@@ -1,17 +1,33 @@
 import java.io.*;
 import java.sql.*;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+
 @WebServlet("/PayslipServlet")
 @MultipartConfig(
-        fileSizeThreshold = 1024 * 1024 * 2, // 2MB
-        maxFileSize = 1024 * 1024 * 10,      // 10MB
-        maxRequestSize = 1024 * 1024 * 50    // 50MB
+        fileSizeThreshold = 1024 * 1024 * 2,
+        maxFileSize = 1024 * 1024 * 10,
+        maxRequestSize = 1024 * 1024 * 50
 )
 public class PayslipServlet extends HttpServlet {
+
+    private Cloudinary cloudinary;
+
+    @Override
+    public void init() {
+        Map<String, String> config = new HashMap<>();
+        config.put("cloud_name", System.getenv("CLOUDINARY_CLOUD_NAME"));
+        config.put("api_key", System.getenv("CLOUDINARY_API_KEY"));
+        config.put("api_secret", System.getenv("CLOUDINARY_API_SECRET"));
+        cloudinary = new Cloudinary(config);
+    }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
@@ -21,40 +37,36 @@ public class PayslipServlet extends HttpServlet {
             String monthYear = request.getParameter("monthYear");
             Part filePart = request.getPart("payslipFile");
 
-            // 1. Get original name and create storage name
             String originalFileName = getFileName(filePart);
             String cleanEmail = userEmail.replace("@", "_").replace(".", "_");
-            String fileName = "payslip_" + cleanEmail + "_" + monthYear + ".pdf";
+            String cloudName = "payslip_" + cleanEmail + "_" + monthYear;
 
-            // 2. Setup path
-            String rootPath = request.getServletContext().getRealPath("/");
-            String relativeDir = "uploads" + File.separator + "payslips";
-            String fullUploadPath = rootPath + File.separator + relativeDir;
+            try {
+                Map uploadResult = cloudinary.uploader().upload(filePart.getInputStream(),
+                        ObjectUtils.asMap(
+                                "public_id", cloudName,
+                                "resource_type", "raw"
+                        ));
 
-            File uploadDir = new File(fullUploadPath);
-            if (!uploadDir.exists()) uploadDir.mkdirs();
+                String cloudUrl = uploadResult.get("secure_url").toString();
 
-            // 3. Save to disk
-            filePart.write(fullUploadPath + File.separator + fileName);
-            String dbPath = "uploads/payslips/" + fileName;
+                try (Connection con = DBConnection.getConnection()) {
+                    PreparedStatement del = con.prepareStatement(
+                            "DELETE FROM user_payslips WHERE user_email=? AND month_year=?");
+                    del.setString(1, userEmail);
+                    del.setString(2, monthYear);
+                    del.executeUpdate();
 
-            try (Connection con = DBConnection.getConnection()) {
-                // Delete existing for that month to avoid duplicates
-                PreparedStatement del = con.prepareStatement("DELETE FROM user_payslips WHERE user_email=? AND month_year=?");
-                del.setString(1, userEmail);
-                del.setString(2, monthYear);
-                del.executeUpdate();
+                    PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO user_payslips (user_email, month_year, file_path, file_name) VALUES (?, ?, ?, ?)");
+                    ps.setString(1, userEmail);
+                    ps.setString(2, monthYear);
+                    ps.setString(3, cloudUrl);
+                    ps.setString(4, originalFileName);
+                    ps.executeUpdate();
 
-                // Insert with file_name column
-                PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO user_payslips (user_email, month_year, file_path, file_name) VALUES (?, ?, ?, ?)");
-                ps.setString(1, userEmail);
-                ps.setString(2, monthYear);
-                ps.setString(3, dbPath);
-                ps.setString(4, originalFileName);
-                ps.executeUpdate();
-
-                response.sendRedirect("genpayslip.html?status=success");
+                    response.sendRedirect("genpayslip.html?status=success");
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 response.sendRedirect("genpayslip.html?status=error");
@@ -68,7 +80,7 @@ public class PayslipServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         try (Connection con = DBConnection.getConnection()) {
-            // ADMIN: View history for one employee
+
             if ("history".equals(action)) {
                 String targetEmail = request.getParameter("userEmail");
                 PreparedStatement ps = con.prepareStatement(
@@ -91,7 +103,7 @@ public class PayslipServlet extends HttpServlet {
                 json.append("]");
                 response.getWriter().write(json.toString());
             }
-            // ADMIN: View PDF from history
+
             else if ("view".equals(action)) {
                 String id = request.getParameter("id");
                 PreparedStatement ps = con.prepareStatement("SELECT file_path FROM user_payslips WHERE id = ?");
@@ -101,12 +113,14 @@ public class PayslipServlet extends HttpServlet {
                     response.sendRedirect(rs.getString("file_path"));
                 }
             }
-            // USER: List own payslips
+
             else if ("list".equals(action)) {
                 String currentUser = (String) request.getSession().getAttribute("userEmail");
-                PreparedStatement ps = con.prepareStatement("SELECT month_year, file_path FROM user_payslips WHERE user_email = ? ORDER BY id DESC");
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT month_year, file_path FROM user_payslips WHERE user_email = ? ORDER BY id DESC");
                 ps.setString(1, currentUser);
                 ResultSet rs = ps.executeQuery();
+
                 StringBuilder json = new StringBuilder("[");
                 boolean first = true;
                 while (rs.next()) {
@@ -118,6 +132,7 @@ public class PayslipServlet extends HttpServlet {
                 json.append("]");
                 response.getWriter().write(json.toString());
             }
+
         } catch (Exception e) {
             e.printStackTrace();
             response.getWriter().write("[]");
