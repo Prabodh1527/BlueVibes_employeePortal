@@ -5,26 +5,23 @@ RUN mvn clean package
 
 FROM tomcat:9.0-jdk17
 
-# Clean old apps
-RUN rm -rf /usr/local/tomcat/webapps/*
+# Expose env vars to Tomcat / Java
+ENV DB_HOST=$DB_HOST
+ENV DB_NAME=$DB_NAME
+ENV DB_USER=$DB_USER
+ENV DB_PASSWORD=$DB_PASSWORD
+ENV DB_PORT=$DB_PORT
 
-# Tell Tomcat it is behind Render's HTTPS proxy
+ENV CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME
+ENV CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY
+ENV CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET
+
+# Tell Tomcat it runs behind HTTPS proxy (Render)
 RUN sed -i 's/port="8080"/port="8080" scheme="https" proxyPort="443"/' /usr/local/tomcat/conf/server.xml
 
-# Copy WAR
+RUN rm -rf /usr/local/tomcat/webapps/*
 COPY --from=build /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
 
-# Pass Render env vars to Tomcat JVM
-ENV JAVA_OPTS="\
--DDB_HOST=${DB_HOST} \
--DDB_NAME=${DB_NAME} \
--DDB_USER=${DB_USER} \
--DDB_PASSWORD=${DB_PASSWORD} \
--DDB_PORT=${DB_PORT} \
--DCLOUDINARY_URL=${CLOUDINARY_URL} \
--DCLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME} \
--DCLOUDINARY_API_KEY=${CLOUDINARY_API_KEY} \
--DCLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}"
-
 EXPOSE 8080
-CMD ["sh", "-c", "catalina.sh run"]
+
+CMD ["catalina.sh", "run"]
