@@ -8,11 +8,16 @@ public class DBConnection {
     public static Connection getConnection() {
         Connection con = null;
         try {
-            String host = System.getenv("DB_HOST");
-            String db   = System.getenv("DB_NAME");
-            String user = System.getenv("DB_USER");
-            String pass = System.getenv("DB_PASSWORD");
-            String port = System.getenv("DB_PORT");
+            // MUST use System.getProperty for Tomcat on Render
+            String host = System.getProperty("DB_HOST");
+            String db   = System.getProperty("DB_NAME");
+            String user = System.getProperty("DB_USER");
+            String pass = System.getProperty("DB_PASSWORD");
+            String port = System.getProperty("DB_PORT");
+
+            if (host == null || db == null) {
+                throw new RuntimeException("Database environment variables NOT loaded into Tomcat");
+            }
 
             String url =
                 "jdbc:mysql://" + host + ":" + port + "/" + db +
@@ -29,9 +34,7 @@ public class DBConnection {
             Class.forName(DRIVER);
             con = DriverManager.getConnection(url, user, pass);
 
-            if (con != null && !con.isClosed()) {
-                System.out.println("Connected to Render Cloud MySQL");
-            }
+            System.out.println("Connected to live MySQL at " + host);
 
         } catch (Exception e) {
             System.out.println("DB CONNECTION FAILED");
