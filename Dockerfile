@@ -1,11 +1,13 @@
-# Use the new official Java 11 image
-FROM eclipse-temurin:11-jdk
-
+# Build stage
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY . .
+RUN mvn clean package
 
-# Create 'out' folder and compile
-RUN mkdir -p out && javac -d out -cp "web/WEB-INF/lib/*:src" src/*.java
+# Runtime stage
+FROM tomcat:9.0-jdk17
+RUN rm -rf /usr/local/tomcat/webapps/*
+COPY --from=build /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
 
-# Start the app
-CMD ["java", "-jar", "web/WEB-INF/lib/jetty-runner-9.4.53.v20231009.jar", "--port", "8080", "--classes", "out", "web"]
+EXPOSE 8080
+CMD ["catalina.sh", "run"]
