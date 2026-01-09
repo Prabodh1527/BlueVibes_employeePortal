@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlueVibes | Portal Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --error: #ef4444; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); display: flex; align-items: center; justify-content: center; height: 100vh; }
+
+        .login-card { background: white; padding: 2.5rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 450px; text-align: center; }
+
+        /* FIXED: SQUAD Dual Logo Branding Style with less white space */
+        .brand-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 1rem;
+        }
+        /* Adjusted width and removed padding to reduce white space - 80px Size */
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            padding: 0;
+            border-radius: 8px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+        .brand-name {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: 4px;
+            background: linear-gradient(to right, #0f172a, #64748b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+        }
+
+        .role-selector { display: flex; gap: 10px; margin-bottom: 1.5rem; }
+        .role-btn { flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; background: white; font-weight: 600; transition: 0.3s; }
+        .role-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .form-control { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 1rem; font-family: inherit; }
+        .btn-login { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn-login:hover { opacity: 0.9; }
+
+        .footer-links { margin-top: 1.5rem; display: flex; justify-content: center; font-size: 0.85rem; }
+        .footer-links a { color: #64748b; text-decoration: none; }
+
+        .error-msg {
+            background: #fee2e2;
+            color: var(--error);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <div class="brand-container">
+        <img src="logo1.jpeg" class="logo">
+        <img src="logo.jpeg" class="logo">
+    </div>
+    <div class="brand-name">BlueVibes</div>
+
+    <h2 style="margin-bottom: 1.5rem; color: var(--primary); font-weight: 700;">Portal Login</h2>
+
+    <div id="errorAlert" class="error-msg">Invalid Email, Password, or Role.</div>
+
+    <div class="role-selector">
+        <button type="button" class="role-btn active" id="btnUser" onclick="setRole('User')">User</button>
+        <button type="button" class="role-btn" id="btnAdmin" onclick="setRole('Admin')">Admin</button>
+    </div>
+
+    <form id="loginForm" action="LoginServlet" method="post">
+        <input type="hidden" name="role" id="roleInput" value="User">
+
+        <input type="text" name="email" class="form-control" placeholder="Username / Email" required>
+        <input type="password" name="password" class="form-control" placeholder="Password" required>
+
+        <button type="submit" class="btn-login">Login to BlueVibes</button>
+    </form>
+
+    <div class="footer-links">
+        <a href="forgotpassword.html">Forgot Password?</a>
+    </div>
+</div>
+
+<script>
+    function setRole(role) {
+        document.getElementById('roleInput').value = role;
+        document.getElementById('btnUser').classList.toggle('active', role === 'User');
+        document.getElementById('btnAdmin').classList.toggle('active', role === 'Admin');
+    }
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            document.getElementById('errorAlert').style.display = 'block';
+        }
+    }
+</script>
+</body>
+</html>

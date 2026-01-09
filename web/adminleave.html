@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlueVibes | Leave Approvals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --sidebar-width: 280px; --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text: #1e293b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Styling */
+        .sidebar { width: var(--sidebar-width); background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; }
+
+        .sidebar-header {
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .brand-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .brand-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 4px;
+            margin-top: 10px;
+            background: linear-gradient(to right, #fff, #64748b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sidebar-logo {
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            padding: 0;
+            border-radius: 8px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; overflow-y: auto; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1.2rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.85rem; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; }
+        .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
+
+        .logout-sect { padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .logout-btn { color: #f87171; text-decoration: none; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; }
+        .logout-btn:hover { color: #ef4444; }
+
+        .submenu { display: none; list-style: none; padding-left: 2.5rem; margin-bottom: 0.5rem; }
+        .submenu.show { display: block; }
+        .submenu-item { display: block; padding: 0.6rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; border-radius: 6px; transition: 0.2s; }
+        .submenu-item:hover { color: white; background: rgba(255,255,255,0.05); }
+
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; padding: 0 2.5rem; }
+
+        .content-area { padding: 2.5rem; overflow-y: auto; flex-grow: 1; }
+
+        .welcome-section {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .welcome-section h1 { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+
+        .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .data-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .data-table th { text-align: left; padding: 15px; background: #f8fafc; color: #64748b; font-size: 0.8rem; border-bottom: 2px solid var(--border); text-transform: uppercase; }
+        .data-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; word-wrap: break-word; vertical-align: middle; }
+
+        .status-badge { font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
+        .status-pending { background: #fef9c3; color: #854d0e; }
+        .status-approved { background: #dcfce7; color: #166534; }
+        .status-rejected { background: #fee2e2; color: #991b1b; }
+
+        .btn-act { padding: 6px 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.7rem; margin-right: 4px; transition: 0.2s; }
+        .btn-app { background: #10b981; color: white; }
+        .btn-rej { background: #ef4444; color: white; }
+        .btn-act:hover { opacity: 0.8; }
+        .btn-act:disabled { opacity: 0.3; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="brand-container">
+            <img src="logo1.jpeg" class="sidebar-logo">
+            <img src="logo.jpeg" class="sidebar-logo">
+        </div>
+        <div class="brand-name">BlueVibes</div>
+    </div>
+    <nav class="nav-links">
+        <a href="adminhome.html" class="nav-item"><i class="ph ph-house"></i> Admin Dashboard</a>
+        <a href="adminprofile.html" class="nav-item"><i class="ph ph-user"></i> My Profile</a>
+        <a href="usermanagement.html" class="nav-item"><i class="ph ph-users-three"></i> User Management</a>
+        <a href="adminreports.html" class="nav-item"><i class="ph ph-clipboard-text"></i> View Weekly Reports</a>
+
+        <div>
+            <button class="nav-item" onclick="toggleMasters()">
+                <i class="ph ph-database"></i> Masters <i class="ph ph-caret-down" style="margin-left: auto; font-size: 0.7rem;"></i>
+            </button>
+            <ul id="mastersSubmenu" class="submenu">
+                <li><a href="designationmaster.html" class="submenu-item">• Designation Master</a></li>
+                <li><a href="qualificationmaster.html" class="submenu-item">• Qualification Master</a></li>
+                <li><a href="experiencemaster.html" class="submenu-item">• Experience Master</a></li>
+                <li><a href="certificationmaster.html" class="submenu-item">• Certification Master</a></li>
+                <li><a href="taskmaster.html" class="submenu-item">• Task Description Master</a></li>
+                <li><a href="customermaster.html" class="submenu-item">• Customer Master</a></li>
+            </ul>
+        </div>
+        <a href="admin_notifications.html" class="nav-item"><i class="ph ph-megaphone"></i> Publish Notifications</a>
+
+        <a href="genpayslip.html" class="nav-item"><i class="ph ph-receipt"></i> Generate Payslips</a>
+        <a href="policy.html" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
+        <a href="adminleave.html" class="nav-item active"><i class="ph ph-calendar-x"></i> Approve/Reject Leaves</a>
+    </nav>
+    <div class="logout-sect">
+        <a href="index.html" class="logout-btn"><i class="ph ph-power"></i> Logout Account</a>
+    </div>
+</aside>
+<main class="main-wrapper">
+    <header class="top-header"><h2>Approve/Reject Leaves</h2></header>
+    <div class="content-area">
+        <div class="welcome-section">
+            <h1>Review Member Absences</h1>
+            <p style="color: #64748b; font-size: 0.9rem;">Approve or reject leave requests from the BlueVibes below.</p>
+        </div>
+        <div class="card">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th style="width: 20%;">Employee</th>
+                    <th style="width: 15%;">Type & Status</th>
+                    <th style="width: 20%;">Dates</th>
+                    <th style="width: 25%;">Reason</th>
+                    <th style="width: 20%;">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="adminLeaveBody"></tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<script>
+    function toggleMasters() {
+        const submenu = document.getElementById('mastersSubmenu');
+        submenu.classList.toggle('show');
+    }
+
+    function fetchAll() {
+        fetch('LeaveServlet?action=fetchAllPending')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('adminLeaveBody');
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;">No leave requests found.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.map(leave => `
+                    <tr>
+                        <td style="font-weight: 600;">${leave.email}</td>
+                        <td><span class="status-badge status-${leave.status.toLowerCase()}">${leave.status}</span><br><b>${leave.type}</b></td>
+                        <td>${leave.dates}</td>
+                        <td>${leave.reason}</td>
+                        <td>
+                            <div style="display:flex;">
+                                <button class="btn-act btn-app" ${leave.status === 'Approved' ? 'disabled' : ''} onclick="updateStatus(${leave.id}, 'Approved')">APPROVE</button>
+                                <button class="btn-act btn-rej" ${leave.status === 'Rejected' ? 'disabled' : ''} onclick="updateStatus(${leave.id}, 'Rejected')">REJECT</button>
+                            </div>
+                        </td>
+                    </tr>`).join('');
+            });
+    }
+
+    function updateStatus(id, newStatus) {
+        if(!confirm(`Are you sure you want to change status to ${newStatus}?`)) return;
+        fetch(`LeaveServlet?action=updateStatus&id=${id}&status=${newStatus}`)
+            .then(res => res.json())
+            .then(data => { if(data.success) fetchAll(); });
+    }
+
+    window.onload = fetchAll;
+</script>
+</body>
+</html>

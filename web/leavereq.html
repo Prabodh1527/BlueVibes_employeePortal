@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlueVibes | Request Leave</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --sidebar-width: 260px; --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text: #1e293b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Styling */
+        .sidebar { width: var(--sidebar-width); background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.1); }
+
+        /* Branding Style */
+        .sidebar-header {
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .brand-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .brand-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 4px;
+            margin-top: 10px;
+            background: linear-gradient(to right, #fff, #64748b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sidebar-logo {
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            padding: 0;
+            border-radius: 8px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.9rem; }
+        .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
+        .logout-sect { padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .logout-btn { color: #f87171; text-decoration: none; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; }
+
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* Header */
+        .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; padding: 0 2.5rem; flex-shrink: 0; }
+
+        .content-area { padding: 2.5rem; overflow-y: auto; flex-grow: 1; }
+        .layout-grid { display: grid; grid-template-columns: 380px 1fr; gap: 2rem; align-items: start; }
+        .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 1.2rem; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem; color: #64748b; text-transform: uppercase; }
+        .form-input { width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.9rem; }
+        .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-sub { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .btn-sub:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .history-table { width: 100%; border-collapse: collapse; }
+        .history-table th { text-align: left; padding: 12px; background: #f8fafc; color: #64748b; font-size: 0.8rem; border-bottom: 2px solid var(--border); text-transform: uppercase; }
+        .history-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+        .status-pill { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .pending { background: #fef9c3; color: #854d0e; }
+        .approved { background: #dcfce7; color: #166534; }
+        .rejected { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="brand-container">
+            <img src="logo1.jpeg" class="sidebar-logo">
+            <img src="logo.jpeg" class="sidebar-logo">
+        </div>
+        <div class="brand-name">BlueVibes</div>
+    </div>
+    <nav class="nav-links">
+        <a href="homepage.jsp" class="nav-item"><i class="ph ph-house"></i> Dashboard</a>
+        <a href="LoadProfileServlet" class="nav-item"><i class="ph ph-user"></i> My Profile</a>
+        <a href="attendance.html" class="nav-item"><i class="ph ph-calendar-check"></i> Attendance & Calender</a>
+        <a href="weeklyreport.html" class="nav-item"><i class="ph ph-clipboard-text"></i> Weekly Status Report</a>
+        <a href="user_notifications.html" class="nav-item"><i class="ph ph-broadcast"></i> Notifications</a>
+        <a href="payslips.html" class="nav-item"><i class="ph ph-receipt"></i> Payslips</a>
+        <a href="appraisals.html" class="nav-item"><i class="ph ph-chart-line-up"></i> KRA Appraisals</a>
+        <a href="policyview.jsp" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
+        <a href="leavereq.html" class="nav-item active"><i class="ph ph-calendar-x"></i> Leave Request</a>
+    </nav>
+    <div class="logout-sect">
+        <a href="index.html" class="logout-btn"><i class="ph ph-power"></i> Logout Account</a>
+    </div>
+</aside>
+<main class="main-wrapper">
+    <header class="top-header">
+        <h2 style="font-weight: 700;">Leave Request</h2>
+    </header>
+    <div class="content-area">
+        <div class="layout-grid">
+            <div class="card">
+                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                    <i class="ph ph-calendar-plus" style="color: var(--accent);"></i> New Request
+                </h3>
+                <form action="LeaveServlet" method="POST">
+                    <div class="form-group">
+                        <label>Leave Type</label>
+                        <select class="form-input" name="leaveType">
+                            <option>Casual Leave</option>
+                            <option>Sick Leave</option>
+                            <option>Personal Leave</option>
+                        </select>
+                    </div>
+                    <div class="date-row">
+                        <div class="form-group"><label>Start Date</label><input type="date" class="form-input" name="startDate" required></div>
+                        <div class="form-group"><label>End Date</label><input type="date" class="form-input" name="endDate" required></div>
+                    </div>
+                    <div class="form-group"><label>Reason</label><textarea class="form-input" name="reason" rows="4" placeholder="Briefly explain the reason for leave..." required></textarea></div>
+                    <button type="submit" class="btn-sub">Submit Request</button>
+                </form>
+            </div>
+            <div class="card">
+                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                    <i class="ph ph-clock-counter-clockwise" style="color: var(--accent);"></i> My Application History
+                </h3>
+                <table class="history-table">
+                    <thead><tr><th>Type</th><th>Dates</th><th>Applied On</th><th>Status</th></tr></thead>
+                    <tbody id="leaveHistoryBody">
+                    <tr><td colspan="4" style="text-align:center; padding: 2rem; color: #94a3b8;">Loading BlueVibes leave records...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+<script>
+    window.onload = function() {
+        fetch('LeaveServlet?action=fetchUserHistory')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('leaveHistoryBody');
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 2rem;">No leave history found in BlueVibes.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.map(leave => `
+                    <tr>
+                        <td><b>${leave.type}</b></td>
+                        <td>${leave.dates}</td>
+                        <td>${leave.appliedOn.split(' ')[0]}</td>
+                        <td><span class="status-pill ${leave.status.toLowerCase()}">${leave.status}</span></td>
+                    </tr>
+                `).join('');
+            })
+            .catch(err => {
+                console.error("Fetch error:", err);
+                document.getElementById('leaveHistoryBody').innerHTML = '<tr><td colspan="4" style="text-align:center; color:red; padding: 2rem;">Error syncing with BlueVibes server.</td></tr>';
+            });
+    };
+</script>
+</body>
+</html>

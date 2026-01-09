@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlueVibes | Designation Master</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --sidebar-width: 280px; --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text: #1e293b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Styling */
+        .sidebar { width: var(--sidebar-width); background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.1); }
+
+        .sidebar-header { padding: 2.5rem 1.5rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .brand-container { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .sidebar-logo { width: 80px; height: 80px; background: transparent; padding: 0; border-radius: 8px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+
+        .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; overflow-y: auto; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1.2rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.85rem; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; }
+        .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
+
+        /* Logout Section */
+        .logout-sect { padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .logout-btn { color: #f87171; text-decoration: none; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; }
+        .logout-btn:hover { color: #ef4444; }
+
+        .submenu { display: none; list-style: none; padding-left: 2.5rem; margin-bottom: 0.5rem; }
+        .submenu.show { display: block; }
+        .submenu-item { display: block; padding: 0.6rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; border-radius: 6px; transition: 0.2s; }
+        .submenu-item:hover, .submenu-item.active-sub { color: white; background: rgba(255,255,255,0.05); }
+        .active-sub { color: white !important; font-weight: 600; }
+
+        /* Main Content area */
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; }
+        .content-area { padding: 2rem; overflow-y: auto; }
+
+        .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .master-form { display: flex; gap: 15px; align-items: flex-end; }
+        .form-group { flex-grow: 1; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+        .form-input { width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; }
+
+        .btn-add { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; height: 42px; }
+        .btn-update { background: #10b981 !important; }
+
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { background: #f8fafc; text-align: left; padding: 15px; font-size: 0.85rem; color: #64748b; border-bottom: 2px solid var(--border); }
+        .data-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+
+        .action-btns { display: flex; gap: 8px; }
+        .btn-action { border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .btn-edit-action { background: #e0f2fe; color: var(--accent); }
+        .btn-edit-action:hover { background: var(--accent); color: white; }
+        .btn-delete-action { background: #fee2e2; color: #ef4444; }
+        .btn-delete-action:hover { background: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="brand-container">
+            <img src="logo1.jpeg" class="sidebar-logo">
+            <img src="logo.jpeg" class="sidebar-logo">
+        </div>
+        <div class="brand-name">BlueVibes</div>
+    </div>
+    <nav class="nav-links">
+        <a href="adminhome.html" class="nav-item"><i class="ph ph-house"></i> Admin Dashboard</a>
+        <a href="adminprofile.html" class="nav-item"><i class="ph ph-user"></i> My Profile</a>
+        <a href="usermanagement.html" class="nav-item"><i class="ph ph-users-three"></i> User Management</a>
+        <a href="adminreports.html" class="nav-item"><i class="ph ph-clipboard-text"></i> View Weekly Reports</a>
+
+        <div>
+            <button class="nav-item active" onclick="toggleMasters()">
+                <i class="ph ph-database"></i> Masters <i class="ph ph-caret-down" style="margin-left: auto; font-size: 0.7rem;"></i>
+            </button>
+            <ul id="mastersSubmenu" class="submenu show">
+                <li><a href="designationmaster.html" class="submenu-item active-sub">• Designation Master</a></li>
+                <li><a href="qualificationmaster.html" class="submenu-item">• Qualification Master</a></li>
+                <li><a href="experiencemaster.html" class="submenu-item">• Experience Master</a></li>
+                <li><a href="certificationmaster.html" class="submenu-item">• Certification Master</a></li>
+                <li><a href="taskmaster.html" class="submenu-item">• Task Description Master</a></li>
+                <li><a href="customermaster.html" class="submenu-item">• Customer Master</a></li>
+            </ul>
+        </div>
+        <a href="admin_notifications.html" class="nav-item"><i class="ph ph-megaphone"></i> Publish Notifications</a>
+
+        <a href="genpayslip.html" class="nav-item"><i class="ph ph-receipt"></i> Generate Payslips</a>
+        <a href="policy.html" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
+        <a href="adminleave.html" class="nav-item"><i class="ph ph-calendar-x"></i> Approve/Reject Leaves</a>
+    </nav>
+    <div class="logout-sect">
+        <a href="index.html" class="logout-btn"><i class="ph ph-power"></i> Logout Account</a>
+    </div>
+</aside>
+
+<main class="main-wrapper">
+    <header class="top-header">
+        <h2 style="font-weight: 700;">Designation Master</h2>
+    </header>
+
+    <div class="content-area">
+        <div class="card">
+            <form id="designationForm" class="master-form">
+                <input type="hidden" id="desigId" value="">
+                <div class="form-group">
+                    <label id="formLabel">Add Designation Name (e.g. Software Engineer, Manager)</label>
+                    <input type="text" id="desigName" class="form-input" placeholder="Enter designation name..." required>
+                </div>
+                <button type="submit" id="submitBtn" class="btn-add">
+                    <i class="ph ph-plus-bold"></i> <span id="btnText">Add Designation</span>
+                </button>
+                <button type="button" id="cancelBtn" class="btn-action" style="display:none; background:#64748b; color:white; height:42px; border-radius: 8px;" onclick="resetForm()">Cancel</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th style="width: 15%;">ID</th>
+                    <th style="width: 65%;">Designation Name</th>
+                    <th style="width: 20%;">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="designationBody">
+                <tr><td colspan="3" style="text-align:center; padding: 2rem; color: #94a3b8;">Syncing with BlueVibes database...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script>
+    function toggleMasters() {
+        const submenu = document.getElementById('mastersSubmenu');
+        submenu.classList.toggle('show');
+    }
+
+    function loadDesignations() {
+        fetch('DesignationServlet')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('designationBody');
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 2rem;">No designations found in BlueVibes records.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.map(d => `
+                    <tr>
+                        <td>${d.id}</td>
+                        <td><strong>${d.name}</strong></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-action btn-edit-action" onclick="editDesignation(${d.id}, '${d.name.replace(/'/g, "\\'")}')" title="Edit">
+                                    <i class="ph ph-pencil-simple"></i>
+                                </button>
+                                <button class="btn-action btn-delete-action" onclick="deleteDesignation(${d.id})" title="Delete">
+                                    <i class="ph ph-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`).join('');
+            })
+            .catch(err => {
+                document.getElementById('designationBody').innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">Error syncing with BlueVibes server.</td></tr>';
+            });
+    }
+
+    function editDesignation(id, name) {
+        document.getElementById('desigId').value = id;
+        document.getElementById('desigName').value = name;
+        document.getElementById('btnText').innerText = "Update Designation";
+        document.getElementById('formLabel').innerText = "Edit Designation Name";
+        document.getElementById('submitBtn').classList.add('btn-update');
+        document.getElementById('cancelBtn').style.display = 'block';
+        document.getElementById('desigName').focus();
+    }
+
+    function resetForm() {
+        document.getElementById('desigId').value = '';
+        document.getElementById('desigName').value = '';
+        document.getElementById('btnText').innerText = "Add Designation";
+        document.getElementById('formLabel').innerText = "Add Designation Name (e.g. Software Engineer, Manager)";
+        document.getElementById('submitBtn').classList.remove('btn-update');
+        document.getElementById('cancelBtn').style.display = 'none';
+    }
+
+    document.getElementById('designationForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = document.getElementById('desigId').value;
+        const name = document.getElementById('desigName').value;
+        const params = new URLSearchParams();
+
+        if(id) {
+            params.append("action", "update");
+            params.append("id", id);
+            params.append("newName", name);
+        } else {
+            params.append("action", "add");
+            params.append("newName", name);
+        }
+
+        fetch('DesignationServlet', { method: 'POST', body: params })
+            .then(() => {
+                resetForm();
+                loadDesignations();
+            })
+            .catch(err => alert("Error updating BlueVibes database."));
+    });
+
+    function deleteDesignation(id) {
+        if(confirm("Are you sure you want to remove this role from BlueVibes?")) {
+            const params = new URLSearchParams();
+            params.append("action", "delete");
+            params.append("id", id);
+            fetch('DesignationServlet', { method: 'POST', body: params })
+                .then(() => loadDesignations())
+                .catch(err => alert("Error deleting from BlueVibes server."));
+        }
+    }
+
+    window.onload = loadDesignations;
+</script>
+</body>
+</html>

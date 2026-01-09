@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlueVibes | User Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text: #1e293b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Styling - Synchronized */
+        .sidebar { width: 280px; background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; }
+
+        /* FIXED: SQUAD Dual Logo Branding Style with less white space */
+        .sidebar-header {
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .brand-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .brand-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 4px;
+            margin-top: 10px;
+            background: linear-gradient(to right, #fff, #64748b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sidebar-logo {
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            padding: 0;
+            border-radius: 8px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; overflow-y: auto; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1.2rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.85rem; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; }
+        .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
+
+        /* Logout Section Added to Sidebar */
+        .logout-sect { padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .logout-btn { color: #f87171; text-decoration: none; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; }
+        .logout-btn:hover { color: #ef4444; }
+
+        /* Dropdown Style for Masters */
+        .submenu { display: none; list-style: none; padding-left: 2.5rem; margin-bottom: 0.5rem; }
+        .submenu.show { display: block; }
+        .submenu-item { display: block; padding: 0.6rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; border-radius: 6px; transition: 0.2s; }
+        .submenu-item:hover { color: white; background: rgba(255,255,255,0.05); }
+
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; }
+        .content-area { padding: 2rem; overflow-y: auto; }
+        .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { background: #f8fafc; text-align: left; padding: 15px; font-size: 0.85rem; color: #64748b; border-bottom: 2px solid var(--border); }
+        .data-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+
+        .action-btns { display: flex; gap: 8px; align-items: center; }
+        .btn-view { background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; font-size: 0.8rem; }
+        .btn-attendance { background: #10b981; }
+        .btn-edit { background: #f59e0b; }
+        .btn-delete { background: #ef4444; }
+        .btn-save-row { background: #059669; }
+        .btn-reg { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); text-decoration: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
+        .btn-reg:hover { background: var(--accent); }
+
+        .btn-reset-db { background: #dc2626; color: white; border: 1px solid #b91c1c; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: 0.2s; margin-right: 10px; }
+        .btn-reset-db:hover { background: #991b1b; }
+
+        .edit-input { width: 100%; padding: 6px; border: 1px solid var(--accent); border-radius: 4px; font-family: inherit; font-size: 0.85rem; }
+
+        /* WFH Toggle Styling */
+        .wfh-toggle {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 2% auto; padding: 0; border-radius: 15px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .modal-header { padding: 1.5rem 2rem; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; }
+        .modal-body { padding: 2rem; background: #f8fafc; }
+        .view-section { background: white; padding: 1.5rem; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 1.5rem; }
+        .view-section h4 { border-bottom: 2px solid var(--bg); padding-bottom: 8px; margin-bottom: 1rem; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .info-item label { display: block; font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
+        .info-item p { font-weight: 600; color: var(--text); margin-top: 4px; }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 1rem; }
+        .day-label { font-weight: 700; font-size: 0.75rem; color: #94a3b8; text-align: center; text-transform: uppercase; padding-bottom: 10px; }
+        .day-cell { aspect-ratio: 1.2; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid var(--border); font-size: 0.95rem; font-weight: 600; color: #64748b; background: white; }
+        .present { background: #dcfce7 !important; color: #166534 !important; border-color: #bbf7d0 !important; }
+        .absent { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .holiday-weekend { background: #e0f2fe; color: #075985; border-color: #bae6fd; }
+        .pre-launch { background: #f8fafc !important; color: #cbd5e1 !important; border-style: dashed !important; text-decoration: line-through !important; }
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="brand-container">
+            <img src="logo1.jpeg" class="sidebar-logo">
+            <img src="logo.jpeg" class="sidebar-logo">
+        </div>
+        <div class="brand-name">BlueVibes</div>
+    </div>
+    <nav class="nav-links">
+        <a href="adminhome.html" class="nav-item"><i class="ph ph-house"></i> Admin Dashboard</a>
+        <a href="adminprofile.html" class="nav-item"><i class="ph ph-user"></i> My Profile</a>
+        <a href="usermanagement.html" class="nav-item active"><i class="ph ph-users-three"></i> User Management</a>
+        <a href="adminreports.html" class="nav-item"><i class="ph ph-clipboard-text"></i> View Weekly Reports</a>
+
+        <div>
+            <button class="nav-item" onclick="toggleMasters()">
+                <i class="ph ph-database"></i> Masters <i class="ph ph-caret-down" style="margin-left: auto; font-size: 0.7rem;"></i>
+            </button>
+            <ul id="mastersSubmenu" class="submenu">
+                <li><a href="designationmaster.html" class="submenu-item">• Designation Master</a></li>
+                <li><a href="qualificationmaster.html" class="submenu-item">• Qualification Master</a></li>
+                <li><a href="experiencemaster.html" class="submenu-item">• Experience Master</a></li>
+                <li><a href="certificationmaster.html" class="submenu-item">• Certification Master</a></li>
+                <li><a href="taskmaster.html" class="submenu-item">• Task Description Master</a></li>
+                <li><a href="customermaster.html" class="submenu-item">• Customer Master</a></li>
+            </ul>
+        </div>
+        <a href="admin_notifications.html" class="nav-item"><i class="ph ph-megaphone"></i> Publish Notifications</a>
+
+        <a href="genpayslip.html" class="nav-item"><i class="ph ph-receipt"></i> Generate Payslips</a>
+        <a href="policy.html" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
+        <a href="adminleave.html" class="nav-item"><i class="ph ph-calendar-x"></i> Approve/Reject Leaves</a>
+    </nav>
+    <div class="logout-sect">
+        <a href="index.html" class="logout-btn"><i class="ph ph-power"></i> Logout Account</a>
+    </div>
+</aside>
+
+<main class="main-wrapper">
+    <header class="top-header">
+        <h2 style="font-weight: 700;">User Management</h2>
+        <div>
+            <button class="btn-reset-db" onclick="resetDatabase()"><i class="ph ph-warning-circle"></i> RESET SYSTEM DATABASE</button>
+            <a href="register.html" class="btn-reg">+ Register New Employee</a>
+        </div>
+    </header>
+
+    <div class="content-area">
+        <div class="card">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Emp ID</th>
+                    <th>Full Name</th>
+                    <th>Official Email</th>
+                    <th>Designation</th>
+                    <th>Joining Date</th>
+                    <th>Leaves Taken</th>
+                    <th style="text-align:center;">Allow WFH</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="employee-table-body">
+                <tr><td colspan="8" style="text-align:center; padding: 2rem;">Syncing with BlueVibes database...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<div id="profileModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>BlueVibes Member Audit Profile</h3>
+            <i class="ph ph-x" style="cursor:pointer; font-size: 1.5rem;" onclick="closeModal('profileModal')"></i>
+        </div>
+        <div id="modal-content-loader" class="modal-body">
+            <p style="text-align:center;">Fetching BlueVibes records...</p>
+        </div>
+    </div>
+</div>
+
+<div id="attendanceModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header" style="background: #10b981;">
+            <h3>BlueVibes Attendance Heatmap</h3>
+            <i class="ph ph-x" style="cursor:pointer; font-size: 1.5rem;" onclick="closeModal('attendanceModal')"></i>
+        </div>
+        <div class="modal-body">
+            <div class="view-section">
+                <div style="display:flex; justify-content: space-between; align-items: center;">
+                    <h4 id="attendance-user-name">Attendance History</h4>
+                    <span id="adminLeaveCounter" style="font-weight:700; font-size: 0.9rem; color: #0f172a;">Leaves: --/24</span>
+                </div>
+                <div class="calendar-grid" id="adminCalendarGrid">
+                    <div class="day-label">Mon</div><div class="day-label">Tue</div><div class="day-label">Wed</div>
+                    <div class="day-label">Thu</div><div class="day-label">Fri</div><div class="day-label">Sat</div>
+                    <div class="day-label">Sun</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleMasters() {
+        const submenu = document.getElementById('mastersSubmenu');
+        submenu.classList.toggle('show');
+    }
+
+    const LAUNCH_DATE = new Date(2025, 11, 29);
+    let masterDesignations = [];
+
+    window.onload = function() {
+        fetch('DesignationServlet')
+            .then(res => res.json())
+            .then(data => { masterDesignations = data; })
+            .then(() => fetchEmployees());
+    };
+
+    function fetchEmployees() {
+        fetch('FetchAllEmployeesServlet')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById("employee-table-body");
+                tableBody.innerHTML = "";
+                if(!data || data.length === 0){
+                    tableBody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding: 2rem;'>No BlueVibes members found.</td></tr>";
+                    return;
+                }
+                data.forEach(emp => {
+                    const safeEmail = emp.email.replace(/[@.]/g, '');
+                    let leaveColor = "#1e293b";
+                    if(emp.leavesTaken >= 24) leaveColor = "#ef4444";
+                    else if(emp.leavesTaken >= 20) leaveColor = "#f59e0b";
+                    else if(emp.leavesTaken > 0) leaveColor = "#10b981";
+
+                    tableBody.innerHTML += `
+                        <tr id="row-${safeEmail}">
+                            <td class="col-empid">${emp.empId}</td>
+                            <td class="col-name">${emp.fullname}</td>
+                            <td class="col-email">${emp.email}</td>
+                            <td class="col-desig">${emp.designation}</td>
+                            <td class="col-doj">${emp.doj ? emp.doj : 'Not Set'}</td>
+                            <td style="font-weight:700; color:${leaveColor}">${emp.leavesTaken || 0} / 24</td>
+                            <td style="text-align:center;">
+                                <input type="checkbox" class="wfh-toggle"
+                                    ${emp.wfhAllowed ? 'checked' : ''}
+                                    onchange="toggleWFH('${emp.email}', this.checked)"
+                                    title="Enable WFH Bypass">
+                            </td>
+                            <td class="action-btns">
+                                <button class="btn-view" onclick="openProfile('${emp.email}')" title="View Profile"><i class="ph ph-user"></i></button>
+                                <button class="btn-view btn-attendance" onclick="openAttendance('${emp.email}', '${emp.fullname}')" title="Attendance"><i class="ph ph-calendar-check"></i></button>
+                                <button class="btn-view btn-edit" onclick="enableEdit('${emp.email}', this)" title="Edit"><i class="ph ph-pencil"></i> Edit</button>
+                                <button class="btn-view btn-delete" onclick="deleteUser('${emp.empId}', '${emp.fullname}')" title="Delete"><i class="ph ph-trash"></i></button>
+                            </td>
+                        </tr>`;
+                });
+            });
+    }
+
+    function toggleWFH(email, isChecked) {
+        const params = new URLSearchParams();
+        params.append("action", "toggle_wfh");
+        params.append("email", email);
+        params.append("status", isChecked);
+
+        fetch('RegisterServlet', {
+            method: 'POST',
+            body: params
+        }).then(res => {
+            if(res.ok) {
+                console.log(`WFH Status for ${email} updated to ${isChecked}`);
+            } else {
+                alert("Failed to update WFH status.");
+                fetchEmployees();
+            }
+        });
+    }
+
+    function enableEdit(email, btn) {
+        const safeEmail = email.replace(/[@.]/g, '');
+        const row = document.getElementById(`row-${safeEmail}`);
+        const idCell = row.querySelector('.col-empid');
+        const nameCell = row.querySelector('.col-name');
+        const emailCell = row.querySelector('.col-email');
+        const desigCell = row.querySelector('.col-desig');
+
+        const oldId = idCell.innerText;
+        const oldName = nameCell.innerText;
+        const oldEmail = emailCell.innerText;
+        const oldDesig = desigCell.innerText;
+
+        idCell.innerHTML = `<input type="text" class="edit-input" value="${oldId}">`;
+        nameCell.innerHTML = `<input type="text" class="edit-input" value="${oldName}">`;
+        emailCell.innerHTML = `<input type="email" class="edit-input" value="${oldEmail}">`;
+        let options = masterDesignations.map(d => `<option value="${d.name}" ${d.name === oldDesig ? 'selected' : ''}>${d.name}</option>`).join('');
+        desigCell.innerHTML = `<select class="edit-input">${options}</select>`;
+
+        btn.innerHTML = `<i class="ph ph-check"></i> Save`;
+        btn.className = "btn-view btn-save-row";
+        btn.onclick = function() { saveEdit(email, btn); };
+    }
+
+    function saveEdit(originalEmail, btn) {
+        const safeEmail = originalEmail.replace(/[@.]/g, '');
+        const row = document.getElementById(`row-${safeEmail}`);
+        const newId = row.querySelector('.col-empid input').value;
+        const newName = row.querySelector('.col-name input').value;
+        const newEmail = row.querySelector('.col-email input').value;
+        const newDesig = row.querySelector('.col-desig select').value;
+
+        const params = new URLSearchParams();
+        params.append("action", "update_basic");
+        params.append("originalEmail", originalEmail);
+        params.append("email", newEmail);
+        params.append("empid", newId);
+        params.append("fullname", newName);
+        params.append("designation", newDesig);
+
+        fetch('RegisterServlet', {
+            method: 'POST',
+            body: params
+        }).then(() => {
+            alert("BlueVibes member details updated!");
+            fetchEmployees();
+        });
+    }
+
+    function deleteUser(empid, name) {
+        if (confirm(`Are you sure you want to remove ${name} from BlueVibes? This will delete all attendance records for this user.`)) {
+            const params = new URLSearchParams();
+            params.append("action", "delete");
+            params.append("empid", empid);
+
+            fetch('RegisterServlet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            })
+                .then(res => res.text())
+                .then(responseText => {
+                    if (responseText.trim() === "deleted") {
+                        alert("BlueVibes member and all related records removed successfully.");
+                        fetchEmployees(); // This refreshes the table
+                    } else {
+                        alert("Delete Failed: " + responseText);
+                    }
+                })
+                .catch(err => {
+                    console.error("Delete Error:", err);
+                    alert("An error occurred while deleting.");
+                });
+        }
+    }
+
+    function resetDatabase() {
+        if (confirm("WARNING: This will permanently delete ALL employees, attendance, reports, and master data except for the Admin account. This action CANNOT be undone. Are you absolutely sure?")) {
+            const pass = prompt("Please type 'CONFIRM RESET' to proceed:");
+            if (pass === "CONFIRM RESET") {
+                const params = new URLSearchParams();
+                params.append("action", "reset_all");
+
+                fetch('RegisterServlet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params
+                })
+                    .then(res => res.text())
+                    .then(responseText => {
+                        if (responseText.trim() === "reset_success") {
+                            alert("Database wiped successfully. The system is now fresh.");
+                            location.reload();
+                        } else {
+                            alert("Reset Failed: " + responseText);
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Reset Error:", err);
+                        alert("An error occurred during database reset.");
+                    });
+            }
+        }
+    }
+
+    function openProfile(userEmail) {
+        document.getElementById('profileModal').style.display = 'block';
+        fetch('GetFullUserAuditServlet?email=' + userEmail)
+            .then(response => response.json())
+            .then(data => renderModalContent(data));
+    }
+
+    function viewCertificate(path) {
+        window.open(path, '_blank');
+    }
+
+    function openAttendance(userEmail, fullName) {
+        document.getElementById('attendanceModal').style.display = 'block';
+        document.getElementById('attendance-user-name').innerText = `Monthly History: ${fullName}`;
+        fetch('AttendanceServlet?action=monthly_status&adminEmail=' + userEmail)
+            .then(response => response.json())
+            .then(statusData => {
+                generateAdminCalendar(statusData);
+                document.getElementById('adminLeaveCounter').innerText = `Leaves: ${statusData.leaves || 0}/24`;
+            });
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function generateAdminCalendar(statusData) {
+        const grid = document.getElementById('adminCalendarGrid');
+        const labels = grid.querySelectorAll('.day-label');
+        grid.innerHTML = '';
+        labels.forEach(l => grid.appendChild(l));
+
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        let startDay = new Date(year, month, 1).getDay();
+        let offset = startDay === 0 ? 6 : startDay - 1;
+
+        for(let o=0; o<offset; o++) grid.appendChild(document.createElement('div'));
+        for (let i = 1; i <= daysInMonth; i++) {
+            const cur = new Date(year, month, i);
+            const cell = document.createElement('div');
+            cell.className = 'day-cell';
+            cell.innerText = i;
+
+            const attendance = statusData.attendance || {};
+            const holidays = statusData.holidays || [];
+
+            if (cur < LAUNCH_DATE) cell.classList.add('pre-launch');
+            else if (cur.getDay() === 0 || holidays.includes(i)) cell.classList.add('holiday-weekend');
+            else if (i <= now.getDate()) {
+                if (attendance[i]) cell.classList.add('present');
+                else if (i < now.getDate()) cell.classList.add('absent');
+            }
+            grid.appendChild(cell);
+        }
+    }
+
+    function renderModalContent(data) {
+        const container = document.getElementById('modal-content-loader');
+        let qualRows = data.quals.length ? data.quals.map(q => `<tr><td>${q.name}</td><td>${q.year}</td><td>${q.grade}</td><td>${q.perc}%</td></tr>`).join('') : "<tr><td colspan='4' style='text-align:center;'>No records</td></tr>";
+        let expRows = data.exps.length ? data.exps.map(e => `<tr><td>${e.company}</td><td>${e.desig}</td><td>${e.joined}</td><td>${e.left}</td></tr>`).join('') : "<tr><td colspan='4' style='text-align:center;'>No records</td></tr>";
+
+        let certRows = (data.certs && data.certs.length) ? data.certs.map(c =>
+            `<tr><td>${c.name}</td><td>${c.date || 'N/A'}</td><td><button class="btn-view" onclick="viewCertificate('${c.path}')" style="padding:4px 8px; font-size:0.7rem;"><i class="ph ph-file-image"></i> View</button></td></tr>`
+        ).join('') : "<tr><td colspan='3' style='text-align:center;'>No certifications found found</td></tr>";
+
+        container.innerHTML = `
+            <div class="view-section">
+                <h4><i class="ph ph-user-circle"></i> 1. Personal Identity</h4>
+                <div class="info-grid">
+                    <div class="info-item"><label>Full Name</label><p>${data.user.fullname || 'N/A'}</p></div>
+                    <div class="info-item"><label>DOB</label><p>${data.user.dob || 'N/A'}</p></div>
+                    <div class="info-item"><label>Gender</label><p>${data.user.gender || 'N/A'}</p></div>
+                    <div class="info-item"><label>Aadhar</label><p>${data.user.aadhar || 'Not Provided'}</p></div>
+                    <div class="info-item"><label>PAN</label><p>${data.user.pan || 'Not Provided'}</p></div>
+                </div>
+            </div>
+            <div class="view-section">
+                <h4><i class="ph ph-phone"></i> 2. Family & Contact Details</h4>
+                <div class="info-grid">
+                    <div class="info-item"><label>Personal Mobile</label><p>${data.user.phone || 'N/A'}</p></div>
+                    <div class="info-item"><label>Father's Mobile</label><p>${data.user.m_father || 'N/A'}</p></div>
+                    <div class="info-item"><label>Mother's Mobile</label><p>${data.user.m_mother || 'N/A'}</p></div>
+                    <div class="info-item"><label>Guardian's Mobile</label><p>${data.user.m_guardian || 'N/A'}</p></div>
+                </div>
+            </div>
+            <div class="view-section">
+                <h4><i class="ph ph-map-pin"></i> 3. Address History</h4>
+                <div class="info-grid">
+                    <div class="info-item" style="grid-column: span 2;"><label>Permanent Address</label><p>${data.user.p_addr || 'N/A'}</p></div>
+                    <div class="info-item" style="grid-column: span 2;"><label>Communication Address</label><p>${data.user.c_addr || 'N/A'}</p></div>
+                </div>
+            </div>
+            <div class="view-section">
+                <h4><i class="ph ph-briefcase"></i> 4. Professional Details</h4>
+                <div class="info-grid">
+                    <div class="info-item"><label>Designation</label><p>${data.user.designation || 'N/A'}</p></div>
+                    <div class="info-item"><label>Date of Joining</label><p>${data.user.doj || 'N/A'}</p></div>
+                    <div class="info-item"><label>PF No</label><p>${data.user.pf_num || 'N/A'}</p></div>
+                </div>
+            </div>
+            <div class="view-section">
+                <h4><i class="ph ph-graduation-cap"></i> 5. Qualifications</h4>
+                <table class="data-table"><thead><tr><th>Degree</th><th>Year</th><th>Grade</th><th>%</th></tr></thead><tbody>${qualRows}</tbody></table>
+            </div>
+            <div class="view-section">
+                <h4><i class="ph ph-buildings"></i> 6. Experience History</h4>
+                <table class="data-table"><thead><tr><th>Company</th><th>Role</th><th>Joined</th><th>Left</th></tr></thead><tbody>${expRows}</tbody></table>
+            </div>
+            <div class="view-section">
+                <h4><i class="ph ph-certificate"></i> 7. Professional Certifications</h4>
+                <table class="data-table">
+                    <thead><tr><th>Certification Title</th><th>Date Issued</th><th>Verification</th></tr></thead>
+                    <tbody>${certRows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+</script>
+</body>
+</html>

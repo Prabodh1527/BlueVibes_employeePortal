@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlueVibes | Admin Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text-muted: #64748b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Styling */
+        .sidebar { width: 280px; background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-header { padding: 2.5rem 1.5rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .brand-container { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .sidebar-logo { width: 80px; height: 80px; background: transparent; padding: 0; border-radius: 8px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+
+        .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; overflow-y: auto; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1.2rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; font-size: 0.85rem; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; transition: 0.3s; }
+        .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
+
+        .logout-sect { padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .logout-btn { color: #f87171; text-decoration: none; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; }
+        .logout-btn:hover { color: #ef4444; }
+
+        .submenu { display: none; list-style: none; padding-left: 2.5rem; margin-bottom: 0.5rem; }
+        .submenu.show { display: block; }
+        .submenu-item { display: block; padding: 0.6rem 1rem; color: #94a3b8; text-decoration: none; font-size: 0.8rem; border-radius: 6px; transition: 0.2s; }
+        .submenu-item:hover { color: white; background: rgba(255,255,255,0.05); }
+
+        /* Main Content area */
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-header { height: 80px; background: var(--primary); color: white; display: flex; align-items: center; padding: 0 2.5rem; }
+        .content-area { padding: 2.5rem; overflow-y: auto; }
+
+        .profile-card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 2.5rem; max-width: 800px; margin-bottom: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 1.5rem; }
+        .data-field label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+        .data-input { width: 100%; padding: 12px; background: #fff; border: 1px solid var(--border); border-radius: 8px; color: var(--primary); font-weight: 500; font-family: inherit; }
+        .data-input[readonly] { background: #f8fafc; color: var(--text-muted); cursor: not-allowed; }
+        .btn-save { margin-top: 1.5rem; background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-save:hover { opacity: 0.9; transform: translateY(-1px); }
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="brand-container">
+            <img src="logo1.jpeg" class="sidebar-logo">
+            <img src="logo.jpeg" class="sidebar-logo">
+        </div>
+        <div class="brand-name">BlueVibes</div>
+    </div>
+    <nav class="nav-links">
+        <a href="adminhome.html" class="nav-item"><i class="ph ph-house"></i> Admin Dashboard</a>
+        <a href="adminprofile.html" class="nav-item active"><i class="ph ph-user"></i> My Profile</a>
+        <a href="usermanagement.html" class="nav-item"><i class="ph ph-users-three"></i> User Management</a>
+        <a href="adminreports.html" class="nav-item"><i class="ph ph-clipboard-text"></i> View Weekly Reports</a>
+
+        <div>
+            <button class="nav-item" onclick="toggleMasters()">
+                <i class="ph ph-database"></i> Masters <i class="ph ph-caret-down" style="margin-left: auto; font-size: 0.7rem;"></i>
+            </button>
+            <ul id="mastersSubmenu" class="submenu">
+                <li><a href="designationmaster.html" class="submenu-item">• Designation Master</a></li>
+                <li><a href="qualificationmaster.html" class="submenu-item">• Qualification Master</a></li>
+                <li><a href="experiencemaster.html" class="submenu-item">• Experience Master</a></li>
+                <li><a href="certificationmaster.html" class="submenu-item">• Certification Master</a></li>
+                <li><a href="taskmaster.html" class="submenu-item">• Task Description Master</a></li>
+                <li><a href="customermaster.html" class="submenu-item">• Customer Master</a></li>
+            </ul>
+        </div>
+        <a href="admin_notifications.html" class="nav-item"><i class="ph ph-megaphone"></i> Publish Notifications</a>
+
+        <a href="genpayslip.html" class="nav-item"><i class="ph ph-receipt"></i> Generate Payslips</a>
+        <a href="policy.html" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
+        <a href="adminleave.html" class="nav-item"><i class="ph ph-calendar-x"></i> Approve/Reject Leaves</a>
+    </nav>
+    <div class="logout-sect">
+        <a href="index.html" class="logout-btn"><i class="ph ph-power"></i> Logout Account</a>
+    </div>
+</aside>
+
+<main class="main-wrapper">
+    <header class="top-header"><h2>Admin Profile</h2></header>
+    <div class="content-area">
+        <div class="profile-card">
+            <h3 style="display: flex; align-items: center; gap: 10px; color: var(--primary);">
+                <i class="ph ph-shield-check" style="color: var(--accent);"></i> Personal Identity
+            </h3>
+            <form action="UpdateAdminProfileServlet" method="POST">
+                <div class="data-grid">
+                    <div class="data-field"><label>Admin ID</label><input type="text" id="adminId" name="empid" class="data-input" readonly></div>
+                    <div class="data-field"><label>Official Email</label><input type="text" id="adminEmail" name="email" class="data-input" readonly></div>
+                    <div class="data-field"><label>Full Name</label><input type="text" id="adminName" name="fullname" class="data-input" required></div>
+                    <div class="data-field"><label>Mobile No.</label><input type="text" id="adminPhone" name="phone" class="data-input" required></div>
+                </div>
+                <button type="submit" class="btn-save">Update Profile Details</button>
+            </form>
+        </div>
+
+        <div class="profile-card">
+            <h3 style="display: flex; align-items: center; gap: 10px; color: var(--primary);">
+                <i class="ph ph-key" style="color: var(--accent);"></i> Security & Password
+            </h3>
+            <form action="UpdatePasswordServlet" method="POST">
+                <div class="data-grid">
+                    <div class="data-field"><label>New Password</label><input type="password" name="newPassword" class="data-input" required></div>
+                    <div class="data-field"><label>Confirm Password</label><input type="password" name="confirmPassword" class="data-input" required></div>
+                </div>
+                <button type="submit" class="btn-save" style="background: #1e293b;">Change Password</button>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script>
+    function toggleMasters() {
+        const submenu = document.getElementById('mastersSubmenu');
+        submenu.classList.toggle('show');
+    }
+
+    window.onload = function() {
+        // Fetch Admin Data
+        fetch('GetAdminDataServlet')
+            .then(res => {
+                if(!res.ok) throw new Error("Session Expired");
+                return res.json();
+            })
+            .then(data => {
+                document.getElementById('adminId').value = data.employee_id;
+                document.getElementById('adminName').value = data.fullname;
+                document.getElementById('adminEmail').value = data.email;
+                document.getElementById('adminPhone').value = data.phone || "";
+            })
+            .catch(err => console.error("Error loading admin profile:", err));
+    };
+</script>
+</body>
+</html>

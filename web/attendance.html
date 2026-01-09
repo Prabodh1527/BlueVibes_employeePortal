@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlueVibes | Attendance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --sidebar-width: 260px; --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text: #1e293b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+        .sidebar { width: var(--sidebar-width); background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header { padding: 2.5rem 1.5rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .brand-container { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .sidebar-logo { width: 80px; height: 80px; background: transparent; padding: 0; border-radius: 8px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.9rem; }
+        .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
+        .logout-sect { padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .logout-btn { color: #f87171; text-decoration: none; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; }
+
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; padding: 0 2.5rem; flex-shrink: 0; justify-content: space-between; }
+        .content-area { padding: 2.5rem; overflow-y: auto; flex-grow: 1; }
+
+        .punch-card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .live-clock { font-size: 2.2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem; }
+        .btn-punch { border: none; padding: 10px 30px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px; margin: 0 auto; transition: 0.2s; }
+        .btn-in { background: #10b981; color: white; }
+        .btn-out { background: #ef4444; color: white; }
+
+        .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+        .stat-card h3 { font-size: 2rem; margin-bottom: 5px; color: var(--accent); }
+
+        .calendar-card { background: white; padding: 2rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .calendar-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+        .nav-btn { background: var(--bg); border: 1px solid var(--border); padding: 5px 12px; border-radius: 6px; cursor: pointer; color: var(--primary); transition: 0.2s; }
+        .nav-btn:hover:not(:disabled) { background: var(--accent); color: white; }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+        .day-label { font-weight: 700; font-size: 0.75rem; color: #94a3b8; text-align: center; text-transform: uppercase; padding-bottom: 10px; }
+        .day-cell { aspect-ratio: 1.2; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid var(--border); font-size: 0.95rem; font-weight: 600; color: #64748b; position: relative; }
+
+        .present { background: #dcfce7 !important; color: #166534 !important; border-color: #bbf7d0 !important; }
+        .absent { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .holiday-weekend { background: #e0f2fe; color: #075985; border-color: #bae6fd; }
+        .pre-launch { background: #f8fafc !important; color: #cbd5e1 !important; border-style: dashed !important; text-decoration: line-through !important; }
+        .today { border: 3px solid var(--accent); }
+
+        .holiday-reason { font-size: 0.55rem; color: #ef4444; position: absolute; bottom: 4px; font-weight: 700; text-align: center; width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .leave-tagline { display: block; margin-top: 5px; font-weight: 600; font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="brand-container"><img src="logo1.jpeg" class="sidebar-logo"><img src="logo.jpeg" class="sidebar-logo"></div>
+        <div class="brand-name">BlueVibes</div>
+    </div>
+    <nav class="nav-links">
+        <a href="homepage.jsp" class="nav-item"><i class="ph ph-house"></i> Dashboard</a>
+        <a href="LoadProfileServlet" class="nav-item"><i class="ph ph-user"></i> My Profile</a>
+        <a href="attendance.html" class="nav-item active"><i class="ph ph-calendar-check"></i> Attendance & Calender</a>
+        <a href="weeklyreport.html" class="nav-item"><i class="ph ph-clipboard-text"></i> Weekly Status Report</a>
+        <a href="user_notifications.html" class="nav-item"><i class="ph ph-broadcast"></i> Notifications</a>
+        <a href="payslips.html" class="nav-item"><i class="ph ph-receipt"></i> Payslips</a>
+        <a href="appraisals.html" class="nav-item"><i class="ph ph-chart-line-up"></i> KRA Appraisals</a>
+        <a href="policyview.jsp" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
+        <a href="leavereq.html" class="nav-item"><i class="ph ph-calendar-x"></i> Leave Request</a>
+    </nav>
+    <div class="logout-sect"><a href="index.html" class="logout-btn"><i class="ph ph-power"></i> Logout Account</a></div>
+</aside>
+
+<main class="main-wrapper">
+    <header class="top-header"><h2>Attendance & Calender</h2></header>
+    <div class="content-area">
+        <div class="punch-card">
+            <div id="liveClock" class="live-clock">00:00:00</div>
+            <div id="punch-container">
+                <button id="punchInBtn" class="btn-punch btn-in" onclick="doPunch('in')"><i class="ph ph-sign-in"></i> PUNCH IN</button>
+                <button id="punchOutBtn" class="btn-punch btn-out" onclick="doPunch('out')" style="display: none;"><i class="ph ph-sign-out"></i> PUNCH OUT</button>
+            </div>
+        </div>
+
+        <div class="stat-row">
+            <div class="stat-card"><h3 id="workingDaysCount">0</h3><p>WORKING DAYS</p></div>
+            <div class="stat-card" style="border-bottom: 4px solid #10b981;"><h3 id="presentCount">0</h3><p>PRESENT</p></div>
+            <div id="leaveStatCard" class="stat-card" style="border-bottom: 4px solid #10b981;">
+                <h3 id="leavesCount">0 / 24</h3>
+                <p>LEAVES TAKEN</p>
+                <small id="leaveTagline" class="leave-tagline"></small>
+            </div>
+        </div>
+
+        <div class="calendar-card">
+            <div class="calendar-nav">
+                <button id="prevBtn" class="nav-btn" onclick="changeMonth(-1)"><i class="ph ph-caret-left"></i></button>
+                <h3 id="calendarMonthYear" style="font-weight: 700; color: var(--primary);">Month Year</h3>
+                <button id="nextBtn" class="nav-btn" onclick="changeMonth(1)"><i class="ph ph-caret-right"></i></button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+                <div class="day-label">Mon</div><div class="day-label">Tue</div><div class="day-label">Wed</div>
+                <div class="day-label">Thu</div><div class="day-label">Fri</div><div class="day-label">Sat</div>
+                <div class="day-label">Sun</div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const LAUNCH_DATE = new Date(2025, 11, 29);
+    let currentViewDate = new Date();
+    const todayDate = new Date();
+    let isCurrentPunched = false;
+
+    function updateClock() { document.getElementById('liveClock').innerText = new Date().toTimeString().split(' ')[0]; }
+    setInterval(updateClock, 1000); updateClock();
+
+    window.onload = function() {
+        fetch('AttendanceServlet?action=status').then(res => res.json()).then(data => {
+            if (data.punchedIn) {
+                isCurrentPunched = true;
+                if (!data.punchedOut) {
+                    document.getElementById('punchInBtn').style.display = 'none';
+                    document.getElementById('punchOutBtn').style.display = 'flex';
+                } else {
+                    document.getElementById('punch-container').innerHTML = '<b>SHIFT COMPLETE</b>';
+                }
+            }
+            loadCalendar();
+        });
+
+        fetch('AttendanceServlet?action=stats').then(res => res.json()).then(data => {
+            document.getElementById('workingDaysCount').innerText = data.workingDays;
+            document.getElementById('presentCount').innerText = data.present;
+            const leaves = data.leaves;
+            document.getElementById('leavesCount').innerText = leaves + " / 24";
+            const tagline = document.getElementById('leaveTagline');
+            if (leaves >= 24) { tagline.innerText = "LIMIT EXCEEDED! Contact Admin."; tagline.style.color = "#ef4444"; }
+            else if (leaves >= 20) { tagline.innerText = "WARNING: Nearing leave limit."; tagline.style.color = "#f59e0b"; }
+            else { tagline.innerText = "Safe: Within leave limits."; tagline.style.color = "#10b981"; }
+        });
+    };
+
+    function changeMonth(dir) {
+        currentViewDate.setMonth(currentViewDate.getMonth() + dir);
+        loadCalendar();
+    }
+
+    function loadCalendar() {
+        const year = currentViewDate.getFullYear();
+        const month = currentViewDate.getMonth();
+        document.getElementById('calendarMonthYear').innerText = currentViewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+        const monthDiff = (year - todayDate.getFullYear()) * 12 + (month - todayDate.getMonth());
+        document.getElementById('nextBtn').disabled = (monthDiff >= 11);
+        document.getElementById('prevBtn').disabled = (monthDiff <= -11);
+
+        fetch(`AttendanceServlet?action=monthly_status&month=${month+1}&year=${year}`).then(res => res.json()).then(statusData => {
+            const grid = document.getElementById('calendarGrid');
+            const labels = Array.from(grid.querySelectorAll('.day-label'));
+            grid.innerHTML = '';
+            labels.forEach(l => grid.appendChild(l));
+
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            let startDay = new Date(year, month, 1).getDay();
+            let offset = startDay === 0 ? 6 : startDay - 1;
+
+            for(let o=0; o<offset; o++) grid.appendChild(document.createElement('div'));
+
+            const attendance = statusData.attendance || {};
+            const holidays = statusData.holidays || [];
+            const holidayDetails = statusData.holidayDetails || {};
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const cur = new Date(year, month, i);
+                cur.setHours(0,0,0,0);
+                const cell = document.createElement('div');
+                cell.className = 'day-cell';
+                cell.innerText = i;
+                const compareToday = new Date(todayDate);
+                compareToday.setHours(0,0,0,0);
+
+                if (cur < new Date(LAUNCH_DATE).setHours(0,0,0,0)) cell.classList.add('pre-launch');
+                if (cur.getTime() === compareToday.getTime()) cell.classList.add('today');
+
+                if (cur.getDay() === 0 || holidays.includes(i)) {
+                    cell.classList.add('holiday-weekend');
+                    if(holidayDetails[i]) {
+                        const reason = document.createElement('span');
+                        reason.className = 'holiday-reason';
+                        reason.innerText = holidayDetails[i];
+                        cell.appendChild(reason);
+                    }
+                }
+                else if (cur < compareToday) {
+                    if (attendance[i]) cell.classList.add('present');
+                    else cell.classList.add('absent');
+                }
+                else if (cur.getTime() === compareToday.getTime() && isCurrentPunched) {
+                    cell.classList.add('present');
+                }
+                grid.appendChild(cell);
+            }
+        });
+    }
+
+    function doPunch(action) {
+        fetch('AttendanceServlet?action=' + action)
+            .then(res => {
+                if (res.status === 403) {
+                    return res.json().then(data => { alert("⚠️ " + data.message); throw new Error("IP Restriction"); });
+                }
+                return res.json();
+            })
+            .then(data => { if (data.success) location.reload(); });
+    }
+</script>
+</body>
+</html>

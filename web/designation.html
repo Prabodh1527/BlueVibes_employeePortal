@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Designation Master | Admin Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root { --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 280px; background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-header { padding: 2rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-logo { width: 100px; height: 100px; background: white; padding: 10px; border-radius: 12px; object-fit: contain; }
+        .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1.2rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.85rem; }
+        .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-header { height: 80px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; }
+        .content-area { padding: 2.5rem; overflow-y: auto; flex-grow: 1; }
+        .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .data-table th { text-align: left; padding: 15px; background: #f8fafc; color: #64748b; border-bottom: 2px solid var(--border); }
+        .data-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header"><img src="logo.jpeg" class="sidebar-logo"></div>
+        <nav class="nav-links">
+            <a href="adminhome.html" class="nav-item"><i class="ph ph-house"></i> Home Dashboard</a>
+            <a href="adminprofile.html" class="nav-item"><i class="ph ph-user"></i> My Profile</a>
+            <a href="usermanagement.html" class="nav-item"><i class="ph ph-users-three"></i> User Management</a>
+            <a href="designation.html" class="nav-item active"><i class="ph ph-briefcase"></i> Designation Master</a>
+            <a href="policy.html" class="nav-item"><i class="ph ph-scroll"></i> Policies</a>
+            <a href="adminleave.html" class="nav-item"><i class="ph ph-calendar-x"></i> Leaves</a>
+        </nav>
+    </aside>
+    <main class="main-wrapper">
+        <header class="top-header"><h2>Designation Master</h2><button style="background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">+ Add New Role</button></header>
+        <div class="content-area"><div class="card"><table class="data-table"><thead><tr><th>ID</th><th>Role Name</th><th>Department</th><th>Actions</th></tr></thead><tbody id="db-desig-list"><tr><td colspan="4" style="text-align:center; padding:50px; color:#94a3b8;">Fetching designations...</td></tr></tbody></table></div></div>
+    </main>
+</body>
+</html>

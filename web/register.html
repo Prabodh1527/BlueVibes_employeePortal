@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register User | Admin Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #0f172a; --accent: #0284c7; --bg: #f8fafc; --border: #e2e8f0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 2rem 0; }
+        .reg-card { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 500px; }
+        .form-group { margin-bottom: 1.2rem; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #64748b; }
+        .form-input { width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 10px; box-sizing: border-box; font-family: inherit; }
+        .btn-reg { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+<div class="reg-card">
+    <h2 style="text-align: center; color: var(--primary); margin-bottom: 2rem;">Register New User</h2>
+
+    <form id="registrationForm" action="RegisterServlet" method="POST">
+        <div class="form-group">
+            <label>Employee ID</label>
+            <input type="text" name="empid" placeholder="e.g., BGL-001" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="fullname" placeholder="Enter Full Name" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+            <label>Official Email</label>
+            <input type="email" name="email" placeholder="email@bluegital.com" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+            <label>Gender</label>
+            <select name="sex" class="form-input" required>
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Designation</label>
+            <select id="designationDropdown" name="designation" class="form-input" required>
+                <option value="">Loading Roles...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Date of Joining</label>
+            <input type="date" name="doj" class="form-input" required>
+        </div>
+
+        <button type="submit" class="btn-reg">Register User</button>
+    </form>
+
+    <a href="adminhome.html" style="display: block; text-align: center; margin-top: 1.5rem; color: #64748b; text-decoration: none; font-size: 0.9rem;">← Back to Dashboard</a>
+</div>
+
+<script>
+    function loadDesignations() {
+        const dropdown = document.getElementById('designationDropdown');
+        fetch('DesignationServlet')
+            .then(res => res.json())
+            .then(data => {
+                dropdown.innerHTML = '<option value="">Select Role</option>';
+                if (data.length === 0) {
+                    dropdown.innerHTML += '<option value="">No roles available</option>';
+                    return;
+                }
+                data.forEach(role => {
+                    let option = document.createElement('option');
+                    option.value = role.name;
+                    option.textContent = role.name;
+                    dropdown.appendChild(option);
+                });
+            })
+            .catch(err => {
+                console.error("Error loading designations:", err);
+                dropdown.innerHTML = '<option value="">Error loading roles</option>';
+            });
+    }
+    window.onload = loadDesignations;
+</script>
+</body>
+</html>
