@@ -20,7 +20,8 @@ public class PolicyServlet extends HttpServlet {
         cloudinary = new Cloudinary(ObjectUtils.asMap(
                 "cloud_name", System.getenv("CLOUDINARY_CLOUD_NAME"),
                 "api_key", System.getenv("CLOUDINARY_API_KEY"),
-                "api_secret", System.getenv("CLOUDINARY_API_SECRET")
+                "api_secret", System.getenv("CLOUDINARY_API_SECRET"),
+                "secure", true
         ));
     }
 
@@ -36,18 +37,19 @@ public class PolicyServlet extends HttpServlet {
                     ps.setInt(1, Integer.parseInt(idStr));
                     ps.executeUpdate();
                 }
-            } else {
+            }
+            else {
                 Part filePart = request.getPart("policyFile");
 
                 if (filePart != null && filePart.getSize() > 0) {
                     String originalName = filePart.getSubmittedFileName();
 
+                    // Upload to Cloudinary
                     Map uploadResult = cloudinary.uploader().upload(
                             filePart.getInputStream(),
                             ObjectUtils.asMap(
-                                    "resource_type", "raw",
                                     "folder", "bluevibes/policies",
-                                    "public_id", System.currentTimeMillis() + "_" + originalName
+                                    "resource_type", "auto"
                             )
                     );
 
@@ -69,37 +71,45 @@ public class PolicyServlet extends HttpServlet {
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
         String action = request.getParameter("action");
 
-        if ("view".equals(action)) {
-            try (Connection con = DBConnection.getConnection()) {
+        try (Connection con = DBConnection.getConnection()) {
+
+            // View / download
+            if ("view".equals(action)) {
                 String id = request.getParameter("id");
-                PreparedStatement ps = con.prepareStatement("SELECT file_path FROM company_policies WHERE id=?");
+                PreparedStatement ps = con.prepareStatement(
+                        "SELECT file_path FROM company_policies WHERE id=?");
                 ps.setInt(1, Integer.parseInt(id));
                 ResultSet rs = ps.executeQuery();
+
                 if (rs.next()) {
                     response.sendRedirect(rs.getString("file_path"));
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+                return;
             }
-            return;
-        }
 
-        response.setContentType("application/json");
-        try (Connection con = DBConnection.getConnection()) {
+            // List all
+            response.setContentType("application/json");
             ResultSet rs = con.createStatement().executeQuery(
                     "SELECT id, policy_name FROM company_policies ORDER BY id DESC");
+
             StringBuilder json = new StringBuilder("[");
             boolean first = true;
+
             while (rs.next()) {
                 if (!first) json.append(",");
-                json.append("{\"id\":").append(rs.getInt("id"))
-                        .append(",\"name\":\"").append(rs.getString("policy_name")).append("\"}");
+                json.append("{\"id\":")
+                        .append(rs.getInt("id"))
+                        .append(",\"name\":\"")
+                        .append(rs.getString("policy_name"))
+                        .append("\"}");
                 first = false;
             }
             json.append("]");
             response.getWriter().print(json.toString());
+
         } catch (Exception e) {
             e.printStackTrace();
         }
