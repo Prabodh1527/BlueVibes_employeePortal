@@ -1,6 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     String userEmail = (String) session.getAttribute("userEmail");
+    if (userEmail == null) {
+        response.sendRedirect("index.html");
+        return;
+    }
 %>
 <!DOCTYPE html>
 <html lang="en">
