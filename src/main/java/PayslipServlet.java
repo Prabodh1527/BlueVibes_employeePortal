@@ -46,7 +46,7 @@ public class PayslipServlet extends HttpServlet {
                             "resource_type", "auto",
                             "folder", "bluevibes/payslips",
                             "public_id", (userEmail + "_" + monthYear).replaceAll("[^a-zA-Z0-9_-]", "_"),
-                            "overwrite",ture
+                            "overwrite",true
                     )
             );
 
@@ -120,4 +120,5 @@ public class PayslipServlet extends HttpServlet {
         }
     }
 }
+
 
