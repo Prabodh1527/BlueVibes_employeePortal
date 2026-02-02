@@ -7,7 +7,7 @@ public class DBConnection {
         Connection con = null;
         try {
             String url =
-                "jdbc:mysql://shuttle.proxy.rlwy.net:56882/railway"
+                "jdbc:mysql://shuttle.proxy.rlwy.net:56882/management_system"
               + "?useSSL=true"
               + "&requireSSL=true"
               + "&verifyServerCertificate=false"
@@ -28,3 +28,4 @@ public class DBConnection {
         return con;
     }
 }
+
