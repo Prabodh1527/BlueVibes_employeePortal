@@ -50,10 +50,12 @@ public class PayslipServlet extends HttpServlet {
                 }
             }
 
+            // 🔥 FIX IS HERE (resource_type = image)
             Map uploadResult = cloudinary.uploader().upload(
                     tempFile,
                     ObjectUtils.asMap(
-                            "resource_type", "raw",
+                            "resource_type", "image",
+                            "format", "pdf",
                             "folder", "bluevibes/payslips",
                             "public_id", (userEmail + "_" + monthYear)
                                     .replaceAll("[^a-zA-Z0-9_-]", "_"),
@@ -84,7 +86,9 @@ public class PayslipServlet extends HttpServlet {
             e.printStackTrace();
             response.sendRedirect("genpayslip.html?status=error");
         } finally {
-            if (tempFile != null && tempFile.exists()) tempFile.delete();
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
         }
     }
 
@@ -95,51 +99,36 @@ public class PayslipServlet extends HttpServlet {
         try (Connection con = DBConnection.getConnection()) {
 
             if ("view".equals(action)) {
-
                 String id = request.getParameter("id");
-
                 PreparedStatement ps = con.prepareStatement(
                         "SELECT file_path FROM user_payslips WHERE id=?");
                 ps.setInt(1, Integer.parseInt(id));
-
                 ResultSet rs = ps.executeQuery();
-
                 if (rs.next()) {
-                    String url = rs.getString("file_path");
-
-                    response.reset();
-                    response.setStatus(HttpServletResponse.SC_FOUND);
-                    response.setHeader("Location", url);
+                    response.sendRedirect(rs.getString("file_path"));
                 }
             }
 
             else if ("history".equals(action)) {
-
                 String email = request.getParameter("userEmail");
-
                 PreparedStatement ps = con.prepareStatement(
                         "SELECT id, month_year, file_name, uploaded_at FROM user_payslips WHERE user_email=? ORDER BY uploaded_at DESC");
                 ps.setString(1, email);
-
                 ResultSet rs = ps.executeQuery();
 
                 StringBuilder json = new StringBuilder("[");
                 boolean first = true;
-
                 while (rs.next()) {
                     if (!first) json.append(",");
-                    json.append("{")
-                        .append("\"id\":").append(rs.getInt("id")).append(",")
-                        .append("\"month_year\":\"").append(rs.getString("month_year")).append("\",")
-                        .append("\"file_name\":\"").append(rs.getString("file_name")).append("\",")
-                        .append("\"uploaded_at\":\"")
-                        .append(rs.getTimestamp("uploaded_at").toString().split(" ")[0])
-                        .append("\"}");
+                    json.append("{\"id\":").append(rs.getInt("id"))
+                            .append(",\"month_year\":\"").append(rs.getString("month_year"))
+                            .append("\",\"file_name\":\"").append(rs.getString("file_name"))
+                            .append("\",\"uploaded_at\":\"")
+                            .append(rs.getTimestamp("uploaded_at").toString().split(" ")[0])
+                            .append("\"}");
                     first = false;
                 }
                 json.append("]");
-
-                response.setContentType("application/json");
                 response.getWriter().write(json.toString());
             }
 
