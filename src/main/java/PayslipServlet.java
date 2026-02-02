@@ -27,8 +27,6 @@ public class PayslipServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        System.out.println("PayslipServlet doPost HIT");
-
         String action = request.getParameter("action");
         if (!"upload".equals(action)) return;
 
@@ -40,10 +38,8 @@ public class PayslipServlet extends HttpServlet {
 
         try (Connection con = DBConnection.getConnection()) {
 
-            // 1️⃣ Create temp file
             tempFile = File.createTempFile("payslip_", ".pdf");
 
-            // 2️⃣ Write uploaded file to temp file
             try (InputStream is = filePart.getInputStream();
                  FileOutputStream fos = new FileOutputStream(tempFile)) {
 
@@ -54,7 +50,6 @@ public class PayslipServlet extends HttpServlet {
                 }
             }
 
-            // 3️⃣ Upload temp file to Cloudinary
             Map uploadResult = cloudinary.uploader().upload(
                     tempFile,
                     ObjectUtils.asMap(
@@ -69,14 +64,12 @@ public class PayslipServlet extends HttpServlet {
             String fileUrl = uploadResult.get("secure_url").toString();
             String originalName = filePart.getSubmittedFileName();
 
-            // 4️⃣ Remove old payslip for same month (if any)
             PreparedStatement del = con.prepareStatement(
                     "DELETE FROM user_payslips WHERE user_email=? AND month_year=?");
             del.setString(1, userEmail);
             del.setString(2, monthYear);
             del.executeUpdate();
 
-            // 5️⃣ Insert new payslip record
             PreparedStatement ps = con.prepareStatement(
                     "INSERT INTO user_payslips (user_email, month_year, file_path, file_name) VALUES (?, ?, ?, ?)");
             ps.setString(1, userEmail);
@@ -91,9 +84,7 @@ public class PayslipServlet extends HttpServlet {
             e.printStackTrace();
             response.sendRedirect("genpayslip.html?status=error");
         } finally {
-            if (tempFile != null && tempFile.exists()) {
-                tempFile.delete();
-            }
+            if (tempFile != null && tempFile.exists()) tempFile.delete();
         }
     }
 
@@ -104,36 +95,51 @@ public class PayslipServlet extends HttpServlet {
         try (Connection con = DBConnection.getConnection()) {
 
             if ("view".equals(action)) {
+
                 String id = request.getParameter("id");
+
                 PreparedStatement ps = con.prepareStatement(
                         "SELECT file_path FROM user_payslips WHERE id=?");
                 ps.setInt(1, Integer.parseInt(id));
+
                 ResultSet rs = ps.executeQuery();
+
                 if (rs.next()) {
-                    response.sendRedirect(rs.getString("file_path"));
+                    String url = rs.getString("file_path");
+
+                    response.reset();
+                    response.setStatus(HttpServletResponse.SC_FOUND);
+                    response.setHeader("Location", url);
                 }
             }
 
             else if ("history".equals(action)) {
+
                 String email = request.getParameter("userEmail");
+
                 PreparedStatement ps = con.prepareStatement(
                         "SELECT id, month_year, file_name, uploaded_at FROM user_payslips WHERE user_email=? ORDER BY uploaded_at DESC");
                 ps.setString(1, email);
+
                 ResultSet rs = ps.executeQuery();
 
                 StringBuilder json = new StringBuilder("[");
                 boolean first = true;
+
                 while (rs.next()) {
                     if (!first) json.append(",");
-                    json.append("{\"id\":").append(rs.getInt("id"))
-                            .append(",\"month_year\":\"").append(rs.getString("month_year"))
-                            .append("\",\"file_name\":\"").append(rs.getString("file_name"))
-                            .append("\",\"uploaded_at\":\"")
-                            .append(rs.getTimestamp("uploaded_at").toString().split(" ")[0])
-                            .append("\"}");
+                    json.append("{")
+                        .append("\"id\":").append(rs.getInt("id")).append(",")
+                        .append("\"month_year\":\"").append(rs.getString("month_year")).append("\",")
+                        .append("\"file_name\":\"").append(rs.getString("file_name")).append("\",")
+                        .append("\"uploaded_at\":\"")
+                        .append(rs.getTimestamp("uploaded_at").toString().split(" ")[0])
+                        .append("\"}");
                     first = false;
                 }
                 json.append("]");
+
+                response.setContentType("application/json");
                 response.getWriter().write(json.toString());
             }
 
