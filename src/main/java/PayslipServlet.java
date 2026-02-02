@@ -27,54 +27,56 @@ public class PayslipServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // 🔴 ADDED FOR DEBUG (ONLY CHANGE)
         System.out.println("PayslipServlet doPost HIT");
 
         String action = request.getParameter("action");
-
         if (!"upload".equals(action)) return;
 
         String userEmail = request.getParameter("userEmail");
         String monthYear = request.getParameter("monthYear");
         Part filePart = request.getPart("payslipFile");
 
+        File tempFile = null;
+
         try (Connection con = DBConnection.getConnection()) {
 
-            // Save uploaded file temporarily
-            File tempFile = File.createTempFile("payslip_", ".pdf");
+            // 1️⃣ Create temp file
+            tempFile = File.createTempFile("payslip_", ".pdf");
+
+            // 2️⃣ Write uploaded file to temp file
             try (InputStream is = filePart.getInputStream();
-                FileOutputStream fos = new FileOutputStream(tempFile)) {
-                    byte[] buffer = new byte[1024];
-                    int bytesRead;
-                    while ((bytesRead = is.read(buffer)) != -1) {
-                        fos.write(buffer, 0, bytesRead);
+                 FileOutputStream fos = new FileOutputStream(tempFile)) {
+
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    fos.write(buffer, 0, bytesRead);
                 }
-        }    
+            }
 
-// Upload temp file to Cloudinary
-Map uploadResult = cloudinary.uploader().upload(
-        tempFile,
-        ObjectUtils.asMap(
-                "resource_type", "raw",
-                "folder", "bluevibes/payslips",
-                "public_id", (userEmail + "_" + monthYear).replaceAll("[^a-zA-Z0-9_-]", "_"),
-                "overwrite", true
-        )
-);
-
-// Delete temp file
-tempFile.delete();
-
+            // 3️⃣ Upload temp file to Cloudinary
+            Map uploadResult = cloudinary.uploader().upload(
+                    tempFile,
+                    ObjectUtils.asMap(
+                            "resource_type", "raw",
+                            "folder", "bluevibes/payslips",
+                            "public_id", (userEmail + "_" + monthYear)
+                                    .replaceAll("[^a-zA-Z0-9_-]", "_"),
+                            "overwrite", true
+                    )
+            );
 
             String fileUrl = uploadResult.get("secure_url").toString();
             String originalName = filePart.getSubmittedFileName();
 
+            // 4️⃣ Remove old payslip for same month (if any)
             PreparedStatement del = con.prepareStatement(
                     "DELETE FROM user_payslips WHERE user_email=? AND month_year=?");
             del.setString(1, userEmail);
             del.setString(2, monthYear);
             del.executeUpdate();
 
+            // 5️⃣ Insert new payslip record
             PreparedStatement ps = con.prepareStatement(
                     "INSERT INTO user_payslips (user_email, month_year, file_path, file_name) VALUES (?, ?, ?, ?)");
             ps.setString(1, userEmail);
@@ -88,6 +90,10 @@ tempFile.delete();
         } catch (Exception e) {
             e.printStackTrace();
             response.sendRedirect("genpayslip.html?status=error");
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
         }
     }
 
@@ -136,6 +142,3 @@ tempFile.delete();
         }
     }
 }
-
-
-
