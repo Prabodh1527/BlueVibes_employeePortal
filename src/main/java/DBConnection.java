@@ -6,24 +6,17 @@ public class DBConnection {
     public static Connection getConnection() {
         Connection con = null;
         try {
-            String host = System.getenv("DB_HOST");
-            String db   = System.getenv("DB_NAME");
-            String user = System.getenv("DB_USER");
-            String pass = System.getenv("DB_PASSWORD");
-            String port = System.getenv("DB_PORT");
-
-            String url = "jdbc:mysql://" + host + ":" + port + "/" + db +
-                         "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+            String url = "jdbc:mysql://sql12.freesqldatabase.com:3306/sql12813830?useSSL=false&serverTimezone=UTC";
+            String user = "sql12813830";
+            String pass = "7aU9wdUTF5";
 
             Class.forName("com.mysql.cj.jdbc.Driver");
             con = DriverManager.getConnection(url, user, pass);
 
-            if (con != null) {
-                System.out.println("Connected to database successfully");
-            }
+            System.out.println("DB CONNECTED SUCCESSFULLY");
 
         } catch (Exception e) {
-            System.out.println("Database connection failed");
+            System.out.println("DB CONNECTION FAILED");
             e.printStackTrace();
         }
         return con;
