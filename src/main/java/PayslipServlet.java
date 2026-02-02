@@ -40,15 +40,31 @@ public class PayslipServlet extends HttpServlet {
 
         try (Connection con = DBConnection.getConnection()) {
 
-            Map uploadResult = cloudinary.uploader().upload(
-                    filePart.getInputStream(),
-                    ObjectUtils.asMap(
-                            "resource_type", "auto",
-                            "folder", "bluevibes/payslips",
-                            "public_id", (userEmail + "_" + monthYear).replaceAll("[^a-zA-Z0-9_-]", "_"),
-                            "overwrite",true
-                    )
-            );
+            // Save uploaded file temporarily
+            File tempFile = File.createTempFile("payslip_", ".pdf");
+            try (InputStream is = filePart.getInputStream();
+                FileOutputStream fos = new FileOutputStream(tempFile)) {
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        fos.write(buffer, 0, bytesRead);
+                }
+        }    
+
+// Upload temp file to Cloudinary
+Map uploadResult = cloudinary.uploader().upload(
+        tempFile,
+        ObjectUtils.asMap(
+                "resource_type", "raw",
+                "folder", "bluevibes/payslips",
+                "public_id", (userEmail + "_" + monthYear).replaceAll("[^a-zA-Z0-9_-]", "_"),
+                "overwrite", true
+        )
+);
+
+// Delete temp file
+tempFile.delete();
+
 
             String fileUrl = uploadResult.get("secure_url").toString();
             String originalName = filePart.getSubmittedFileName();
@@ -120,5 +136,6 @@ public class PayslipServlet extends HttpServlet {
         }
     }
 }
+
 
 
