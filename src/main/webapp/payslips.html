@@ -116,7 +116,7 @@
 <script>
     window.onload = function() {
         // Fetch payslips dynamically from the servlet
-        fetch('PayslipServlet?action=list')
+        fetch('PayslipServlet?action=history')
             .then(res => res.json())
             .then(data => {
                 const listContainer = document.getElementById('db-payslip-list');
@@ -154,3 +154,4 @@
 </script>
 </body>
 </html>
+
