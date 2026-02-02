@@ -20,7 +20,7 @@ public class LoginServlet extends HttpServlet {
         try {
             Connection con = DBConnection.getConnection();
 
-            String sql = "SELECT * FROM management_system_users WHERE email=? AND password=? AND role=?";
+            String sql = "SELECT * FROM users WHERE email=? AND password=? AND role=?";
             PreparedStatement ps = con.prepareStatement(sql);
             ps.setString(1, email);
             ps.setString(2, password);
@@ -52,4 +52,5 @@ public class LoginServlet extends HttpServlet {
         }
     }
 }
+
 
