@@ -43,9 +43,10 @@ public class PayslipServlet extends HttpServlet {
             Map uploadResult = cloudinary.uploader().upload(
                     filePart.getInputStream(),
                     ObjectUtils.asMap(
-                            "resource_type", "raw",
+                            "resource_type", "auto",
                             "folder", "bluevibes/payslips",
-                            "public_id", userEmail + "_" + monthYear
+                            "public_id", (userEmail + "_" + monthYear).replaceAll("[^a-zA-Z0-9_-]", "_"),
+                            "overwrite",ture
                     )
             );
 
@@ -119,3 +120,4 @@ public class PayslipServlet extends HttpServlet {
         }
     }
 }
+
