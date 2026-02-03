@@ -107,10 +107,14 @@ public class PayslipServlet extends HttpServlet {
 
                 if (rs.next()) {
                     response.sendRedirect(rs.getString("file_path"));
+                    return; // ✅ IMPORTANT
                 }
             }
 
             else if ("history".equals(action)) {
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+
                 String email = request.getParameter("userEmail");
 
                 PreparedStatement ps = con.prepareStatement(
