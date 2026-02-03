@@ -25,46 +25,72 @@ public class PolicyServlet extends HttpServlet {
         ));
     }
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
         String action = request.getParameter("action");
+        File tempFile = null;
 
         try (Connection con = DBConnection.getConnection()) {
 
             if ("delete".equals(action)) {
                 String idStr = request.getParameter("id");
                 if (idStr != null) {
-                    PreparedStatement ps = con.prepareStatement("DELETE FROM company_policies WHERE id=?");
+                    PreparedStatement ps = con.prepareStatement(
+                            "DELETE FROM company_policies WHERE id=?");
                     ps.setInt(1, Integer.parseInt(idStr));
                     ps.executeUpdate();
                 }
-            }
-            else {
+            } else {
+
                 Part filePart = request.getPart("policyFile");
-
-                if (filePart != null && filePart.getSize() > 0) {
-                    String originalName = filePart.getSubmittedFileName();
-
-                    // Upload to Cloudinary
-                    Map uploadResult = cloudinary.uploader().upload(
-                            filePart.getInputStream(),
-                            ObjectUtils.asMap(
-                                    "folder", "bluevibes/policies",
-                                    "resource_type", "auto"
-                            )
-                    );
-
-                    String fileUrl = uploadResult.get("secure_url").toString();
-
-                    PreparedStatement ps = con.prepareStatement(
-                            "INSERT INTO company_policies (policy_name, file_path) VALUES (?, ?)");
-                    ps.setString(1, originalName);
-                    ps.setString(2, fileUrl);
-                    ps.executeUpdate();
+                if (filePart == null || filePart.getSize() == 0) {
+                    response.sendRedirect("policy.html");
+                    return;
                 }
+
+                String originalName = filePart.getSubmittedFileName();
+
+                // 1️⃣ create temp file
+                tempFile = File.createTempFile("policy_", ".pdf");
+
+                // 2️⃣ write upload to temp
+                try (InputStream is = filePart.getInputStream();
+                     FileOutputStream fos = new FileOutputStream(tempFile)) {
+
+                    byte[] buffer = new byte[1024];
+                    int read;
+                    while ((read = is.read(buffer)) != -1) {
+                        fos.write(buffer, 0, read);
+                    }
+                }
+
+                // 3️⃣ upload temp file to cloudinary (RAW)
+                Map uploadResult = cloudinary.uploader().upload(
+                        tempFile,
+                        ObjectUtils.asMap(
+                                "folder", "bluevibes/policies",
+                                "resource_type", "raw",
+                                "overwrite", true
+                        )
+                );
+
+                String fileUrl = uploadResult.get("secure_url").toString();
+
+                // 4️⃣ insert db record
+                PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO company_policies (policy_name, file_path) VALUES (?, ?)");
+                ps.setString(1, originalName);
+                ps.setString(2, fileUrl);
+                ps.executeUpdate();
             }
 
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
         }
 
         response.sendRedirect("policy.html");
@@ -76,7 +102,6 @@ public class PolicyServlet extends HttpServlet {
 
         try (Connection con = DBConnection.getConnection()) {
 
-            // View / download
             if ("view".equals(action)) {
                 String id = request.getParameter("id");
                 PreparedStatement ps = con.prepareStatement(
@@ -90,7 +115,6 @@ public class PolicyServlet extends HttpServlet {
                 return;
             }
 
-            // List all
             response.setContentType("application/json");
             ResultSet rs = con.createStatement().executeQuery(
                     "SELECT id, policy_name FROM company_policies ORDER BY id DESC");
