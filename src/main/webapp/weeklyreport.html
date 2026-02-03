@@ -214,11 +214,40 @@
         }
     }
 
+    /* ================= FIXED EXCEL EXPORT ================= */
     function exportToExcel() {
-        const table = document.getElementById("reportTable");
-        const wb = XLSX.utils.table_to_book(table, {sheet: "Weekly Status Report"});
-        XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
+        fetch('WeeklyReportServlet?action=fetchMyReports')
+            .then(res => res.json())
+            .then(data => {
+                if (!data || data.length === 0) {
+                    alert("No data to export");
+                    return;
+                }
+
+                const rows = [
+                    ["Task ID", "Task Description", "Customer", "Status", "% Completed", "Start Date", "End Date", "Comments"]
+                ];
+
+                data.forEach(r => {
+                    rows.push([
+                        r.taskId,
+                        r.taskDesc,
+                        r.customer,
+                        r.status,
+                        r.percent,
+                        r.startDate,
+                        r.endDate,
+                        r.comments
+                    ]);
+                });
+
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
+                XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
+            });
     }
+    /* ===================================================== */
 
     window.onload = function() {
         const now = new Date();
@@ -234,6 +263,8 @@
         if(params.get('status') === 'success') alert('Weekly report saved successfully!');
     };
 </script>
+
 </body>
 </html>
+
 
