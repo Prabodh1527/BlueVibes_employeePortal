@@ -24,6 +24,7 @@ public class PayslipServlet extends HttpServlet {
         ));
     }
 
+    // ================= UPLOAD =================
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -50,12 +51,11 @@ public class PayslipServlet extends HttpServlet {
                 }
             }
 
-            // 🔥 FIX IS HERE (resource_type = image)
+            // ✅ CORRECT PDF UPLOAD
             Map uploadResult = cloudinary.uploader().upload(
                     tempFile,
                     ObjectUtils.asMap(
-                            "resource_type", "image",
-                            "format", "pdf",
+                            "resource_type", "raw",
                             "folder", "bluevibes/payslips",
                             "public_id", (userEmail + "_" + monthYear)
                                     .replaceAll("[^a-zA-Z0-9_-]", "_"),
@@ -86,12 +86,11 @@ public class PayslipServlet extends HttpServlet {
             e.printStackTrace();
             response.sendRedirect("genpayslip.html?status=error");
         } finally {
-            if (tempFile != null && tempFile.exists()) {
-                tempFile.delete();
-            }
+            if (tempFile != null && tempFile.exists()) tempFile.delete();
         }
     }
 
+    // ================= VIEW / HISTORY =================
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         String action = request.getParameter("action");
@@ -100,10 +99,12 @@ public class PayslipServlet extends HttpServlet {
 
             if ("view".equals(action)) {
                 String id = request.getParameter("id");
+
                 PreparedStatement ps = con.prepareStatement(
                         "SELECT file_path FROM user_payslips WHERE id=?");
                 ps.setInt(1, Integer.parseInt(id));
                 ResultSet rs = ps.executeQuery();
+
                 if (rs.next()) {
                     response.sendRedirect(rs.getString("file_path"));
                 }
@@ -111,6 +112,7 @@ public class PayslipServlet extends HttpServlet {
 
             else if ("history".equals(action)) {
                 String email = request.getParameter("userEmail");
+
                 PreparedStatement ps = con.prepareStatement(
                         "SELECT id, month_year, file_name, uploaded_at FROM user_payslips WHERE user_email=? ORDER BY uploaded_at DESC");
                 ps.setString(1, email);
@@ -118,9 +120,11 @@ public class PayslipServlet extends HttpServlet {
 
                 StringBuilder json = new StringBuilder("[");
                 boolean first = true;
+
                 while (rs.next()) {
                     if (!first) json.append(",");
-                    json.append("{\"id\":").append(rs.getInt("id"))
+                    json.append("{")
+                            .append("\"id\":").append(rs.getInt("id"))
                             .append(",\"month_year\":\"").append(rs.getString("month_year"))
                             .append("\",\"file_name\":\"").append(rs.getString("file_name"))
                             .append("\",\"uploaded_at\":\"")
