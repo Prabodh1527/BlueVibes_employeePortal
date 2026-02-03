@@ -174,9 +174,10 @@
 </main>
 
 <script>
+    let lastFetchedData = [];
+
     function toggleMasters() {
-        const submenu = document.getElementById('mastersSubmenu');
-        submenu.classList.toggle('show');
+        document.getElementById('mastersSubmenu').classList.toggle('show');
     }
 
     function toggleUserDropdown() {
@@ -185,14 +186,11 @@
 
     document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('userDropdown');
-        if (!dropdown.contains(event.target)) {
-            dropdown.classList.remove('active');
-        }
+        if (!dropdown.contains(event.target)) dropdown.classList.remove('active');
     });
 
     function toggleSelectAll(source) {
-        const checkboxes = document.querySelectorAll('.user-checkbox');
-        checkboxes.forEach(cb => cb.checked = source.checked);
+        document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = source.checked);
         updateSelectedCount();
     }
 
@@ -216,34 +214,37 @@
         fetch('FetchAllEmployeesServlet')
             .then(res => res.json())
             .then(data => {
-                const container = document.getElementById('userCheckboxContainer');
-                container.innerHTML = data.map(u => `
-                    <label class="checkbox-item">
-                        <input type="checkbox" class="user-checkbox" value="${u.email}" onclick="updateSelectedCount()">
-                        ${u.fullname} (${u.empId})
-                    </label>
-                `).join('');
+                document.getElementById('userCheckboxContainer').innerHTML =
+                    data.map(u => `
+                        <label class="checkbox-item">
+                            <input type="checkbox" class="user-checkbox" value="${u.email}" onclick="updateSelectedCount()">
+                            ${u.fullname} (${u.empId})
+                        </label>
+                    `).join('');
             });
     };
 
     function fetchReports() {
-        const selectedUsers = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.value);
+        const users = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.value);
         const from = document.getElementById('fromDate').value;
         const to = document.getElementById('toDate').value;
 
-        if (selectedUsers.length === 0) {
+        if (users.length === 0) {
             alert("Please select at least one BlueVibes member.");
             return;
         }
 
-        fetch(`AdminReportServlet?emails=${selectedUsers.join(',')}&from=${from}&to=${to}`)
+        fetch(`AdminReportServlet?emails=${users.join(',')}&from=${from}&to=${to}`)
             .then(res => res.json())
             .then(data => {
+                lastFetchedData = data;
                 const tbody = document.getElementById('adminReportTbody');
-                if(!data || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 2rem;">No reports found for the selected criteria.</td></tr>';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">No reports found.</td></tr>';
                     return;
                 }
+
                 tbody.innerHTML = data.map(r => `
                     <tr>
                         <td><strong>${r.userName}</strong></td>
@@ -260,11 +261,39 @@
             });
     }
 
+    /* ================= FIXED ADMIN EXCEL ================= */
     function exportMultiExcel() {
-        const table = document.getElementById("adminReportTable");
-        const wb = XLSX.utils.table_to_book(table, {sheet: "BlueVibes Weekly Reports"});
+        if (!lastFetchedData || lastFetchedData.length === 0) {
+            alert("No data to export");
+            return;
+        }
+
+        const rows = [
+            ["Employee", "Task ID", "Description", "Customer", "Status", "% Completed", "Start Date", "End Date", "Comments"]
+        ];
+
+        lastFetchedData.forEach(r => {
+            rows.push([
+                r.userName,
+                r.taskId,
+                r.taskDesc,
+                r.customer,
+                r.status,
+                r.percent,
+                r.startDate,
+                r.endDate,
+                r.comments
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Weekly Reports");
         XLSX.writeFile(wb, "BlueVibes_Weekly_Report_Export.xlsx");
     }
+    /* ==================================================== */
 </script>
+
 </body>
 </html>
+
