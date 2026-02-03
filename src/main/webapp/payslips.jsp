@@ -73,7 +73,6 @@
 </head>
 <body>
 
-<!-- ✅ FIXED SIDEBAR (COPIED EXACTLY FROM WORKING PAGE) -->
 <aside class="sidebar">
     <div class="sidebar-header">
         <div class="brand-container">
@@ -125,10 +124,10 @@ window.onload = function () {
             list.innerHTML = data.map(p => `
                 <div class="ps-row">
                     <div>
-                        <span style="font-weight:700;">${formatMonth(p.month_year)}</span>
-                        <p style="font-size:0.8rem;color:#64748b;">Uploaded on ${p.uploaded_at}</p>
+                        <span style="font-weight:700;">\${formatMonth(p.month_year)}</span>
+                        <p style="font-size:0.8rem;color:#64748b;">Uploaded on \${p.uploaded_at}</p>
                     </div>
-                    <a href="PayslipServlet?action=view&id=${p.id}" target="_blank" class="btn-dl">
+                    <a href="PayslipServlet?action=view&id=\${p.id}" target="_blank" class="btn-dl">
                         <i class="ph ph-download-simple"></i> Download PDF
                     </a>
                 </div>
