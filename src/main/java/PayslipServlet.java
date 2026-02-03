@@ -1,4 +1,6 @@
 import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.sql.*;
 import java.util.*;
 import javax.servlet.ServletException;
@@ -51,7 +53,6 @@ public class PayslipServlet extends HttpServlet {
                 }
             }
 
-            // ✅ CORRECT PDF UPLOAD
             Map uploadResult = cloudinary.uploader().upload(
                     tempFile,
                     ObjectUtils.asMap(
@@ -101,13 +102,30 @@ public class PayslipServlet extends HttpServlet {
                 String id = request.getParameter("id");
 
                 PreparedStatement ps = con.prepareStatement(
-                        "SELECT file_path FROM user_payslips WHERE id=?");
+                        "SELECT file_path, file_name FROM user_payslips WHERE id=?");
                 ps.setInt(1, Integer.parseInt(id));
                 ResultSet rs = ps.executeQuery();
 
                 if (rs.next()) {
-                    response.sendRedirect(rs.getString("file_path"));
-                    return; // ✅ IMPORTANT
+                    String fileUrl = rs.getString("file_path");
+                    String fileName = rs.getString("file_name");
+
+                    URL url = new URL(fileUrl);
+                    URLConnection conn = url.openConnection();
+
+                    response.setContentType("application/pdf");
+                    response.setHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
+
+                    try (InputStream in = conn.getInputStream();
+                         OutputStream out = response.getOutputStream()) {
+
+                        byte[] buffer = new byte[4096];
+                        int len;
+                        while ((len = in.read(buffer)) != -1) {
+                            out.write(buffer, 0, len);
+                        }
+                    }
+                    return;
                 }
             }
 
