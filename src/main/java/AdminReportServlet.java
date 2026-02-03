@@ -26,11 +26,13 @@ public class AdminReportServlet extends HttpServlet {
         if (emailsParam != null && !emailsParam.isEmpty()) {
             sql.append(" AND wr.user_email IN (").append(formatEmailList(emailsParam)).append(")");
         }
+
+        // ✅ FIXED DATE OVERLAP LOGIC
         if (fromDate != null && !fromDate.isEmpty()) {
-            sql.append(" AND DATE(wr.start_date) >= ?");
+            sql.append(" AND wr.end_date >= ?");
         }
         if (toDate != null && !toDate.isEmpty()) {
-            sql.append(" AND DATE(wr.end_date) <= ?");
+            sql.append(" AND wr.start_date <= ?");
         }
 
         try (Connection con = DBConnection.getConnection();
