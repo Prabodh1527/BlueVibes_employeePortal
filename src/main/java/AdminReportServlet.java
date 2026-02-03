@@ -1,98 +1,167 @@
 import java.io.*;
 import java.sql.*;
 import java.util.*;
-import javax.servlet.ServletException;
+import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
-@WebServlet("/AdminReportServlet")
-public class AdminReportServlet extends HttpServlet {
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        PrintWriter out = response.getWriter();
+@WebServlet("/WeeklyReportServlet")
+public class WeeklyReportServlet extends HttpServlet {
 
-        String emailsParam = request.getParameter("emails");
-        String fromDate = request.getParameter("from");
-        String toDate = request.getParameter("to");
+    // SAVE / UPDATE / DELETE
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-        // Log parameters for debugging in your console
-        System.out.println("Admin Filter - Emails: " + emailsParam + " | From: " + fromDate + " | To: " + toDate);
+        String action = request.getParameter("action");
 
-        StringBuilder sql = new StringBuilder(
-                "SELECT wr.*, u.fullname FROM user_weekly_reports wr " +
-                        "JOIN users u ON wr.user_email = u.email WHERE 1=1 "
-        );
-
-        if (emailsParam != null && !emailsParam.isEmpty()) {
-            sql.append(" AND wr.user_email IN (").append(formatEmailList(emailsParam)).append(")");
+        // DELETE ROW
+        if ("delete".equals(action)) {
+            deleteReport(request, response);
+            return;
         }
 
-        // Use DATE() casting to ensure string comparison works with DB Date types
-        if (fromDate != null && !fromDate.isEmpty()) {
-            sql.append(" AND DATE(wr.start_date) >= ?");
-        }
-        if (toDate != null && !toDate.isEmpty()) {
-            sql.append(" AND DATE(wr.end_date) <= ?");
-        }
+        // SAVE / UPDATE
+        HttpSession session = request.getSession(false);
+        String userEmail = (String) session.getAttribute("userEmail");
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+        String[] reportIds = request.getParameterValues("reportId");
+        String[] taskIds = request.getParameterValues("taskId");
+        String[] taskDescs = request.getParameterValues("taskDesc");
+        String[] customers = request.getParameterValues("customer");
+        String[] statuses = request.getParameterValues("status");
+        String[] percents = request.getParameterValues("percent");
+        String[] startDates = request.getParameterValues("startDate");
+        String[] endDates = request.getParameterValues("endDate");
+        String[] comments = request.getParameterValues("comments");
 
-            int paramIndex = 1;
-            // The order of these must strictly match the order in the StringBuilder above
-            if (fromDate != null && !fromDate.isEmpty()) {
-                ps.setString(paramIndex++, fromDate);
+        String insertSql =
+                "INSERT INTO user_weekly_reports " +
+                "(user_email, task_id, task_description, customer, status, percentage_completed, start_date, end_date, comments) " +
+                "VALUES (?,?,?,?,?,?,?,?,?)";
+
+        String updateSql =
+                "UPDATE user_weekly_reports SET " +
+                "task_id=?, task_description=?, customer=?, status=?, percentage_completed=?, start_date=?, end_date=?, comments=? " +
+                "WHERE report_id=? AND user_email=?";
+
+        try (Connection con = DBConnection.getConnection()) {
+
+            for (int i = 0; i < taskIds.length; i++) {
+
+                if ("0".equals(reportIds[i])) {
+                    // INSERT
+                    try (PreparedStatement ps = con.prepareStatement(insertSql)) {
+                        ps.setString(1, userEmail);
+                        ps.setString(2, taskIds[i]);
+                        ps.setString(3, taskDescs[i]);
+                        ps.setString(4, customers[i]);
+                        ps.setString(5, statuses[i]);
+                        ps.setInt(6, Integer.parseInt(percents[i]));
+                        ps.setString(7, startDates[i]);
+                        ps.setString(8, endDates[i]);
+                        ps.setString(9, comments[i]);
+                        ps.executeUpdate();
+                    }
+                } else {
+                    // UPDATE
+                    try (PreparedStatement ps = con.prepareStatement(updateSql)) {
+                        ps.setString(1, taskIds[i]);
+                        ps.setString(2, taskDescs[i]);
+                        ps.setString(3, customers[i]);
+                        ps.setString(4, statuses[i]);
+                        ps.setInt(5, Integer.parseInt(percents[i]));
+                        ps.setString(6, startDates[i]);
+                        ps.setString(7, endDates[i]);
+                        ps.setString(8, comments[i]);
+                        ps.setInt(9, Integer.parseInt(reportIds[i]));
+                        ps.setString(10, userEmail);
+                        ps.executeUpdate();
+                    }
+                }
             }
-            if (toDate != null && !toDate.isEmpty()) {
-                ps.setString(paramIndex++, toDate);
-            }
 
-            ResultSet rs = ps.executeQuery();
-            StringBuilder jsonBuilder = new StringBuilder("[");
-            boolean first = true;
-
-            while (rs.next()) {
-                if (!first) jsonBuilder.append(",");
-
-                // Sanitizing comments for JSON safety
-                String rawComments = rs.getString("comments");
-                String cleanComments = (rawComments != null) ?
-                        rawComments.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", "") : "";
-
-                String row = String.format(
-                        "{\"userName\":\"%s\", \"taskId\":\"%s\", \"taskDesc\":\"%s\", \"customer\":\"%s\", \"status\":\"%s\", \"percent\":%d, \"startDate\":\"%s\", \"endDate\":\"%s\", \"comments\":\"%s\"}",
-                        rs.getString("fullname"),
-                        rs.getString("task_id") != null ? rs.getString("task_id") : "N/A",
-                        rs.getString("task_description"),
-                        rs.getString("customer"),
-                        rs.getString("status"),
-                        rs.getInt("percentage_completed"),
-                        rs.getString("start_date"),
-                        rs.getString("end_date"),
-                        cleanComments
-                );
-
-                jsonBuilder.append(row);
-                first = false;
-            }
-            jsonBuilder.append("]");
-            out.print(jsonBuilder.toString());
+            response.sendRedirect("weeklyreport.html?status=success");
 
         } catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.print("{\"error\": \"Database Error: " + e.getMessage() + "\"}");
+            response.sendRedirect("weeklyreport.html?status=error");
         }
     }
 
-    private String formatEmailList(String emails) {
-        String[] emailArray = emails.split(",");
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < emailArray.length; i++) {
-            sb.append("'").append(emailArray[i].trim()).append("'");
-            if (i < emailArray.length - 1) sb.append(",");
+    // FETCH USER REPORTS
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String action = request.getParameter("action");
+        if (!"fetchMyReports".equals(action)) return;
+
+        HttpSession session = request.getSession(false);
+        String userEmail = (String) session.getAttribute("userEmail");
+
+        response.setContentType("application/json");
+        PrintWriter out = response.getWriter();
+
+        String sql =
+                "SELECT * FROM user_weekly_reports WHERE user_email=? ORDER BY created_at DESC";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, userEmail);
+            ResultSet rs = ps.executeQuery();
+
+            StringBuilder json = new StringBuilder("[");
+            boolean first = true;
+
+            while (rs.next()) {
+                if (!first) json.append(",");
+
+                json.append("{")
+                    .append("\"reportId\":").append(rs.getInt("report_id")).append(",")
+                    .append("\"taskId\":\"").append(rs.getString("task_id")).append("\",")
+                    .append("\"taskDesc\":\"").append(rs.getString("task_description")).append("\",")
+                    .append("\"customer\":\"").append(rs.getString("customer")).append("\",")
+                    .append("\"status\":\"").append(rs.getString("status")).append("\",")
+                    .append("\"percent\":").append(rs.getInt("percentage_completed")).append(",")
+                    .append("\"startDate\":\"").append(rs.getString("start_date")).append("\",")
+                    .append("\"endDate\":\"").append(rs.getString("end_date")).append("\",")
+                    .append("\"comments\":\"")
+                    .append(rs.getString("comments") == null ? "" :
+                            rs.getString("comments").replace("\"", "\\\""))
+                    .append("\"}")
+                ;
+                first = false;
+            }
+
+            json.append("]");
+            out.print(json.toString());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            out.print("[]");
         }
-        return sb.toString();
+    }
+
+    // DELETE
+    private void deleteReport(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+
+        String id = request.getParameter("id");
+
+        response.setContentType("application/json");
+        PrintWriter out = response.getWriter();
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps =
+                     con.prepareStatement("DELETE FROM user_weekly_reports WHERE report_id=?")) {
+
+            ps.setInt(1, Integer.parseInt(id));
+            ps.executeUpdate();
+            out.print("{\"success\":true}");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            out.print("{\"success\":false}");
+        }
     }
 }
