@@ -45,7 +45,11 @@
         .sidebar-logo {
             width: 80px;
             height: 80px;
+            background: transparent;
+            padding: 0;
+            border-radius: 8px;
             object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
         }
 
         .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; }
@@ -69,6 +73,7 @@
 </head>
 <body>
 
+<!-- ✅ FIXED SIDEBAR (COPIED EXACTLY FROM WORKING PAGE) -->
 <aside class="sidebar">
     <div class="sidebar-header">
         <div class="brand-container">
@@ -79,7 +84,14 @@
     </div>
     <nav class="nav-links">
         <a href="homepage.jsp" class="nav-item"><i class="ph ph-house"></i> Dashboard</a>
+        <a href="LoadProfileServlet" class="nav-item"><i class="ph ph-user"></i> My Profile</a>
+        <a href="attendance.html" class="nav-item"><i class="ph ph-calendar-check"></i> Attendance & Calender</a>
+        <a href="weeklyreport.html" class="nav-item"><i class="ph ph-clipboard-text"></i> Weekly Status Report</a>
+        <a href="user_notifications.html" class="nav-item"><i class="ph ph-broadcast"></i> Notifications</a>
         <a href="payslips.jsp" class="nav-item active"><i class="ph ph-receipt"></i> Payslips</a>
+        <a href="appraisals.html" class="nav-item"><i class="ph ph-chart-line-up"></i> KRA Appraisals</a>
+        <a href="policyview.jsp" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
+        <a href="leavereq.html" class="nav-item"><i class="ph ph-calendar-x"></i> Leave Request</a>
     </nav>
     <div class="logout-sect">
         <a href="index.html" class="logout-btn"><i class="ph ph-power"></i> Logout Account</a>
@@ -113,10 +125,10 @@ window.onload = function () {
             list.innerHTML = data.map(p => `
                 <div class="ps-row">
                     <div>
-                        <span style="font-weight:700;">\${formatMonth(p.month_year)}</span>
-                        <p style="font-size:0.8rem;color:#64748b;">Uploaded on \${p.uploaded_at}</p>
+                        <span style="font-weight:700;">${formatMonth(p.month_year)}</span>
+                        <p style="font-size:0.8rem;color:#64748b;">Uploaded on ${p.uploaded_at}</p>
                     </div>
-                    <a href="PayslipServlet?action=view&id=\${p.id}" target="_blank" class="btn-dl">
+                    <a href="PayslipServlet?action=view&id=${p.id}" target="_blank" class="btn-dl">
                         <i class="ph ph-download-simple"></i> Download PDF
                     </a>
                 </div>
