@@ -104,7 +104,10 @@ public class WeeklyReportServlet extends HttpServlet {
         String userEmail = (String) session.getAttribute("userEmail");
         if (userEmail == null) return;
 
+        // ✅ ENCODING SAFETY (no logic change)
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
         PrintWriter out = response.getWriter();
 
         String sql =
@@ -154,6 +157,7 @@ public class WeeklyReportServlet extends HttpServlet {
 
         String id = request.getParameter("id");
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8"); // safety
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps =
