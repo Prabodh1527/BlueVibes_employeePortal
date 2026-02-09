@@ -12,6 +12,7 @@ public class AdminReportServlet extends HttpServlet {
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
+
         PrintWriter out = response.getWriter();
 
         String emailsParam = request.getParameter("emails");
@@ -27,7 +28,7 @@ public class AdminReportServlet extends HttpServlet {
             sql.append(" AND wr.user_email IN (").append(formatEmailList(emailsParam)).append(")");
         }
 
-        // ✅ FIXED DATE OVERLAP LOGIC
+        // ✅ DATE OVERLAP LOGIC (INTENTIONALLY KEPT)
         if (fromDate != null && !fromDate.isEmpty()) {
             sql.append(" AND wr.end_date >= ?");
         }
