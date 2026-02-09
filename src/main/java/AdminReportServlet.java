@@ -12,7 +12,6 @@ public class AdminReportServlet extends HttpServlet {
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-
         PrintWriter out = response.getWriter();
 
         String emailsParam = request.getParameter("emails");
@@ -28,13 +27,17 @@ public class AdminReportServlet extends HttpServlet {
             sql.append(" AND wr.user_email IN (").append(formatEmailList(emailsParam)).append(")");
         }
 
-        // ✅ DATE OVERLAP LOGIC (INTENTIONALLY KEPT)
+        // ✅ WEEKLY REPORT FIX
+        // Proper overlap logic so ALL matching rows appear
         if (fromDate != null && !fromDate.isEmpty()) {
-            sql.append(" AND wr.end_date >= ?");
+            sql.append(" AND (wr.end_date IS NULL OR wr.end_date >= ?)");
         }
         if (toDate != null && !toDate.isEmpty()) {
-            sql.append(" AND wr.start_date <= ?");
+            sql.append(" AND (wr.start_date IS NULL OR wr.start_date <= ?)");
         }
+
+        // ❗ ensure no implicit limit and consistent order
+        sql.append(" ORDER BY wr.created_at ASC");
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql.toString())) {
