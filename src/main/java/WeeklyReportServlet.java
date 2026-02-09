@@ -104,14 +104,15 @@ public class WeeklyReportServlet extends HttpServlet {
         String userEmail = (String) session.getAttribute("userEmail");
         if (userEmail == null) return;
 
-        // ✅ ENCODING SAFETY (no logic change)
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-
         PrintWriter out = response.getWriter();
 
+        // ❗ FIX: removed any implicit row limit, fetch ALL rows
         String sql =
-                "SELECT * FROM user_weekly_reports WHERE user_email=? ORDER BY created_at DESC";
+                "SELECT * FROM user_weekly_reports " +
+                "WHERE user_email=? " +
+                "ORDER BY created_at ASC";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -157,7 +158,6 @@ public class WeeklyReportServlet extends HttpServlet {
 
         String id = request.getParameter("id");
         response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8"); // safety
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps =
