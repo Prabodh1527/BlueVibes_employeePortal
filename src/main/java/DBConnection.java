@@ -7,12 +7,11 @@ public class DBConnection {
         Connection con = null;
         try {
             String url =
-                "jdbc:mysql://shuttle.proxy.rlwy.net:56882/management_system"
-              + "?useSSL=false"
-              + "&serverTimezone=UTC"
-              + "&autoReconnect=true"
-              + "&failOverReadOnly=false"
-              + "&maxReconnects=10";
+              "jdbc:mysql://shuttle.proxy.rlwy.net:56882/management_system"
+            + "?useSSL=false"
+            + "&allowPublicKeyRetrieval=true"
+            + "&serverTimezone=UTC"
+            +"&autoReconnect=true";
 
             String user = "root";
             String pass = "OZKiDIwjorSGALvAVhAbgmIKUCeNrVzV";
@@ -29,3 +28,4 @@ public class DBConnection {
         return con;
     }
 }
+
