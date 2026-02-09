@@ -27,12 +27,12 @@
 
         .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
         .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; flex-shrink: 0; }
-        .content-area { padding: 2rem; overflow-y: scroll; flex-grow: 1; }
+        .content-area { padding: 2rem; overflow-y: auto; flex-grow: 1; }
 
         .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--bg); }
 
-        .table-container { overflow-x: auto; overflow-y: auto; max-height: 420px; }
+        .table-container { overflow-x: auto; overflow-y: auto; max-height: 65vh; }
         .report-table { width: 100%; border-collapse: collapse; min-width: 1100px; }
         .report-table th { background: #0f172a; color: white; text-align: left; padding: 12px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #334155; }
         .report-table td { padding: 8px; border: 1px solid var(--border); }
@@ -103,15 +103,18 @@
                             <th style="width: 50px;">Action</th>
                         </tr>
                         </thead>
-                        <tbody id="reportTbody"></tbody>
+                        <tbody id="reportTbody">
+                        </tbody>
                     </table>
                 </div>
 
-                <button type="button" class="btn btn-add" onclick="addRow()"><i class="ph ph-plus-circle"></i> Add Task Row</button>
+                <button type="button" class="btn btn-add" style="margin-top:15px;" onclick="addRow()">
+                    <i class="ph ph-plus-circle"></i> Add Task Row
+                </button>
 
                 <div class="btn-group">
-                    <button type="submit" class="btn btn-save"><i class="ph ph-floppy-disk"></i> Save Weekly Report</button>
                     <button type="button" class="btn btn-excel" onclick="exportToExcel()"><i class="ph ph-file-xls"></i> Export to Excel</button>
+                    <button type="submit" class="btn btn-save"><i class="ph ph-floppy-disk"></i> Save Weekly Report</button>
                 </div>
             </form>
         </div>
@@ -219,8 +222,28 @@
         fetch('WeeklyReportServlet?action=fetchMyReports')
             .then(res => res.json())
             .then(data => {
-                const rows = [["Task ID","Task Description","Customer","Status","% Completed","Start Date","End Date","Comments"]];
-                data.forEach(r => rows.push([r.taskId,r.taskDesc,r.customer,r.status,r.percent,r.startDate,r.endDate,r.comments]));
+                if (!data || data.length === 0) {
+                    alert("No data to export");
+                    return;
+                }
+
+                const rows = [
+                    ["Task ID", "Task Description", "Customer", "Status", "% Completed", "Start Date", "End Date", "Comments"]
+                ];
+
+                data.forEach(r => {
+                    rows.push([
+                        r.taskId,
+                        r.taskDesc,
+                        r.customer,
+                        r.status,
+                        r.percent,
+                        r.startDate,
+                        r.endDate,
+                        r.comments
+                    ]);
+                });
+
                 const ws = XLSX.utils.aoa_to_sheet(rows);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
@@ -232,9 +255,14 @@
         const now = new Date();
         const first = now.getDate() - now.getDay() + 1;
         const last = first + 5;
-        document.getElementById('weekRange').innerText =
-            `Current Week: ${new Date(now.setDate(first)).toLocaleDateString()} to ${new Date(now.setDate(last)).toLocaleDateString()}`;
+        const start = new Date(new Date().setDate(first)).toLocaleDateString();
+        const end = new Date(new Date().setDate(last)).toLocaleDateString();
+        document.getElementById('weekRange').innerText = `Current Week: ${start} to ${end}`;
+
         loadMastersAndReports();
+
+        const params = new URLSearchParams(window.location.search);
+        if(params.get('status') === 'success') alert('Weekly report saved successfully!');
     };
 </script>
 
