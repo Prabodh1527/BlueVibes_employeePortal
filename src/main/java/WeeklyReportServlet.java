@@ -11,6 +11,7 @@ public class WeeklyReportServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
+        // Check if ANY valid session exists
         String userEmail = (session != null) ? (String) session.getAttribute("userEmail") : null;
         
         if (userEmail == null) {
@@ -19,7 +20,6 @@ public class WeeklyReportServlet extends HttpServlet {
         }
 
         String action = request.getParameter("action");
-
         if ("delete".equals(action)) {
             deleteReport(request, response, userEmail);
             return;
@@ -35,11 +35,7 @@ public class WeeklyReportServlet extends HttpServlet {
         String[] endDates = request.getParameterValues("endDate");
         String[] comments = request.getParameterValues("comments");
 
-        if (taskDescs == null) {
-            response.sendRedirect("weeklyreport.html");
-            return;
-        }
-
+        // Fixed SQL for PostgreSQL using explicit DATE casting
         String insertSql = "INSERT INTO user_weekly_reports " +
                 "(user_email, task_id, task_description, customer, status, percentage_completed, start_date, end_date, comments) " +
                 "VALUES (?,?,?,?,?,?,CAST(? AS DATE),CAST(? AS DATE),?)";
@@ -50,38 +46,40 @@ public class WeeklyReportServlet extends HttpServlet {
                 "WHERE report_id=? AND user_email=?";
 
         try (Connection con = DBConnection.getConnection()) {
-            for (int i = 0; i < taskDescs.length; i++) {
-                if (taskDescs[i] == null || taskDescs[i].trim().isEmpty()) continue;
+            if (taskDescs != null) {
+                for (int i = 0; i < taskDescs.length; i++) {
+                    if (taskDescs[i] == null || taskDescs[i].trim().isEmpty()) continue;
 
-                int percent = 0;
-                try { percent = Integer.parseInt(percents[i]); } catch (Exception ignored) {}
+                    int percent = 0;
+                    try { percent = Integer.parseInt(percents[i]); } catch (Exception ignored) {}
 
-                if ("0".equals(reportIds[i])) {
-                    try (PreparedStatement ps = con.prepareStatement(insertSql)) {
-                        ps.setString(1, userEmail);
-                        ps.setString(2, taskIds[i]);
-                        ps.setString(3, taskDescs[i]);
-                        ps.setString(4, customers[i]);
-                        ps.setString(5, statuses[i]);
-                        ps.setInt(6, percent);
-                        ps.setString(7, (startDates[i] == null || startDates[i].isEmpty()) ? null : startDates[i]);
-                        ps.setString(8, (endDates[i] == null || endDates[i].isEmpty()) ? null : endDates[i]);
-                        ps.setString(9, comments[i]);
-                        ps.executeUpdate();
-                    }
-                } else {
-                    try (PreparedStatement ps = con.prepareStatement(updateSql)) {
-                        ps.setString(1, taskIds[i]);
-                        ps.setString(2, taskDescs[i]);
-                        ps.setString(3, customers[i]);
-                        ps.setString(4, statuses[i]);
-                        ps.setInt(5, percent);
-                        ps.setString(6, (startDates[i] == null || startDates[i].isEmpty()) ? null : startDates[i]);
-                        ps.setString(7, (endDates[i] == null || endDates[i].isEmpty()) ? null : endDates[i]);
-                        ps.setString(8, comments[i]);
-                        ps.setInt(9, Integer.parseInt(reportIds[i]));
-                        ps.setString(10, userEmail);
-                        ps.executeUpdate();
+                    if ("0".equals(reportIds[i])) {
+                        try (PreparedStatement ps = con.prepareStatement(insertSql)) {
+                            ps.setString(1, userEmail);
+                            ps.setString(2, taskIds[i]);
+                            ps.setString(3, taskDescs[i]);
+                            ps.setString(4, customers[i]);
+                            ps.setString(5, statuses[i]);
+                            ps.setInt(6, percent);
+                            ps.setString(7, (startDates[i] == null || startDates[i].isEmpty()) ? null : startDates[i]);
+                            ps.setString(8, (endDates[i] == null || endDates[i].isEmpty()) ? null : endDates[i]);
+                            ps.setString(9, comments[i]);
+                            ps.executeUpdate();
+                        }
+                    } else {
+                        try (PreparedStatement ps = con.prepareStatement(updateSql)) {
+                            ps.setString(1, taskIds[i]);
+                            ps.setString(2, taskDescs[i]);
+                            ps.setString(3, customers[i]);
+                            ps.setString(4, statuses[i]);
+                            ps.setInt(5, percent);
+                            ps.setString(6, (startDates[i] == null || startDates[i].isEmpty()) ? null : startDates[i]);
+                            ps.setString(7, (endDates[i] == null || endDates[i].isEmpty()) ? null : endDates[i]);
+                            ps.setString(8, comments[i]);
+                            ps.setInt(9, Integer.parseInt(reportIds[i]));
+                            ps.setString(10, userEmail);
+                            ps.executeUpdate();
+                        }
                     }
                 }
             }
@@ -98,8 +96,10 @@ public class WeeklyReportServlet extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         String userEmail = (session != null) ? (String) session.getAttribute("userEmail") : null;
+        
         if (userEmail == null) {
-            response.setStatus(401);
+            response.setContentType("application/json");
+            response.getWriter().print("[]");
             return;
         }
 
