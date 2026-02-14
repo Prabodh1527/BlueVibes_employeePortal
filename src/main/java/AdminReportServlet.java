@@ -14,9 +14,10 @@ public class AdminReportServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
 
-        // Security check: Ensure an admin is logged in
+        // 1. Check Session - Ensure it's an Admin
         HttpSession session = request.getSession(false);
         if (session == null || !"Admin".equals(session.getAttribute("role"))) {
+            response.setStatus(401);
             out.print("[]");
             return;
         }
@@ -25,7 +26,7 @@ public class AdminReportServlet extends HttpServlet {
         String fromDate = request.getParameter("from");
         String toDate = request.getParameter("to");
 
-        // Use PostgreSQL compatible JOIN and syntax
+        // 2. PostgreSQL compatible JOIN
         StringBuilder sql = new StringBuilder(
                 "SELECT wr.*, u.fullname FROM user_weekly_reports wr " +
                 "JOIN users u ON wr.user_email = u.email WHERE 1=1 "
@@ -35,7 +36,7 @@ public class AdminReportServlet extends HttpServlet {
             sql.append(" AND wr.user_email IN (").append(formatEmailList(emailsParam)).append(")");
         }
 
-        // Fix: Cast dates for PostgreSQL
+        // 3. PostgreSQL Date Casting
         if (fromDate != null && !fromDate.isEmpty()) {
             sql.append(" AND (wr.end_date IS NULL OR wr.end_date >= CAST(? AS DATE))");
         }
