@@ -5,34 +5,30 @@ import java.sql.DriverManager;
 public class DBConnection {
 
     public static Connection getConnection() {
-
         try {
 
             String databaseUrl = System.getenv("DATABASE_URL");
 
-            if (databaseUrl == null) {
-                throw new RuntimeException("DATABASE_URL is NULL");
+            if (databaseUrl == null || databaseUrl.isEmpty()) {
+                throw new RuntimeException("DATABASE_URL not set");
             }
 
-            URI uri = new URI(databaseUrl);
+            URI dbUri = new URI(databaseUrl);
 
-            String username = uri.getUserInfo().split(":")[0];
-            String password = uri.getUserInfo().split(":")[1];
+            String userInfo = dbUri.getUserInfo();
+            String username = userInfo.split(":")[0];
+            String password = userInfo.split(":")[1];
 
             String jdbcUrl = "jdbc:postgresql://"
-                    + uri.getHost()
+                    + dbUri.getHost()
                     + ":"
-                    + uri.getPort()
-                    + uri.getPath()
+                    + dbUri.getPort()
+                    + dbUri.getPath()
                     + "?sslmode=require";
 
             Class.forName("org.postgresql.Driver");
 
-            Connection con = DriverManager.getConnection(jdbcUrl, username, password);
-
-            System.out.println("PostgreSQL Connected");
-
-            return con;
+            return DriverManager.getConnection(jdbcUrl, username, password);
 
         } catch (Exception e) {
             e.printStackTrace();
