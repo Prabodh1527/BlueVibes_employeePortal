@@ -5,16 +5,20 @@ public class DBConnection {
 
     public static Connection getConnection() {
         Connection con = null;
-        try {
-            String url =
-              "jdbc:mysql://shuttle.proxy.rlwy.net:56882/management_system"
-            + "?useSSL=false"
-            + "&allowPublicKeyRetrieval=true"
-            + "&serverTimezone=UTC"
-            +"&autoReconnect=true";
 
-            String user = "root";
-            String pass = "OZKiDIwjorSGALvAVhAbgmIKUCeNrVzV";
+        try {
+            String host = System.getenv("DB_HOST");
+            String port = System.getenv("DB_PORT");
+            String database = System.getenv("DB_NAME");
+            String user = System.getenv("DB_USER");
+            String pass = System.getenv("DB_PASSWORD");
+
+            String url = "jdbc:mysql://" + host + ":" + port + "/" + database
+                    + "?useSSL=true"
+                    + "&requireSSL=true"
+                    + "&verifyServerCertificate=false"
+                    + "&allowPublicKeyRetrieval=true"
+                    + "&serverTimezone=UTC";
 
             Class.forName("com.mysql.cj.jdbc.Driver");
             con = DriverManager.getConnection(url, user, pass);
@@ -25,7 +29,7 @@ public class DBConnection {
             System.out.println("DB CONNECTION FAILED");
             e.printStackTrace();
         }
+
         return con;
     }
 }
-
