@@ -1,4 +1,3 @@
-import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
@@ -7,28 +6,23 @@ public class DBConnection {
     public static Connection getConnection() {
         try {
 
-            String databaseUrl = System.getenv("DATABASE_URL");
+            String host = System.getenv("DB_HOST");
+            String port = System.getenv("DB_PORT");
+            String db   = System.getenv("DB_NAME");
+            String user = System.getenv("DB_USER");
+            String pass = System.getenv("DB_PASSWORD");
 
-            if (databaseUrl == null || databaseUrl.isEmpty()) {
-                throw new RuntimeException("DATABASE_URL not set");
+            if (host == null || port == null || db == null || user == null || pass == null) {
+                throw new RuntimeException("One or more DB environment variables are missing.");
             }
 
-            URI dbUri = new URI(databaseUrl);
-
-            String userInfo = dbUri.getUserInfo();
-            String username = userInfo.split(":")[0];
-            String password = userInfo.split(":")[1];
-
             String jdbcUrl = "jdbc:postgresql://"
-                    + dbUri.getHost()
-                    + ":"
-                    + dbUri.getPort()
-                    + dbUri.getPath()
+                    + host + ":" + port + "/" + db
                     + "?sslmode=require";
 
             Class.forName("org.postgresql.Driver");
 
-            return DriverManager.getConnection(jdbcUrl, username, password);
+            return DriverManager.getConnection(jdbcUrl, user, pass);
 
         } catch (Exception e) {
             e.printStackTrace();
