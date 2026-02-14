@@ -12,7 +12,7 @@
 
     <dependencies>
 
-        <!-- Servlet API -->
+        <!-- Servlet -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
@@ -20,14 +20,14 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- PostgreSQL Driver -->
+        <!-- H2 Database -->
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>42.7.3</version>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.2.224</version>
         </dependency>
 
-        <!-- Java Mail -->
+        <!-- Mail -->
         <dependency>
             <groupId>com.sun.mail</groupId>
             <artifactId>javax.mail</artifactId>
