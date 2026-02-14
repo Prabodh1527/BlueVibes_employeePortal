@@ -4,7 +4,7 @@ import java.sql.SQLException;
 
 public class DBConnection {
 
-    private static final String JDBC_URL = "jdbc:h2:~/bluevibesdb;AUTO_SERVER=TRUE";
+    private static final String JDBC_URL = "jdbc:h2:~/bluevibesdb";
     private static final String JDBC_USER = "sa";
     private static final String JDBC_PASSWORD = "";
 
