@@ -20,11 +20,11 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- H2 Database -->
+        <!-- PostgreSQL Driver -->
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>2.2.224</version>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
         </dependency>
 
         <!-- Mail -->
@@ -46,7 +46,6 @@
     <build>
         <plugins>
 
-            <!-- Java 8 Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
