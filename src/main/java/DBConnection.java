@@ -1,18 +1,30 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
 
 public class DBConnection {
 
-    private static final String JDBC_URL = "jdbc:h2:~/bluevibesdb";
-    private static final String JDBC_USER = "sa";
-    private static final String JDBC_PASSWORD = "";
-
     public static Connection getConnection() {
         try {
-            Class.forName("org.h2.Driver");
-            return DriverManager.getConnection(JDBC_URL, JDBC_USER, JDBC_PASSWORD);
-        } catch (ClassNotFoundException | SQLException e) {
+
+            String databaseUrl = System.getenv("DATABASE_URL");
+
+            if (databaseUrl == null || databaseUrl.isEmpty()) {
+                System.out.println("DATABASE_URL not set");
+                return null;
+            }
+
+            // Convert for JDBC
+            databaseUrl = databaseUrl.replace("postgres://", "jdbc:postgresql://");
+
+            Class.forName("org.postgresql.Driver");
+
+            Connection con = DriverManager.getConnection(databaseUrl);
+
+            System.out.println("Connected to PostgreSQL");
+
+            return con;
+
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
