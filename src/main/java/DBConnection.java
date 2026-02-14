@@ -1,32 +1,53 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.Statement;
 
 public class DBConnection {
 
+    private static boolean initialized = false;
+
     public static Connection getConnection() {
-        Connection con = null;
-
         try {
-            String databaseUrl = System.getenv("DATABASE_URL");
+            Class.forName("org.h2.Driver");
 
-            if (databaseUrl == null || databaseUrl.isEmpty()) {
-                System.out.println("DATABASE_URL is not set!");
-                return null;
+            Connection con = DriverManager.getConnection(
+                    "jdbc:h2:mem:bluevibes;DB_CLOSE_DELAY=-1",
+                    "sa",
+                    ""
+            );
+
+            if (!initialized) {
+                initializeDatabase(con);
+                initialized = true;
             }
 
-            // Convert postgresql:// to jdbc:postgresql://
-            databaseUrl = databaseUrl.replace("postgresql://", "jdbc:postgresql://");
-
-            Class.forName("org.postgresql.Driver");
-            con = DriverManager.getConnection(databaseUrl);
-
-            System.out.println("PostgreSQL CONNECTED SUCCESSFULLY");
+            return con;
 
         } catch (Exception e) {
-            System.out.println("DB CONNECTION FAILED");
             e.printStackTrace();
+            return null;
         }
+    }
 
-        return con;
+    private static void initializeDatabase(Connection con) throws Exception {
+
+        Statement st = con.createStatement();
+
+        st.execute("""
+            CREATE TABLE users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                fullname VARCHAR(100),
+                email VARCHAR(100) UNIQUE,
+                password VARCHAR(100),
+                role VARCHAR(20)
+            );
+        """);
+
+        st.execute("""
+            INSERT INTO users (fullname, email, password, role)
+            VALUES ('Admin User', 'admin@bluegital.com', '111', 'Admin');
+        """);
+
+        st.close();
     }
 }
