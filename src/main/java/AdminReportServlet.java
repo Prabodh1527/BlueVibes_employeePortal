@@ -18,6 +18,7 @@ public class AdminReportServlet extends HttpServlet {
         String fromDate = request.getParameter("from");
         String toDate = request.getParameter("to");
 
+        // Use proper JOIN and column names for PostgreSQL
         StringBuilder sql = new StringBuilder(
                 "SELECT wr.*, u.fullname FROM user_weekly_reports wr " +
                 "JOIN users u ON wr.user_email = u.email WHERE 1=1 "
@@ -27,16 +28,13 @@ public class AdminReportServlet extends HttpServlet {
             sql.append(" AND wr.user_email IN (").append(formatEmailList(emailsParam)).append(")");
         }
 
-        // ✅ WEEKLY REPORT FIX
-        // Proper overlap logic so ALL matching rows appear
         if (fromDate != null && !fromDate.isEmpty()) {
-            sql.append(" AND (wr.end_date IS NULL OR wr.end_date >= ?)");
+            sql.append(" AND (wr.end_date IS NULL OR wr.end_date >= CAST(? AS DATE))");
         }
         if (toDate != null && !toDate.isEmpty()) {
-            sql.append(" AND (wr.start_date IS NULL OR wr.start_date <= ?)");
+            sql.append(" AND (wr.start_date IS NULL OR wr.start_date <= CAST(? AS DATE))");
         }
 
-        // ❗ ensure no implicit limit and consistent order
         sql.append(" ORDER BY wr.created_at ASC");
 
         try (Connection con = DBConnection.getConnection();
@@ -54,18 +52,16 @@ public class AdminReportServlet extends HttpServlet {
                 if (!first) json.append(",");
 
                 json.append("{")
-                        .append("\"userName\":\"").append(rs.getString("fullname")).append("\",")
-                        .append("\"taskId\":\"").append(rs.getString("task_id")).append("\",")
-                        .append("\"taskDesc\":\"").append(rs.getString("task_description")).append("\",")
-                        .append("\"customer\":\"").append(rs.getString("customer")).append("\",")
-                        .append("\"status\":\"").append(rs.getString("status")).append("\",")
+                        .append("\"userName\":\"").append(escapeJson(rs.getString("fullname"))).append("\",")
+                        .append("\"taskId\":\"").append(escapeJson(rs.getString("task_id"))).append("\",")
+                        .append("\"taskDesc\":\"").append(escapeJson(rs.getString("task_description"))).append("\",")
+                        .append("\"customer\":\"").append(escapeJson(rs.getString("customer"))).append("\",")
+                        .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
                         .append("\"percent\":").append(rs.getInt("percentage_completed")).append(",")
                         .append("\"startDate\":\"").append(rs.getString("start_date")).append("\",")
                         .append("\"endDate\":\"").append(rs.getString("end_date")).append("\",")
-                        .append("\"comments\":\"")
-                        .append(rs.getString("comments") == null ? "" :
-                                rs.getString("comments").replace("\"", "\\\""))
-                        .append("\"}");
+                        .append("\"comments\":\"").append(escapeJson(rs.getString("comments"))).append("\"")
+                        .append("}");
 
                 first = false;
             }
@@ -83,9 +79,14 @@ public class AdminReportServlet extends HttpServlet {
         String[] arr = emails.split(",");
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < arr.length; i++) {
-            sb.append("'").append(arr[i].trim()).append("'");
+            sb.append("'").append(arr[i].trim().replace("'", "''")).append("'");
             if (i < arr.length - 1) sb.append(",");
         }
         return sb.toString();
+    }
+
+    private String escapeJson(String input) {
+        if (input == null) return "";
+        return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 }
