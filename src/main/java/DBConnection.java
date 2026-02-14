@@ -7,23 +7,20 @@ public class DBConnection {
         Connection con = null;
 
         try {
-            String host = System.getenv("DB_HOST");
-            String port = System.getenv("DB_PORT");
-            String database = System.getenv("DB_NAME");
-            String user = System.getenv("DB_USER");
-            String pass = System.getenv("DB_PASSWORD");
+            String databaseUrl = System.getenv("DATABASE_URL");
 
-            String url = "jdbc:mysql://" + host + ":" + port + "/" + database
-                    + "?useSSL=true"
-                    + "&requireSSL=true"
-                    + "&verifyServerCertificate=false"
-                    + "&allowPublicKeyRetrieval=true"
-                    + "&serverTimezone=UTC";
+            if (databaseUrl == null || databaseUrl.isEmpty()) {
+                System.out.println("DATABASE_URL is not set!");
+                return null;
+            }
 
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            con = DriverManager.getConnection(url, user, pass);
+            // Convert postgresql:// to jdbc:postgresql://
+            databaseUrl = databaseUrl.replace("postgresql://", "jdbc:postgresql://");
 
-            System.out.println("DB CONNECTED SUCCESSFULLY");
+            Class.forName("org.postgresql.Driver");
+            con = DriverManager.getConnection(databaseUrl);
+
+            System.out.println("PostgreSQL CONNECTED SUCCESSFULLY");
 
         } catch (Exception e) {
             System.out.println("DB CONNECTION FAILED");
