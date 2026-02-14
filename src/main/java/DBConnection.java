@@ -1,3 +1,4 @@
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
@@ -8,19 +9,26 @@ public class DBConnection {
 
             String databaseUrl = System.getenv("DATABASE_URL");
 
-            if (databaseUrl == null || databaseUrl.isEmpty()) {
-                System.out.println("DATABASE_URL not set");
+            if (databaseUrl == null) {
+                System.out.println("DATABASE_URL is null");
                 return null;
             }
 
-            // Convert for JDBC
-            databaseUrl = databaseUrl.replace("postgres://", "jdbc:postgresql://");
+            URI dbUri = new URI(databaseUrl);
+
+            String username = dbUri.getUserInfo().split(":")[0];
+            String password = dbUri.getUserInfo().split(":")[1];
+            String jdbcUrl = "jdbc:postgresql://" +
+                    dbUri.getHost() +
+                    ":" +
+                    dbUri.getPort() +
+                    dbUri.getPath();
 
             Class.forName("org.postgresql.Driver");
 
-            Connection con = DriverManager.getConnection(databaseUrl);
+            Connection con = DriverManager.getConnection(jdbcUrl, username, password);
 
-            System.out.println("Connected to PostgreSQL");
+            System.out.println("PostgreSQL Connected Successfully");
 
             return con;
 
