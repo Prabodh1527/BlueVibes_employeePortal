@@ -28,7 +28,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);display:flex;height:100
 .submenu-item:hover{color:white;background:rgba(255,255,255,0.05);}
 
 .logout-sect{padding:1.5rem;border-top:1px solid rgba(255,255,255,0.1);}
-.logout-btn{color:#f87171;text-decoration:none;font-weight:600;font-size:0.9rem;}
+.logout-btn{color:#f87171;text-decoration:none;font-weight:600;font-size:0.9rem;display:flex;align-items:center;gap:8px;}
 
 .main-wrapper{flex-grow:1;display:flex;flex-direction:column;overflow:hidden;}
 .top-header{height:70px;background:var(--primary);color:white;display:flex;align-items:center;padding:0 2.5rem;font-size:1.2rem;font-weight:600;}
@@ -100,6 +100,7 @@ font-size:0.85rem;
 .report-table{width:100%;border-collapse:collapse;}
 .report-table th{background:var(--primary);color:white;padding:12px;font-size:0.8rem;text-align:left;}
 .report-table td{padding:10px;border:1px solid var(--border);font-size:0.85rem;}
+.default-msg{text-align:center;font-weight:500;color:#64748b;padding:40px 0;}
 </style>
 </head>
 
@@ -115,14 +116,33 @@ font-size:0.85rem;
 </div>
 
 <nav class="nav-links">
-<a href="adminhome.html" class="nav-item">Admin Dashboard</a>
-<a href="adminprofile.html" class="nav-item">My Profile</a>
-<a href="usermanagement.html" class="nav-item">User Management</a>
-<a href="adminreports.html" class="nav-item active">View Weekly Reports</a>
+<a href="adminhome.html" class="nav-item"><i class="ph ph-house"></i> Admin Dashboard</a>
+<a href="adminprofile.html" class="nav-item"><i class="ph ph-user"></i> My Profile</a>
+<a href="usermanagement.html" class="nav-item"><i class="ph ph-users-three"></i> User Management</a>
+<a href="adminreports.html" class="nav-item active"><i class="ph ph-clipboard-text"></i> View Weekly Reports</a>
+
+<button class="nav-item" onclick="toggleMasters()">
+<i class="ph ph-database"></i> Masters
+<i class="ph ph-caret-down" style="margin-left:auto;font-size:0.7rem;"></i>
+</button>
+
+<ul id="mastersSubmenu" class="submenu">
+<li><a href="designationmaster.html" class="submenu-item">Designation Master</a></li>
+<li><a href="qualificationmaster.html" class="submenu-item">Qualification Master</a></li>
+<li><a href="experiencemaster.html" class="submenu-item">Experience Master</a></li>
+<li><a href="certificationmaster.html" class="submenu-item">Certification Master</a></li>
+<li><a href="taskmaster.html" class="submenu-item">Task Master</a></li>
+<li><a href="customermaster.html" class="submenu-item">Customer Master</a></li>
+</ul>
+
+<a href="admin_notifications.html" class="nav-item"><i class="ph ph-megaphone"></i> Publish Notifications</a>
+<a href="genpayslip.html" class="nav-item"><i class="ph ph-receipt"></i> Generate Payslips</a>
+<a href="policy.html" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
+<a href="adminleave.html" class="nav-item"><i class="ph ph-calendar-x"></i> Approve/Reject Leaves</a>
 </nav>
 
 <div class="logout-sect">
-<a href="index.html" class="logout-btn">Logout</a>
+<a href="index.html" class="logout-btn"><i class="ph ph-power"></i> Logout</a>
 </div>
 </aside>
 
@@ -170,7 +190,9 @@ font-size:0.85rem;
 <th>Comments</th>
 </tr>
 </thead>
-<tbody id="adminReportBody"></tbody>
+<tbody id="adminReportBody">
+<tr><td colspan="9" class="default-msg">Apply filters to view weekly reports.</td></tr>
+</tbody>
 </table>
 </div>
 
@@ -181,6 +203,10 @@ font-size:0.85rem;
 <script>
 
 let filteredData=[];
+
+function toggleMasters(){
+document.getElementById("mastersSubmenu").classList.toggle("show");
+}
 
 function toggleUserList(){
 const ul=document.getElementById("userList");
@@ -264,8 +290,7 @@ XLSX.writeFile(wb,"Filtered_Weekly_Reports.xlsx");
 }
 
 window.onload=function(){
-loadUsers();
-applyFilters();
+loadUsers(); // removed default applyFilters()
 }
 
 </script>
