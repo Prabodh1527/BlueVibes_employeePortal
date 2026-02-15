@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>BlueVibes | View Weekly Reports</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<meta charset="UTF-8">
+<title>BlueVibes | View Weekly Reports</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-:root { --primary:#0f172a; --accent:#0284c7; --bg:#f1f5f9; --border:#e2e8f0; }
+:root{--primary:#0f172a;--accent:#0284c7;--bg:#f1f5f9;--border:#e2e8f0;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Inter',sans-serif;background:var(--bg);display:flex;height:100vh;overflow:hidden;}
 
@@ -28,7 +28,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);display:flex;height:100
 .submenu-item:hover{color:white;background:rgba(255,255,255,0.05);}
 
 .logout-sect{padding:1.5rem;border-top:1px solid rgba(255,255,255,0.1);}
-.logout-btn{color:#f87171;text-decoration:none;display:flex;align-items:center;gap:10px;font-weight:600;font-size:0.9rem;}
+.logout-btn{color:#f87171;text-decoration:none;font-weight:600;font-size:0.9rem;}
 
 .main-wrapper{flex-grow:1;display:flex;flex-direction:column;overflow:hidden;}
 .top-header{height:70px;background:var(--primary);color:white;display:flex;align-items:center;padding:0 2.5rem;font-size:1.2rem;font-weight:600;}
@@ -36,7 +36,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);display:flex;height:100
 
 .card{background:white;border-radius:12px;border:1px solid var(--border);padding:2rem;}
 
-.filter-container{
+.filter-grid{
 display:grid;
 grid-template-columns: 2fr 1fr 1fr auto auto;
 gap:20px;
@@ -98,18 +98,8 @@ font-size:0.85rem;
 
 .table-container{overflow-x:auto;}
 .report-table{width:100%;border-collapse:collapse;}
-.report-table th{
-background:var(--primary);
-color:white;
-padding:12px;
-font-size:0.8rem;
-text-align:left;
-}
-.report-table td{
-padding:10px;
-border:1px solid var(--border);
-font-size:0.85rem;
-}
+.report-table th{background:var(--primary);color:white;padding:12px;font-size:0.8rem;text-align:left;}
+.report-table td{padding:10px;border:1px solid var(--border);font-size:0.85rem;}
 </style>
 </head>
 
@@ -129,17 +119,6 @@ font-size:0.85rem;
 <a href="adminprofile.html" class="nav-item">My Profile</a>
 <a href="usermanagement.html" class="nav-item">User Management</a>
 <a href="adminreports.html" class="nav-item active">View Weekly Reports</a>
-<div>
-<button class="nav-item" onclick="toggleMasters()">Masters</button>
-<ul id="mastersSubmenu" class="submenu">
-<li><a href="designationmaster.html" class="submenu-item">Designation Master</a></li>
-<li><a href="qualificationmaster.html" class="submenu-item">Qualification Master</a></li>
-<li><a href="experiencemaster.html" class="submenu-item">Experience Master</a></li>
-<li><a href="certificationmaster.html" class="submenu-item">Certification Master</a></li>
-<li><a href="taskmaster.html" class="submenu-item">Task Description Master</a></li>
-<li><a href="customermaster.html" class="submenu-item">Customer Master</a></li>
-</ul>
-</div>
 </nav>
 
 <div class="logout-sect">
@@ -153,7 +132,7 @@ font-size:0.85rem;
 <div class="content-area">
 <div class="card">
 
-<div class="filter-container">
+<div class="filter-grid">
 
 <div class="filter-group user-dropdown">
 <label>Select Users</label>
@@ -171,8 +150,8 @@ font-size:0.85rem;
 <input type="date" id="toDate">
 </div>
 
-<button class="btn btn-filter" onclick="applyFilters()">Apply Filter</button>
-<button class="btn btn-excel" onclick="exportToExcel()">Export to Excel</button>
+<button class="btn btn-filter" onclick="applyFilters()">Apply</button>
+<button class="btn btn-excel" onclick="exportToExcel()">Export</button>
 
 </div>
 
@@ -203,10 +182,6 @@ font-size:0.85rem;
 
 let filteredData=[];
 
-function toggleMasters(){
-document.getElementById("mastersSubmenu").classList.toggle("show");
-}
-
 function toggleUserList(){
 const ul=document.getElementById("userList");
 ul.style.display=ul.style.display==="block"?"none":"block";
@@ -220,7 +195,7 @@ const ul=document.getElementById("userList");
 ul.innerHTML="";
 ul.innerHTML+=`<label><input type="checkbox" value="ALL" onchange="selectAll(this)"> Select All</label>`;
 data.forEach(u=>{
-ul.innerHTML+=`<label><input type="checkbox" value="${u.email}"> ${u.fullname}</label>`;
+ul.innerHTML+=`<label><input type="checkbox" value="${u.email}"> ${u.fullname} (${u.email})</label>`;
 });
 });
 }
