@@ -14,9 +14,11 @@ public class AdminReportServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
 
-        // 1. Check Session - Ensure it's an Admin
+        // 1. Check Session - MATCHED TO LOGIN SERVLET (userRole)
         HttpSession session = request.getSession(false);
-        if (session == null || !"Admin".equals(session.getAttribute("role"))) {
+        String sessionRole = (session != null) ? (String) session.getAttribute("userRole") : null;
+
+        if (session == null || !"Admin".equalsIgnoreCase(sessionRole)) {
             response.setStatus(401);
             out.print("[]");
             return;
@@ -36,7 +38,7 @@ public class AdminReportServlet extends HttpServlet {
             sql.append(" AND wr.user_email IN (").append(formatEmailList(emailsParam)).append(")");
         }
 
-        // 3. PostgreSQL Date Casting
+        // 3. PostgreSQL Date Casting with NULL safety
         if (fromDate != null && !fromDate.isEmpty()) {
             sql.append(" AND (wr.end_date IS NULL OR wr.end_date >= CAST(? AS DATE))");
         }
@@ -96,6 +98,6 @@ public class AdminReportServlet extends HttpServlet {
 
     private String escapeJson(String input) {
         if (input == null) return "";
-        return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+        return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", " ");
     }
 }
