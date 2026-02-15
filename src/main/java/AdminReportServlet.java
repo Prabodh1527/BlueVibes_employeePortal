@@ -69,8 +69,8 @@ public class AdminReportServlet extends HttpServlet {
                         .append("\"customer\":\"").append(escapeJson(rs.getString("customer"))).append("\",")
                         .append("\"status\":\"").append(escapeJson(rs.getString("status"))).append("\",")
                         .append("\"percent\":").append(rs.getInt("percentage_completed")).append(",")
-                        .append("\"startDate\":\"").append(rs.getString("start_date")).append("\",")
-                        .append("\"endDate\":\"").append(rs.getString("end_date")).append("\",")
+                        .append("\"startDate\":\"").append(rs.getString("start_date") != null ? rs.getString("start_date") : "").append("\",")
+                        .append("\"endDate\":\"").append(rs.getString("end_date") != null ? rs.getString("end_date") : "").append("\",")
                         .append("\"comments\":\"").append(escapeJson(rs.getString("comments"))).append("\"")
                         .append("}");
 
