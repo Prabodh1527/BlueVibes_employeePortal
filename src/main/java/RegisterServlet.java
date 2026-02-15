@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -17,6 +18,11 @@ public class RegisterServlet extends HttpServlet {
         if (action == null) action = "add";
 
         try (Connection con = DBConnection.getConnection()) {
+            if (con == null) {
+                response.setStatus(500);
+                response.getWriter().println("Database Connection Failed");
+                return;
+            }
 
             if ("add".equals(action)) {
                 String empid = request.getParameter("empid");
@@ -35,18 +41,29 @@ public class RegisterServlet extends HttpServlet {
                     calculatedLeaves = 10;
                 }
 
-                String sql = "INSERT INTO users (employee_id, fullname, email, password, role, gender, designation, date_of_joining, leave_balance) VALUES (?, ?, ?, ?, 'User', ?, ?, ?, ?)";
-                PreparedStatement ps = con.prepareStatement(sql);
-                ps.setString(1, empid);
-                ps.setString(2, fullname);
-                ps.setString(3, email);
-                ps.setString(4, "dummypassword");
-                ps.setString(5, gender);
-                ps.setString(6, designation);
-                ps.setString(7, doj);
-                ps.setInt(8, calculatedLeaves);
-                ps.executeUpdate();
-                response.sendRedirect("usermanagement.html?status=registered");
+                // PostgreSQL Fix: We must cast the date string explicitly
+                String sql = "INSERT INTO users (employee_id, fullname, email, password, role, gender, designation, date_of_joining, leave_balance) " +
+                             "VALUES (?, ?, ?, ?, 'User', ?, ?, CAST(? AS DATE), ?)";
+                
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    ps.setString(1, empid);
+                    ps.setString(2, fullname);
+                    ps.setString(3, email);
+                    ps.setString(4, "dummypassword");
+                    ps.setString(5, gender);
+                    ps.setString(6, designation);
+                    ps.setString(7, doj);
+                    ps.setInt(8, calculatedLeaves);
+                    ps.executeUpdate();
+                    response.sendRedirect("usermanagement.html?status=registered");
+                } catch (SQLException e) {
+                    // Postgres error code 23505 = Unique Violation (email already exists)
+                    if (e.getSQLState().equals("23505")) {
+                        response.sendRedirect("usermanagement.html?status=exists");
+                    } else {
+                        throw e;
+                    }
+                }
 
             } else if ("update_basic".equals(action)) {
                 String originalEmail = request.getParameter("originalEmail");
@@ -90,19 +107,10 @@ public class RegisterServlet extends HttpServlet {
                 }
 
             } else if ("reset_all".equals(action)) {
-                // --- THE COMPLETE SYSTEM WIPE ---
-                // Tables to be cleared (User data only)
                 String[] userRelatedTables = {
-                        "attendance",
-                        "leaves",
-                        "user_weekly_reports",
-                        "user_certifications",
-                        "user_experience",
-                        "user_qualifications",
-                        "user_payslips",
-                        "notifications",
-                        "broadcasts",
-                        "announcements"
+                        "attendance", "leaves", "user_weekly_reports", "user_certifications", 
+                        "user_experience", "user_qualifications", "user_payslips", 
+                        "notifications", "broadcasts", "announcements"
                 };
 
                 for (String table : userRelatedTables) {
@@ -111,10 +119,7 @@ public class RegisterServlet extends HttpServlet {
                     } catch (Exception e) {}
                 }
 
-                // Delete all users except for the Admin account
                 con.prepareStatement("DELETE FROM users WHERE role != 'Admin'").executeUpdate();
-
-                // Note: Policies and Master tables are NOT in the list above, so they stay!
                 response.getWriter().write("reset_success");
 
             } else if ("toggle_wfh".equals(action)) {
