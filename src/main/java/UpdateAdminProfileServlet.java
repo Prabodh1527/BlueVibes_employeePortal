@@ -12,13 +12,27 @@ public class UpdateAdminProfileServlet extends HttpServlet {
         String phone = request.getParameter("phone");
 
         try (Connection con = DBConnection.getConnection()) {
-            PreparedStatement ps = con.prepareStatement("UPDATE users SET fullname = ?, phone = ? WHERE email = ?");
-            ps.setString(1, name);
-            ps.setString(2, phone);
-            ps.setString(3, email);
-            ps.executeUpdate();
+            if (con == null) {
+                response.sendRedirect("adminprofile.html?status=error");
+                return;
+            }
 
-            response.sendRedirect("adminprofile.html?status=success");
-        } catch (Exception e) { e.printStackTrace(); }
+            String sql = "UPDATE users SET fullname = ?, phone = ? WHERE email = ?";
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setString(1, name);
+                ps.setString(2, phone);
+                ps.setString(3, email);
+                
+                int rowsUpdated = ps.executeUpdate();
+                if (rowsUpdated > 0) {
+                    response.sendRedirect("adminprofile.html?status=success");
+                } else {
+                    response.sendRedirect("adminprofile.html?status=notfound");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect("adminprofile.html?status=error");
+        }
     }
 }
