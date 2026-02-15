@@ -60,7 +60,7 @@
         .legend-item { display: flex; align-items: center; gap: 6px; }
         .dot { width: 12px; height: 12px; border-radius: 3px; }
 
-        .network-master {position: absolute; top: 30px; right: 30px; width: 320px; background: var(--white); border-radius: 12px; padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid var(--border); z-index: 100;}
+        .network-master {position: fixed; top: 120px; right: 40px; width: 320px; background: var(--white); border-radius: 12px; padding: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid var(--border); z-index: 100; cursor: move;}
         .network-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; color: var(--primary); border-bottom: 1px solid var(--bg); padding-bottom: 8px; }
         .ip-display { background: var(--bg); padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; color: var(--accent); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
         .btn-update-ip { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; width: 100%; transition: 0.2s; font-weight: 600; }
@@ -253,5 +253,6 @@
 </script>
 </body>
 </html>
+
 
 
