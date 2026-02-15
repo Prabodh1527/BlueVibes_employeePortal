@@ -17,6 +17,7 @@ public class PolicyServlet extends HttpServlet {
 
     @Override
     public void init() {
+        // Initialize Cloudinary with Environment Variables
         cloudinary = new Cloudinary(ObjectUtils.asMap(
                 "cloud_name", System.getenv("CLOUDINARY_CLOUD_NAME"),
                 "api_key", System.getenv("CLOUDINARY_API_KEY"),
@@ -32,17 +33,17 @@ public class PolicyServlet extends HttpServlet {
         File tempFile = null;
 
         try (Connection con = DBConnection.getConnection()) {
+            if (con == null) throw new SQLException("DB Connection Failed");
 
             if ("delete".equals(action)) {
                 String idStr = request.getParameter("id");
-                if (idStr != null) {
-                    PreparedStatement ps = con.prepareStatement(
-                            "DELETE FROM company_policies WHERE id=?");
-                    ps.setInt(1, Integer.parseInt(idStr));
-                    ps.executeUpdate();
+                if (idStr != null && !idStr.isEmpty()) {
+                    try (PreparedStatement ps = con.prepareStatement("DELETE FROM company_policies WHERE id=?")) {
+                        ps.setInt(1, Integer.parseInt(idStr));
+                        ps.executeUpdate();
+                    }
                 }
             } else {
-
                 Part filePart = request.getPart("policyFile");
                 if (filePart == null || filePart.getSize() == 0) {
                     response.sendRedirect("policy.html");
@@ -50,14 +51,10 @@ public class PolicyServlet extends HttpServlet {
                 }
 
                 String originalName = filePart.getSubmittedFileName();
-
-                // 1️⃣ create temp file
                 tempFile = File.createTempFile("policy_", ".pdf");
 
-                // 2️⃣ write upload to temp
                 try (InputStream is = filePart.getInputStream();
                      FileOutputStream fos = new FileOutputStream(tempFile)) {
-
                     byte[] buffer = new byte[1024];
                     int read;
                     while ((read = is.read(buffer)) != -1) {
@@ -65,7 +62,7 @@ public class PolicyServlet extends HttpServlet {
                     }
                 }
 
-                // 3️⃣ upload temp file to cloudinary (RAW)
+                // Upload to Cloudinary (RAW resource type for PDFs/Docs)
                 Map uploadResult = cloudinary.uploader().upload(
                         tempFile,
                         ObjectUtils.asMap(
@@ -77,12 +74,12 @@ public class PolicyServlet extends HttpServlet {
 
                 String fileUrl = uploadResult.get("secure_url").toString();
 
-                // 4️⃣ insert db record
-                PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO company_policies (policy_name, file_path) VALUES (?, ?)");
-                ps.setString(1, originalName);
-                ps.setString(2, fileUrl);
-                ps.executeUpdate();
+                try (PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO company_policies (policy_name, file_path) VALUES (?, ?)")) {
+                    ps.setString(1, originalName);
+                    ps.setString(2, fileUrl);
+                    ps.executeUpdate();
+                }
             }
 
         } catch (Exception e) {
@@ -97,45 +94,56 @@ public class PolicyServlet extends HttpServlet {
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-
         String action = request.getParameter("action");
 
         try (Connection con = DBConnection.getConnection()) {
+            if (con == null) return;
 
             if ("view".equals(action)) {
                 String id = request.getParameter("id");
-                PreparedStatement ps = con.prepareStatement(
-                        "SELECT file_path FROM company_policies WHERE id=?");
-                ps.setInt(1, Integer.parseInt(id));
-                ResultSet rs = ps.executeQuery();
-
-                if (rs.next()) {
-                    response.sendRedirect(rs.getString("file_path"));
+                if (id != null && !id.isEmpty()) {
+                    try (PreparedStatement ps = con.prepareStatement("SELECT file_path FROM company_policies WHERE id=?")) {
+                        ps.setInt(1, Integer.parseInt(id));
+                        try (ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) {
+                                response.sendRedirect(rs.getString("file_path"));
+                                return;
+                            }
+                        }
+                    }
                 }
-                return;
             }
 
+            // Fetch list of policies
             response.setContentType("application/json");
-            ResultSet rs = con.createStatement().executeQuery(
-                    "SELECT id, policy_name FROM company_policies ORDER BY id DESC");
+            response.setCharacterEncoding("UTF-8");
+            
+            try (Statement st = con.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT id, policy_name FROM company_policies ORDER BY id DESC")) {
 
-            StringBuilder json = new StringBuilder("[");
-            boolean first = true;
+                StringBuilder json = new StringBuilder("[");
+                boolean first = true;
 
-            while (rs.next()) {
-                if (!first) json.append(",");
-                json.append("{\"id\":")
-                        .append(rs.getInt("id"))
-                        .append(",\"name\":\"")
-                        .append(rs.getString("policy_name"))
-                        .append("\"}");
-                first = false;
+                while (rs.next()) {
+                    if (!first) json.append(",");
+                    json.append("{")
+                        .append("\"id\":").append(rs.getInt("id"))
+                        .append(",\"name\":\"").append(cleanJson(rs.getString("policy_name"))).append("\"")
+                        .append("}");
+                    first = false;
+                }
+                json.append("]");
+                response.getWriter().print(json.toString());
             }
-            json.append("]");
-            response.getWriter().print(json.toString());
 
         } catch (Exception e) {
             e.printStackTrace();
+            response.getWriter().print("[]");
         }
+    }
+
+    private String cleanJson(String input) {
+        if (input == null) return "";
+        return input.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
