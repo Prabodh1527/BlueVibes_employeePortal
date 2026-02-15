@@ -154,8 +154,15 @@
             masterData.customers = results[1];
 
             fetch('WeeklyReportServlet?action=fetchMyReports')
-                .then(res => res.json())
+                .then(res => {
+                    if (res.status === 401) {
+                        window.location.href = "index.html";
+                        return;
+                    }
+                    return res.json();
+                })
                 .then(reports => {
+                    if (!reports) return;
                     const tbody = document.getElementById('reportTbody');
                     tbody.innerHTML = "";
                     if (reports.length > 0) {
