@@ -19,7 +19,7 @@
         .sidebar-logo { width: 80px; height: 80px; object-fit: contain; }
 
         .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; overflow-y: auto; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1.2rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.85rem; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1.2rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.85rem; border:none; background:transparent; width:100%; text-align:left; cursor:pointer; }
         .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
 
         .submenu { display: none; list-style: none; padding-left: 2.5rem; margin-bottom: 0.5rem; }
@@ -37,13 +37,22 @@
         .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid var(--bg); padding-bottom: 1rem; }
 
+        .filter-row { display:flex; gap:20px; flex-wrap:wrap; margin-bottom:20px; align-items:flex-end; }
+        .filter-group { display:flex; flex-direction:column; font-size:0.8rem; }
+        .filter-group input { padding:6px; border:1px solid var(--border); border-radius:6px; }
+
+        .user-dropdown { position:relative; }
+        .user-dropdown-btn { padding:6px 10px; border:1px solid var(--border); border-radius:6px; cursor:pointer; background:white; font-size:0.8rem; }
+        .user-dropdown-content { position:absolute; top:100%; left:0; background:white; border:1px solid var(--border); border-radius:8px; max-height:200px; overflow-y:auto; display:none; padding:10px; z-index:100; }
+        .user-dropdown-content label { display:block; font-size:0.8rem; margin-bottom:5px; }
+
         .table-container { overflow-x: auto; }
         .report-table { width: 100%; border-collapse: collapse; }
         .report-table th { background: var(--primary); color: white; padding: 12px; font-size: 0.8rem; }
         .report-table td { padding: 8px; border: 1px solid var(--border); font-size: 0.85rem; }
 
         .btn-excel { background: #16a34a; color: white; padding: 8px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
-        .btn-excel:hover { opacity: 0.9; }
+        .btn-filter { background: var(--accent); color:white; padding:6px 14px; border:none; border-radius:6px; cursor:pointer; font-size:0.8rem; }
     </style>
 </head>
 
@@ -97,11 +106,26 @@
 
     <div class="content-area">
         <div class="card">
-            <div class="card-header">
-                <h3><i class="ph ph-list-bullets"></i> All Employees Weekly Reports</h3>
-                <button class="btn-excel" onclick="exportToExcel()">
-                    <i class="ph ph-file-xls"></i> Export to Excel
-                </button>
+
+            <div class="filter-row">
+                <div class="filter-group user-dropdown">
+                    <label>Select Users</label>
+                    <div class="user-dropdown-btn" onclick="toggleUserDropdown()">Select Users</div>
+                    <div class="user-dropdown-content" id="userDropdown"></div>
+                </div>
+
+                <div class="filter-group">
+                    <label>From Date</label>
+                    <input type="date" id="fromDate">
+                </div>
+
+                <div class="filter-group">
+                    <label>To Date</label>
+                    <input type="date" id="toDate">
+                </div>
+
+                <button class="btn-filter" onclick="applyFilters()">Apply Filter</button>
+                <button class="btn-excel" onclick="exportToExcel()">Export to Excel</button>
             </div>
 
             <div class="table-container">
@@ -127,56 +151,100 @@
 </main>
 
 <script>
+
+let filteredData = [];
+
 function toggleMasters() {
     document.getElementById("mastersSubmenu").classList.toggle("show");
 }
 
-function loadReports() {
-    fetch("AdminReportServlet")
-        .then(res => {
-            if (res.status === 401) {
-                window.location.href = "index.html";
-                return;
-            }
-            return res.json();
-        })
-        .then(data => {
-            if (!data) return;
-            const tbody = document.getElementById("adminReportBody");
-            tbody.innerHTML = "";
-            data.forEach(r => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${r.userName}</td>
-                        <td>${r.taskId}</td>
-                        <td>${r.taskDesc}</td>
-                        <td>${r.customer}</td>
-                        <td>${r.status}</td>
-                        <td>${r.percent}</td>
-                        <td>${r.startDate}</td>
-                        <td>${r.endDate}</td>
-                        <td>${r.comments}</td>
-                    </tr>`;
-            });
-        });
+function toggleUserDropdown(){
+    const dd = document.getElementById("userDropdown");
+    dd.style.display = dd.style.display === "block" ? "none" : "block";
 }
 
-function exportToExcel() {
-    fetch("AdminReportServlet")
-        .then(res => res.json())
-        .then(data => {
-            const rows = [["User","Task ID","Description","Customer","Status","%","Start","End","Comments"]];
-            data.forEach(r => {
-                rows.push([r.userName,r.taskId,r.taskDesc,r.customer,r.status,r.percent,r.startDate,r.endDate,r.comments]);
-            });
-            const ws = XLSX.utils.aoa_to_sheet(rows);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Admin Weekly Reports");
-            XLSX.writeFile(wb, "All_Employee_Weekly_Reports.xlsx");
+function loadUsers(){
+    fetch("FetchAllEmployeesServlet")
+    .then(res=>res.json())
+    .then(data=>{
+        const dd = document.getElementById("userDropdown");
+        dd.innerHTML="";
+        dd.innerHTML += `<label><input type="checkbox" value="ALL" onchange="selectAllUsers(this)"> Select All</label>`;
+        data.forEach(u=>{
+            dd.innerHTML += `<label><input type="checkbox" value="${u.email}"> ${u.fullName}</label>`;
         });
+    });
 }
 
-window.onload = loadReports;
+function selectAllUsers(cb){
+    const boxes = document.querySelectorAll("#userDropdown input[type=checkbox]");
+    boxes.forEach(b=>{
+        if(b.value!=="ALL") b.checked = cb.checked;
+    });
+}
+
+function applyFilters(){
+    const from = document.getElementById("fromDate").value;
+    const to = document.getElementById("toDate").value;
+
+    const selectedEmails = [];
+    document.querySelectorAll("#userDropdown input[type=checkbox]:checked").forEach(cb=>{
+        if(cb.value!=="ALL") selectedEmails.push(cb.value);
+    });
+
+    let url = "AdminReportServlet?";
+    if(selectedEmails.length>0) url += "emails="+selectedEmails.join(",")+"&";
+    if(from) url += "from="+from+"&";
+    if(to) url += "to="+to;
+
+    fetch(url)
+    .then(res=>{
+        if(res.status===401){ window.location.href="index.html"; return; }
+        return res.json();
+    })
+    .then(data=>{
+        if(!data) return;
+        filteredData = data;
+        renderTable(data);
+    });
+}
+
+function renderTable(data){
+    const tbody = document.getElementById("adminReportBody");
+    tbody.innerHTML="";
+    data.forEach(r=>{
+        tbody.innerHTML += `
+            <tr>
+                <td>${r.userName}</td>
+                <td>${r.taskId}</td>
+                <td>${r.taskDesc}</td>
+                <td>${r.customer}</td>
+                <td>${r.status}</td>
+                <td>${r.percent}</td>
+                <td>${r.startDate}</td>
+                <td>${r.endDate}</td>
+                <td>${r.comments}</td>
+            </tr>`;
+    });
+}
+
+function exportToExcel(){
+    if(filteredData.length===0){ alert("No data to export"); return; }
+    const rows=[["User","Task ID","Description","Customer","Status","%","Start","End","Comments"]];
+    filteredData.forEach(r=>{
+        rows.push([r.userName,r.taskId,r.taskDesc,r.customer,r.status,r.percent,r.startDate,r.endDate,r.comments]);
+    });
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Admin Weekly Reports");
+    XLSX.writeFile(wb,"Filtered_Weekly_Reports.xlsx");
+}
+
+window.onload = function(){
+    loadUsers();
+    applyFilters();
+};
+
 </script>
 
 </body>
