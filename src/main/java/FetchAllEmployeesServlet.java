@@ -18,6 +18,11 @@ public class FetchAllEmployeesServlet extends HttpServlet {
         LocalDate today = LocalDate.now();
 
         try (Connection con = DBConnection.getConnection()) {
+            if (con == null) {
+                out.print("{\"error\": \"Database Connection Failed\"}");
+                return;
+            }
+
             if ("counts".equals(action)) {
                 PreparedStatement psTotal = con.prepareStatement("SELECT COUNT(*) FROM users WHERE role='User'");
                 ResultSet rsTotal = psTotal.executeQuery();
@@ -33,25 +38,28 @@ public class FetchAllEmployeesServlet extends HttpServlet {
                 Set<LocalDate> holidayDates = new HashSet<>();
                 PreparedStatement hps = con.prepareStatement("SELECT holiday_date FROM holidays");
                 ResultSet hrs = hps.executeQuery();
-                while(hrs.next()) holidayDates.add(hrs.getDate("holiday_date").toLocalDate());
+                while(hrs.next()) {
+                    Date hDate = hrs.getDate("holiday_date");
+                    if (hDate != null) holidayDates.add(hDate.toLocalDate());
+                }
 
-                // UPDATED SQL: Added date_of_joining so we can calculate leaves correctly for each person
+                // Query optimized for PostgreSQL
                 String sql = "SELECT employee_id, fullname, email, designation, wfh_allowed, date_of_joining, " +
-                        "(SELECT COUNT(*) FROM attendance WHERE user_email = users.email) as present_count " +
-                        "FROM users WHERE role='User'";
+                             "(SELECT COUNT(*) FROM attendance WHERE user_email = users.email) as present_count " +
+                             "FROM users WHERE role='User'";
+                
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery();
 
                 StringBuilder json = new StringBuilder("[");
                 boolean first = true;
+                
                 while (rs.next()) {
                     if (!first) json.append(",");
 
                     // --- INDIVIDUAL WORKING DAYS CALCULATION ---
                     int individualWorkingDays = 0;
                     Date dojSql = rs.getDate("date_of_joining");
-
-                    // Default to today if DOJ is missing to prevent errors
                     LocalDate empJoiningDate = (dojSql != null) ? dojSql.toLocalDate() : today;
 
                     LocalDate tempIter = empJoiningDate;
@@ -63,21 +71,22 @@ public class FetchAllEmployeesServlet extends HttpServlet {
                         }
                         tempIter = tempIter.plusDays(1);
                     }
-                    // --------------------------------------------
 
                     int presentCount = rs.getInt("present_count");
                     int leavesTaken = individualWorkingDays - presentCount;
                     if (leavesTaken < 0) leavesTaken = 0;
 
-                    json.append("{");
-                    json.append("\"empId\":\"").append(rs.getString("employee_id")).append("\",");
-                    json.append("\"fullname\":\"").append(rs.getString("fullname")).append("\",");
-                    json.append("\"email\":\"").append(rs.getString("email")).append("\",");
-                    json.append("\"designation\":\"").append(rs.getString("designation")).append("\",");
-                    json.append("\"doj\":\"").append(rs.getString("date_of_joining")).append("\","); // Added DOJ field
-                    json.append("\"wfhAllowed\":").append(rs.getBoolean("wfh_allowed")).append(",");
-                    json.append("\"leavesTaken\":").append(leavesTaken);
-                    json.append("}");
+                    // Building JSON with escaped values for safety
+                    json.append("{")
+                        .append("\"empId\":\"").append(clean(rs.getString("employee_id"))).append("\",")
+                        .append("\"fullname\":\"").append(clean(rs.getString("fullname"))).append("\",")
+                        .append("\"email\":\"").append(clean(rs.getString("email"))).append("\",")
+                        .append("\"designation\":\"").append(clean(rs.getString("designation"))).append("\",")
+                        .append("\"doj\":\"").append(rs.getString("date_of_joining") == null ? "" : rs.getString("date_of_joining")).append("\",")
+                        .append("\"wfhAllowed\":").append(rs.getBoolean("wfh_allowed")).append(",")
+                        .append("\"leavesTaken\":").append(leavesTaken)
+                        .append("}");
+                    
                     first = false;
                 }
                 json.append("]");
@@ -85,8 +94,14 @@ public class FetchAllEmployeesServlet extends HttpServlet {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            out.print("{\"error\": \"Database Error\"}");
+            out.print("{\"error\": \"Database Error: " + e.getMessage().replace("\"", "'") + "\"}");
         }
         out.flush();
+    }
+
+    // Helper to prevent JSON breaking characters
+    private String clean(String input) {
+        if (input == null) return "";
+        return input.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
