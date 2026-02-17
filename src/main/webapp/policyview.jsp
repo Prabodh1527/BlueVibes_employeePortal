@@ -90,7 +90,8 @@
                 }
 
                 data.forEach(p => {
-                    const name = p.name.toLowerCase();
+                    // FIXED: Using p.policy_name to match your database column
+                    const name = p.policy_name.toLowerCase();
                     let icon = name.endsWith('.pdf') ? "ph-file-pdf" : "ph-file-xls";
                     let color = name.endsWith('.pdf') ? "#ef4444" : "#10b981";
 
@@ -100,7 +101,7 @@
                             <i class="ph ${icon}"></i>
                         </div>
                         <div class="policy-info">
-                            <h3>${p.name}</h3>
+                            <h3>${p.policy_name}</h3>
                             <a href="PolicyServlet?action=view&id=` + p.id + `" class="btn-download">
                                 <i class="ph ph-download-simple"></i> Download BlueVibes Policy
                             </a>
@@ -114,4 +115,3 @@
 </script>
 </body>
 </html>
-
