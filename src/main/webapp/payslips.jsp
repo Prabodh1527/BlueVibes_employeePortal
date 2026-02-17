@@ -125,7 +125,7 @@ window.onload = function () {
                 <div class="ps-row">
                     <div>
                         <span style="font-weight:700;">\${formatMonth(p.month_year)}</span>
-                        <p style="font-size:0.8rem;color:#64748b;">Uploaded on \${p.uploaded_at}</p>
+                        <p style="font-size:0.8rem;color:#64748b;">Uploaded on \${p.uploaded_at || 'N/A'}</p>
                     </div>
                     <a href="PayslipServlet?action=view&id=\${p.id}" target="_blank" class="btn-dl">
                         <i class="ph ph-download-simple"></i> Download PDF
@@ -140,7 +140,7 @@ window.onload = function () {
 };
 
 function formatMonth(val) {
-    if (!val.includes('-')) return val;
+    if (!val || !val.includes('-')) return val;
     const [y, m] = val.split('-');
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     return months[parseInt(m) - 1] + " " + y;
