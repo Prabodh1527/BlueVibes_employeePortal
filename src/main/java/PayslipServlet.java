@@ -31,11 +31,28 @@ public class PayslipServlet extends HttpServlet {
         ));
     }
 
-    // ================= UPLOAD (Admin Side) =================
+    // ================= UPLOAD & DELETE (Admin Side) =================
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         String action = request.getParameter("action");
+        
+        // ADDED DELETE LOGIC
+        if ("delete".equals(action)) {
+            String idStr = request.getParameter("id");
+            if (idStr != null && !idStr.isEmpty()) {
+                try (Connection con = DBConnection.getConnection()) {
+                    try (PreparedStatement ps = con.prepareStatement("DELETE FROM employee_payslips WHERE id=?")) {
+                        ps.setInt(1, Integer.parseInt(idStr));
+                        ps.executeUpdate();
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            return;
+        }
+
         if (!"upload".equals(action)) return;
 
         String userEmail = request.getParameter("userEmail");
