@@ -74,8 +74,8 @@ public class PolicyServlet extends HttpServlet {
 
                 String fileUrl = uploadResult.get("secure_url").toString();
 
-                // FIXED: SQL column names match the table we created in Step 4
-                String sql = "INSERT INTO company_policies (title, file_url) VALUES (?, ?)";
+                // FIXED: SQL column names match your actual database: policy_name and file_path
+                String sql = "INSERT INTO company_policies (policy_name, file_path) VALUES (?, ?)";
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setString(1, originalName);
                     ps.setString(2, fileUrl);
@@ -103,12 +103,12 @@ public class PolicyServlet extends HttpServlet {
             if ("view".equals(action)) {
                 String id = request.getParameter("id");
                 if (id != null && !id.isEmpty()) {
-                    // FIXED: SQL column names match the table
-                    try (PreparedStatement ps = con.prepareStatement("SELECT file_url FROM company_policies WHERE id=?")) {
+                    // FIXED: SQL column names match your database: file_path
+                    try (PreparedStatement ps = con.prepareStatement("SELECT file_path FROM company_policies WHERE id=?")) {
                         ps.setInt(1, Integer.parseInt(id));
                         try (ResultSet rs = ps.executeQuery()) {
                             if (rs.next()) {
-                                String rawUrl = rs.getString("file_url");
+                                String rawUrl = rs.getString("file_path");
                                 // Logic to force a download via Cloudinary transformation
                                 String downloadUrl = rawUrl.replace("/upload/", "/upload/fl_attachment/");
                                 response.sendRedirect(downloadUrl);
@@ -123,18 +123,19 @@ public class PolicyServlet extends HttpServlet {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             
-            // FIXED: SQL column names match the table
+            // FIXED: SQL column names match your database: policy_name
             try (Statement st = con.createStatement();
-                 ResultSet rs = st.executeQuery("SELECT id, title FROM company_policies ORDER BY id DESC")) {
+                 ResultSet rs = st.executeQuery("SELECT id, policy_name FROM company_policies ORDER BY id DESC")) {
 
                 StringBuilder json = new StringBuilder("[");
                 boolean first = true;
 
                 while (rs.next()) {
                     if (!first) json.append(",");
+                    // FIXED: Key is "policy_name" to match what we need in the HTML loop
                     json.append("{")
                         .append("\"id\":").append(rs.getInt("id"))
-                        .append(",\"name\":\"").append(cleanJson(rs.getString("title"))).append("\"")
+                        .append(",\"policy_name\":\"").append(cleanJson(rs.getString("policy_name"))).append("\"")
                         .append("}");
                     first = false;
                 }
