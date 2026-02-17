@@ -1,5 +1,3 @@
-package main.java;
-
 import java.io.*;
 import java.sql.*;
 import java.util.*;
@@ -71,7 +69,7 @@ public class PolicyServlet extends HttpServlet {
 
                 String fileUrl = uploadResult.get("secure_url").toString();
 
-                String sql = "INSERT INTO company_policies (policy_name, file_path) VALUES (?, ?)";
+                String sql = "INSERT INTO company_policies (policy_name, file_path) VALUES (?, ?) ";
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setString(1, originalName);
                     ps.setString(2, fileUrl);
