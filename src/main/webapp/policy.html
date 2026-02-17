@@ -168,7 +168,7 @@
                 }
                 tbody.innerHTML = data.map(p => `
                     <tr>
-                        <td><strong>${p.name}</strong></td>
+                        <td><strong>${p.policy_name}</strong></td>
                         <td>
                             <div class="action-btns">
                                 <a href="PolicyServlet?action=view&id=${p.id}" target="_blank" class="btn-view">
@@ -206,3 +206,4 @@
 </script>
 </body>
 </html>
+
