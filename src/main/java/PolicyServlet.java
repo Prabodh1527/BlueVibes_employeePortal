@@ -62,7 +62,7 @@ public class PolicyServlet extends HttpServlet {
                     }
                 }
 
-                // Upload to Cloudinary (RAW resource type for PDFs/Docs)
+                // Upload to Cloudinary (RAW resource type for PDFs)
                 Map uploadResult = cloudinary.uploader().upload(
                         tempFile,
                         ObjectUtils.asMap(
@@ -74,8 +74,9 @@ public class PolicyServlet extends HttpServlet {
 
                 String fileUrl = uploadResult.get("secure_url").toString();
 
-                try (PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO company_policies (policy_name, file_path) VALUES (?, ?)")) {
+                // FIXED: SQL column names match the table we created in Step 4
+                String sql = "INSERT INTO company_policies (title, file_url) VALUES (?, ?)";
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setString(1, originalName);
                     ps.setString(2, fileUrl);
                     ps.executeUpdate();
@@ -102,11 +103,15 @@ public class PolicyServlet extends HttpServlet {
             if ("view".equals(action)) {
                 String id = request.getParameter("id");
                 if (id != null && !id.isEmpty()) {
-                    try (PreparedStatement ps = con.prepareStatement("SELECT file_path FROM company_policies WHERE id=?")) {
+                    // FIXED: SQL column names match the table
+                    try (PreparedStatement ps = con.prepareStatement("SELECT file_url FROM company_policies WHERE id=?")) {
                         ps.setInt(1, Integer.parseInt(id));
                         try (ResultSet rs = ps.executeQuery()) {
                             if (rs.next()) {
-                                response.sendRedirect(rs.getString("file_path"));
+                                String rawUrl = rs.getString("file_url");
+                                // Logic to force a download via Cloudinary transformation
+                                String downloadUrl = rawUrl.replace("/upload/", "/upload/fl_attachment/");
+                                response.sendRedirect(downloadUrl);
                                 return;
                             }
                         }
@@ -118,8 +123,9 @@ public class PolicyServlet extends HttpServlet {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             
+            // FIXED: SQL column names match the table
             try (Statement st = con.createStatement();
-                 ResultSet rs = st.executeQuery("SELECT id, policy_name FROM company_policies ORDER BY id DESC")) {
+                 ResultSet rs = st.executeQuery("SELECT id, title FROM company_policies ORDER BY id DESC")) {
 
                 StringBuilder json = new StringBuilder("[");
                 boolean first = true;
@@ -128,7 +134,7 @@ public class PolicyServlet extends HttpServlet {
                     if (!first) json.append(",");
                     json.append("{")
                         .append("\"id\":").append(rs.getInt("id"))
-                        .append(",\"name\":\"").append(cleanJson(rs.getString("policy_name"))).append("\"")
+                        .append(",\"name\":\"").append(cleanJson(rs.getString("title"))).append("\"")
                         .append("}");
                     first = false;
                 }
