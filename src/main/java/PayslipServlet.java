@@ -19,7 +19,6 @@ public class PayslipServlet extends HttpServlet {
 
     @Override
     public void init() {
-        // Safe check for environment variables
         String cloudName = System.getenv("CLOUDINARY_CLOUD_NAME");
         String apiKey = System.getenv("CLOUDINARY_API_KEY");
         String apiSecret = System.getenv("CLOUDINARY_API_SECRET");
@@ -27,7 +26,8 @@ public class PayslipServlet extends HttpServlet {
         cloudinary = new Cloudinary(ObjectUtils.asMap(
                 "cloud_name", cloudName,
                 "api_key", apiKey,
-                "api_secret", apiSecret
+                "api_secret", apiSecret,
+                "secure", true
         ));
     }
 
@@ -69,28 +69,25 @@ public class PayslipServlet extends HttpServlet {
                     ObjectUtils.asMap(
                             "resource_type", "raw",
                             "folder", "bluevibes/payslips",
-                            "public_id", (userEmail + "_" + monthYear).replaceAll("[^a-zA-Z0-9_-]", "_"),
                             "overwrite", true
                     )
             );
 
             String fileUrl = uploadResult.get("secure_url").toString();
-            String originalName = filePart.getSubmittedFileName();
 
-            // PostgreSQL Transaction: Delete old entry if exists, then insert new
+            // FIXED: Using table name 'employee_payslips' and columns 'user_email', 'month_year', 'file_url'
             con.setAutoCommit(false);
             try {
-                try (PreparedStatement del = con.prepareStatement("DELETE FROM user_payslips WHERE user_email=? AND month_year=?")) {
+                try (PreparedStatement del = con.prepareStatement("DELETE FROM employee_payslips WHERE user_email=? AND month_year=?")) {
                     del.setString(1, userEmail);
                     del.setString(2, monthYear);
                     del.executeUpdate();
                 }
 
-                try (PreparedStatement ps = con.prepareStatement("INSERT INTO user_payslips (user_email, month_year, file_path, file_name) VALUES (?, ?, ?, ?)")) {
+                try (PreparedStatement ps = con.prepareStatement("INSERT INTO employee_payslips (user_email, month_year, file_url) VALUES (?, ?, ?)")) {
                     ps.setString(1, userEmail);
                     ps.setString(2, monthYear);
                     ps.setString(3, fileUrl);
-                    ps.setString(4, originalName);
                     ps.executeUpdate();
                 }
                 con.commit();
@@ -120,27 +117,16 @@ public class PayslipServlet extends HttpServlet {
                 String id = request.getParameter("id");
                 if (id == null) return;
 
-                try (PreparedStatement ps = con.prepareStatement("SELECT file_path, file_name FROM user_payslips WHERE id=?")) {
+                // FIXED: Table 'employee_payslips', Column 'file_url'
+                try (PreparedStatement ps = con.prepareStatement("SELECT file_url FROM employee_payslips WHERE id=?")) {
                     ps.setInt(1, Integer.parseInt(id));
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
-                            String fileUrl = rs.getString("file_path");
-                            String fileName = rs.getString("file_name");
-
-                            URL url = new URL(fileUrl);
-                            URLConnection conn = url.openConnection();
-
-                            response.setContentType("application/pdf");
-                            response.setHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
-
-                            try (InputStream in = conn.getInputStream();
-                                 OutputStream out = response.getOutputStream()) {
-                                byte[] buffer = new byte[4096];
-                                int len;
-                                while ((len = in.read(buffer)) != -1) {
-                                    out.write(buffer, 0, len);
-                                }
-                            }
+                            String fileUrl = rs.getString("file_url");
+                            // Logic to force a download via Cloudinary transformation
+                            String downloadUrl = fileUrl.replace("/upload/", "/upload/fl_attachment/");
+                            response.sendRedirect(downloadUrl);
+                            return;
                         }
                     }
                 }
@@ -156,7 +142,8 @@ public class PayslipServlet extends HttpServlet {
                     return;
                 }
 
-                String sql = "SELECT id, month_year, file_name, uploaded_at FROM user_payslips WHERE user_email=? ORDER BY uploaded_at DESC";
+                // FIXED: Table 'employee_payslips'
+                String sql = "SELECT id, month_year, uploaded_at FROM employee_payslips WHERE user_email=? ORDER BY uploaded_at DESC";
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setString(1, email);
                     try (ResultSet rs = ps.executeQuery()) {
@@ -171,7 +158,6 @@ public class PayslipServlet extends HttpServlet {
                             json.append("{")
                                     .append("\"id\":").append(rs.getInt("id"))
                                     .append(",\"month_year\":\"").append(clean(rs.getString("month_year")))
-                                    .append("\",\"file_name\":\"").append(clean(rs.getString("file_name")))
                                     .append("\",\"uploaded_at\":\"").append(dateOnly)
                                     .append("\"}");
                             first = false;
