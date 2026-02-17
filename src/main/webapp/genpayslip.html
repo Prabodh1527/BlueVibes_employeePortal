@@ -198,7 +198,6 @@
                             <tr>
                                 <th>Month/Year</th>
                                 <th>Dispatch Date</th>
-                                <th>File Name</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -206,8 +205,7 @@
                             ${data.map(p => `
                                 <tr>
                                     <td><b>${p.month_year}</b></td>
-                                    <td>${p.uploaded_at}</td>
-                                    <td><i class="ph ph-file-pdf" style="color:#ef4444"></i> ${p.file_name}</td>
+                                    <td>${p.uploaded_at || 'N/A'}</td>
                                     <td>
                                         <a href="PayslipServlet?action=view&id=${p.id}" target="_blank" class="view-link">
                                             <i class="ph ph-eye"></i> View PDF
