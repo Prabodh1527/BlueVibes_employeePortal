@@ -31,13 +31,11 @@ public class PayslipServlet extends HttpServlet {
         ));
     }
 
-    // ================= UPLOAD & DELETE (Admin Side) =================
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         String action = request.getParameter("action");
         
-        // ADDED DELETE LOGIC
         if ("delete".equals(action)) {
             String idStr = request.getParameter("id");
             if (idStr != null && !idStr.isEmpty()) {
@@ -80,7 +78,6 @@ public class PayslipServlet extends HttpServlet {
                 }
             }
 
-            // Upload to Cloudinary
             Map uploadResult = cloudinary.uploader().upload(
                     tempFile,
                     ObjectUtils.asMap(
@@ -92,7 +89,6 @@ public class PayslipServlet extends HttpServlet {
 
             String fileUrl = uploadResult.get("secure_url").toString();
 
-            // FIXED: Using table name 'employee_payslips' and columns 'user_email', 'month_year', 'file_url'
             con.setAutoCommit(false);
             try {
                 try (PreparedStatement del = con.prepareStatement("DELETE FROM employee_payslips WHERE user_email=? AND month_year=?")) {
@@ -122,7 +118,6 @@ public class PayslipServlet extends HttpServlet {
         }
     }
 
-    // ================= VIEW / HISTORY (User Side) =================
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         String action = request.getParameter("action");
@@ -134,13 +129,11 @@ public class PayslipServlet extends HttpServlet {
                 String id = request.getParameter("id");
                 if (id == null) return;
 
-                // FIXED: Table 'employee_payslips', Column 'file_url'
                 try (PreparedStatement ps = con.prepareStatement("SELECT file_url FROM employee_payslips WHERE id=?")) {
                     ps.setInt(1, Integer.parseInt(id));
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
                             String fileUrl = rs.getString("file_url");
-                            // Logic to force a download via Cloudinary transformation
                             String downloadUrl = fileUrl.replace("/upload/", "/upload/fl_attachment/");
                             response.sendRedirect(downloadUrl);
                             return;
@@ -159,7 +152,6 @@ public class PayslipServlet extends HttpServlet {
                     return;
                 }
 
-                // FIXED: Table 'employee_payslips'
                 String sql = "SELECT id, month_year, uploaded_at FROM employee_payslips WHERE user_email=? ORDER BY uploaded_at DESC";
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setString(1, email);
@@ -196,4 +188,3 @@ public class PayslipServlet extends HttpServlet {
         return input.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
-
