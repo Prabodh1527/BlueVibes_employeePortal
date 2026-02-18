@@ -42,7 +42,6 @@ public class AttendanceServlet extends HttpServlet {
             Map<Integer, String> holidayDetails = new HashMap<>();
             Set<Integer> holidayDaysList = new HashSet<>();
 
-            // PostgreSQL uses EXTRACT
             String holidayQuery = "SELECT EXTRACT(DAY FROM holiday_date)::int, reason FROM holidays " +
                                  "WHERE EXTRACT(MONTH FROM holiday_date)=? AND EXTRACT(YEAR FROM holiday_date)=?";
             
