@@ -183,16 +183,20 @@
             fetch(`AttendanceServlet?action=update_office_ip&new_ip=${newIP}`)
                 .then(res => res.json())
                 .then(data => {
-                    if(data.success) {
+                    // Logic to update UI and refresh
+                    if(data.success || data.status === "success") {
                         document.getElementById('currentConfiguredIP').innerText = newIP;
                         alert("Office IP successfully updated to: " + newIP);
+                        location.reload(); // Force refresh to sync everything
+                    } else {
+                        alert("Failed to update IP on server.");
                     }
-                });
+                })
+                .catch(err => alert("Error connecting to server."));
         } else if (newIP) {
             alert("Invalid IP format. Please use xxx.xxx.xxx.xxx");
         }
     }
-
     function renderDays(year, month, holidayMap) {
         const grid = document.getElementById('adminHolidayGrid');
         const labels = grid.querySelectorAll('.day-label');
@@ -286,6 +290,7 @@
 </script>
 </body>
 </html>
+
 
 
 
