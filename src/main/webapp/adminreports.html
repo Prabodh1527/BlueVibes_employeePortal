@@ -278,15 +278,44 @@ tbody.innerHTML+=`
 }
 
 function exportToExcel(){
-if(filteredData.length===0){alert("No data");return;}
-const rows=[["User","Task ID","Description","Customer","Status","%","Start","End","Comments"]];
-filteredData.forEach(r=>{
-rows.push([r.userName,r.taskId,r.taskDesc,r.customer,r.status,r.percent,r.startDate,r.endDate,r.comments]);
-});
-const ws=XLSX.utils.aoa_to_sheet(rows);
-const wb=XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb,ws,"Reports");
-XLSX.writeFile(wb,"Filtered_Weekly_Reports.xlsx");
+    if(filteredData.length===0){
+        alert("No data");
+        return;
+    }
+
+    // ✅ Excel (same as before)
+    const rows=[["User","Task ID","Description","Customer","Status","%","Start","End","Comments"]];
+    filteredData.forEach(r=>{
+        rows.push([r.userName,r.taskId,r.taskDesc,r.customer,r.status,r.percent,r.startDate,r.endDate,r.comments]);
+    });
+
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Reports");
+    XLSX.writeFile(wb,"Filtered_Weekly_Reports.xlsx");
+
+
+    // ✅ NEW: trigger email
+    const from=document.getElementById("fromDate").value;
+    const to=document.getElementById("toDate").value;
+
+    const selected=[];
+    document.querySelectorAll("#userList input[type=checkbox]:checked").forEach(cb=>{
+        if(cb.value!=="ALL") selected.push(cb.value);
+    });
+
+    let url="AdminReportServlet?action=mail&";
+    if(selected.length>0) url+="emails="+selected.join(",")+"&";
+    if(from) url+="from="+from+"&";
+    if(to) url+="to="+to;
+
+    fetch(url)
+    .then(() => {
+      console.log("Mail triggered");
+    })
+    .catch(err => {
+      console.error("Mail failed", err);
+    });
 }
 
 window.onload=function(){
