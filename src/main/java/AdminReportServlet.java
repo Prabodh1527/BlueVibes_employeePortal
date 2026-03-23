@@ -112,8 +112,8 @@ public class AdminReportServlet extends HttpServlet {
     // ✅ ONLY ADDITION (email method)
     private void sendEmail(String content) {
 
-        final String from = "your_email@gmail.com";
-        final String password = "your_app_password";
+        final String from = "gprabodhchandra@gmail.com";
+        final String password = "votvwrdaqdabjwul";
         final String to = "prasanthrambharadwaj@gmail.com";
 
         Properties props = new Properties();
