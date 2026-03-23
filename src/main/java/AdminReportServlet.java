@@ -1,5 +1,9 @@
 import java.io.*;
 import java.sql.*;
+import java.util.Properties;
+
+import javax.mail.*;
+import javax.mail.internet.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
@@ -14,7 +18,6 @@ public class AdminReportServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
 
-        // 1. Check Session - MATCHED TO LOGIN SERVLET (userRole)
         HttpSession session = request.getSession(false);
         String sessionRole = (session != null) ? (String) session.getAttribute("userRole") : null;
 
@@ -28,7 +31,6 @@ public class AdminReportServlet extends HttpServlet {
         String fromDate = request.getParameter("from");
         String toDate = request.getParameter("to");
 
-        // 2. PostgreSQL compatible JOIN
         StringBuilder sql = new StringBuilder(
                 "SELECT wr.*, u.fullname FROM user_weekly_reports wr " +
                 "JOIN users u ON wr.user_email = u.email WHERE 1=1 "
@@ -38,7 +40,6 @@ public class AdminReportServlet extends HttpServlet {
             sql.append(" AND wr.user_email IN (").append(formatEmailList(emailsParam)).append(")");
         }
 
-        // 3. PostgreSQL Date Casting with NULL safety
         if (fromDate != null && !fromDate.isEmpty()) {
             sql.append(" AND (wr.end_date IS NULL OR wr.end_date >= CAST(? AS DATE))");
         }
@@ -78,6 +79,13 @@ public class AdminReportServlet extends HttpServlet {
             }
 
             json.append("]");
+
+            // ✅ ONLY ADDITION (trigger mail)
+            String action = request.getParameter("action");
+            if ("mail".equals(action)) {
+                sendEmail(json.toString());
+            }
+
             out.print(json.toString());
 
         } catch (Exception e) {
@@ -99,5 +107,41 @@ public class AdminReportServlet extends HttpServlet {
     private String escapeJson(String input) {
         if (input == null) return "";
         return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", " ");
+    }
+
+    // ✅ ONLY ADDITION (email method)
+    private void sendEmail(String content) {
+
+        final String from = "your_email@gmail.com";
+        final String password = "your_app_password";
+        final String to = "prasanthrambharadwaj@gmail.com";
+
+        Properties props = new Properties();
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+
+        Session session = Session.getInstance(props,
+                new javax.mail.Authenticator() {
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication(from, password);
+                    }
+                });
+
+        try {
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(from));
+            message.setRecipients(Message.RecipientType.TO,
+                    InternetAddress.parse(to));
+            message.setSubject("Weekly Report Export");
+
+            message.setText(content);
+
+            Transport.send(message);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
