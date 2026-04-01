@@ -310,14 +310,33 @@ function exportToExcel(){
         userMap[r.userName].push(r.percent);
     });
 
-    new Chart(document.getElementById("userChart"),{
+    const ctx = document.getElementById("userChart").getContext("2d");
+
+    const gradient = ctx.createLinearGradient(0,0,600,0);
+    gradient.addColorStop(0,"#0284c7");
+    gradient.addColorStop(1,"#38bdf8");
+
+    new Chart(ctx,{
         type:'bar',
         data:{
             labels:Object.keys(userMap),
             datasets:[{
                 label:'Avg Completion %',
-                data:Object.values(userMap).map(a=>a.reduce((x,y)=>x+y,0)/a.length)
+                data:Object.values(userMap).map(a=>a.reduce((x,y)=>x+y,0)/a.length),
+                backgroundColor:gradient,
+                borderRadius:12,
+                barThickness:25
             }]
+        },
+        options:{
+            indexAxis:'y',
+            plugins:{
+                legend:{display:false}
+            },
+            scales:{
+                x:{beginAtZero:true},
+                y:{grid:{display:false}}
+            }
         }
     });
 
