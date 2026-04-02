@@ -19,9 +19,9 @@ public class TravelServlet extends HttpServlet {
             Class.forName("org.postgresql.Driver");
 
             Connection con = DriverManager.getConnection(
-                "YOUR_DB_URL",
-                "YOUR_DB_USER",
-                "YOUR_DB_PASSWORD"
+                "postgresql://bluevibes_user:dHyhOQGsAdkp2bwdifqdewiz6l0YxwAp@dpg-d68bcgn5r7bs73eo41k0-a/bluevibes",
+                "bluevibes_db_new_user",
+                "jc0bxNz8YFBiM7BZoa80yWd8T30jB9MD"
             );
 
             String query = "INSERT INTO travel_request (email, from_date, to_date, purpose, transfer_type, advance_amount, status) VALUES (?, ?, ?, ?, ?, ?, 'Pending')";
