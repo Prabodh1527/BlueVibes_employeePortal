@@ -31,27 +31,24 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; }
 .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; padding: 0 2.5rem; }
-.content-area { padding: 2.5rem; }
+.content-area { padding: 2.5rem; overflow-y:auto; }
 
-.card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 2rem; max-width: 600px; }
+.card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 2rem; }
 
-.form-group { margin-bottom: 15px; }
-.form-group label { font-size: 0.85rem; font-weight: 600; }
-.form-group input, .form-group select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-}
+table { width:100%; border-collapse: collapse; }
+th { background:#0f172a; color:white; padding:10px; font-size:0.8rem; }
+td { padding:8px; border:1px solid var(--border); }
+input, select { width:100%; padding:6px; border:1px solid var(--border); border-radius:6px; }
 
 .btn-submit {
     background: var(--accent);
     color: white;
-    padding: 10px 20px;
+    padding: 10px 18px;
     border: none;
     border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
+    margin-right:10px;
 }
 </style>
 </head>
@@ -89,58 +86,89 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 </aside>
 
 <main class="main-wrapper">
-<header class="top-header"><h2 style="font-weight:700;">Travel Request</h2></header>
+<header class="top-header"><h2 style="font-weight:700;">Tour Advance / Reimbursement</h2></header>
 
 <div class="content-area">
 <div class="card">
 
-<form action="TravelServlet" method="post">
+<table id="travelTable">
+<tr>
+<th>Type</th>
+<th>From</th>
+<th>To</th>
+<th>From Date</th>
+<th>To Date</th>
+<th>Purpose</th>
+<th>Amount</th>
+<th>Remarks</th>
+</tr>
 
-<div class="form-group">
-<label>Email</label>
-<input type="text" name="email" required>
-</div>
-
-<div class="form-group">
-<label>From Date</label>
-<input type="date" name="from_date" required>
-</div>
-
-<div class="form-group">
-<label>To Date</label>
-<input type="date" name="to_date" required>
-</div>
-
-<div class="form-group">
-<label>Purpose</label>
-<input type="text" name="purpose" required>
-</div>
-
-<div class="form-group">
-<label>Location</label>
-<input type="text" name="location" required>
-</div>
-
-<div class="form-group">
-<label>Transfer Type</label>
-<select name="transfer_type">
-<option value="Advance">Advance</option>
-<option value="Reimbursement">Reimbursement</option>
+<tr>
+<td>
+<select>
+<option>Travel</option>
+<option>Accommodation</option>
 </select>
-</div>
+</td>
+<td><input type="text"></td>
+<td><input type="text"></td>
+<td><input type="date"></td>
+<td><input type="date"></td>
+<td><input type="text"></td>
+<td><input type="number" class="amt" oninput="calcTotal()"></td>
+<td><input type="text"></td>
+</tr>
 
-<div class="form-group">
-<label>Advance Amount</label>
-<input type="number" name="advance_amount" required>
-</div>
+<tr>
+<td colspan="6" style="text-align:right;font-weight:bold;">Total</td>
+<td><input type="number" id="totalAmount" readonly></td>
+<td></td>
+</tr>
+</table>
 
-<button class="btn-submit">Submit Request</button>
+<br>
 
-</form>
+<button class="btn-submit" onclick="addRow()">+ Add Row</button>
+<button class="btn-submit" onclick="submitData()">Save</button>
 
 </div>
 </div>
 </main>
+
+<script>
+function addRow(){
+    let table=document.getElementById("travelTable");
+    let row=table.insertRow(table.rows.length-1);
+
+    row.innerHTML=`
+    <td>
+    <select>
+    <option>Travel</option>
+    <option>Accommodation</option>
+    </select>
+    </td>
+    <td><input type="text"></td>
+    <td><input type="text"></td>
+    <td><input type="date"></td>
+    <td><input type="date"></td>
+    <td><input type="text"></td>
+    <td><input type="number" class="amt" oninput="calcTotal()"></td>
+    <td><input type="text"></td>
+    `;
+}
+
+function calcTotal(){
+    let total=0;
+    document.querySelectorAll(".amt").forEach(a=>{
+        total+=Number(a.value)||0;
+    });
+    document.getElementById("totalAmount").value=total;
+}
+
+function submitData(){
+    alert("Next step: backend integration");
+}
+</script>
 
 </body>
 </html>
