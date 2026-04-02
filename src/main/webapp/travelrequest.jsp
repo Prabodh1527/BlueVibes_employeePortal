@@ -74,7 +74,6 @@ input, select { width:100%; padding:6px; border:1px solid var(--border); border-
 <a href="appraisals.html" class="nav-item"><i class="ph ph-chart-line-up"></i> KRA Appraisals</a>
 <a href="policyview.jsp" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
 
-<!-- ✅ ADDED -->
 <a href="travelrequest.jsp" class="nav-item active"><i class="ph ph-airplane"></i> Travel Request</a>
 
 <a href="leavereq.html" class="nav-item"><i class="ph ph-calendar-x"></i> Leave Request</a>
@@ -166,7 +165,27 @@ function calcTotal(){
 }
 
 function submitData(){
-    alert("Next step: backend integration");
+    let row = document.querySelectorAll("#travelTable tr")[1];
+    let cols = row.querySelectorAll("input, select");
+
+    let formData = new URLSearchParams();
+
+    formData.append("type", cols[0].value);
+    formData.append("from", cols[1].value);
+    formData.append("to", cols[2].value);
+    formData.append("from_date", cols[3].value);
+    formData.append("to_date", cols[4].value);
+    formData.append("purpose", cols[5].value);
+    formData.append("amount", cols[6].value);
+    formData.append("remarks", cols[7].value);
+
+    fetch("TravelServlet", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.text())
+    .then(msg => alert(msg))
+    .catch(() => alert("Error"));
 }
 </script>
 
