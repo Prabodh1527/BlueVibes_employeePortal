@@ -1,14 +1,15 @@
 import java.io.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
+import javax.servlet.annotation.WebServlet;
 import java.sql.*;
 
+@WebServlet("/TravelServlet")   // ✅ THIS LINE FIXES YOUR ERROR
 public class TravelServlet extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // 🔹 get data from frontend
         String type = request.getParameter("type");
         String fromLoc = request.getParameter("from");
         String toLoc = request.getParameter("to");
