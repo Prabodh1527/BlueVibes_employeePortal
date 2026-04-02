@@ -57,6 +57,7 @@
         <a href="payslips.jsp" class="nav-item"><i class="ph ph-receipt"></i> Payslips</a>
         <a href="appraisals.html" class="nav-item"><i class="ph ph-chart-line-up"></i> KRA Appraisals</a>
         <a href="policyview.jsp" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
+        <a href="travelrequest.jsp" class="nav-item"><i class="ph ph-airplane"></i> Travel Request</a>
         <a href="leavereq.html" class="nav-item"><i class="ph ph-calendar-x"></i> Leave Request</a>
     </nav>
     <div class="sidebar-footer"><a href="index.html" class="logout-item"><i class="ph ph-sign-out"></i> Logout Account</a></div>
