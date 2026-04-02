@@ -14,17 +14,19 @@ public class TravelServlet extends HttpServlet {
         String purpose = request.getParameter("purpose");
         String type = request.getParameter("transfer_type");
         String advance = request.getParameter("advance_amount");
+        String location = request.getParameter("location"); // ✅ ADDED
 
         try {
             Class.forName("org.postgresql.Driver");
 
             Connection con = DriverManager.getConnection(
-                "postgresql://bluevibes_user:dHyhOQGsAdkp2bwdifqdewiz6l0YxwAp@dpg-d68bcgn5r7bs73eo41k0-a/bluevibes",
-                "bluevibes_db_new_user",
-                "jc0bxNz8YFBiM7BZoa80yWd8T30jB9MD"
+                "jdbc:postgresql://dpg-d68bcgn5r7bs73eo41k0-a:5432/bluevibes",
+                "bluevibes_user",
+                "dHyhOQGsAdkp2bwdifqdewiz6l0YxwAp"
             );
 
-            String query = "INSERT INTO travel_request (email, from_date, to_date, purpose, transfer_type, advance_amount, status) VALUES (?, ?, ?, ?, ?, ?, 'Pending')";
+            // ✅ UPDATED QUERY (location added)
+            String query = "INSERT INTO travel_request (email, from_date, to_date, purpose, location, transfer_type, advance_amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')";
 
             PreparedStatement ps = con.prepareStatement(query);
 
@@ -32,8 +34,9 @@ public class TravelServlet extends HttpServlet {
             ps.setDate(2, Date.valueOf(from));
             ps.setDate(3, Date.valueOf(to));
             ps.setString(4, purpose);
-            ps.setString(5, type);
-            ps.setDouble(6, Double.parseDouble(advance));
+            ps.setString(5, location); // ✅ ADDED
+            ps.setString(6, type);
+            ps.setDouble(7, Double.parseDouble(advance)); // shifted index
 
             ps.executeUpdate();
 
