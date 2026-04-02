@@ -124,7 +124,7 @@
 <template id="rowTemplate">
     <tr>
         <input type="hidden" name="reportId" value="0">
-        <td><input type="text" name="taskId" class="form-input" placeholder="ID"></td>
+        <td><input type="text" name="taskId" class="form-input taskId" readonly</td>
         <td><select name="taskDesc" class="form-input task-master-select"><option value="">Select Type</option></select></td>
         <td><select name="customer" class="form-input customer-master-select"><option value="">Select Customer</option></select></td>
         <td>
@@ -198,7 +198,7 @@
         }
 
         tbody.appendChild(newRow);
-        newRow.querySelector('[name="taskId"]').focus();
+        updateTaskIds();
     }
 
     function removeRow(btn) {
@@ -215,6 +215,7 @@
             }
         } else {
             row.remove();
+            updateTaskIds();
         }
     }
 
@@ -249,6 +250,15 @@
                 XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
                 XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
             });
+    }
+    function updateTaskIds(){
+        const rows = document.querySelectorAll("#reportTbodytr");
+        rows.forEach(row,index)=> {
+            const idField= row.querySelector('.taskId');
+            if (idField){
+                idField.value=index+1;
+            }
+        });
     }
 
     window.onload = function() {
