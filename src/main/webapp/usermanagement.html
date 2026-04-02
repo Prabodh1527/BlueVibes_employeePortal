@@ -168,7 +168,6 @@
                     <th>Official Email</th>
                     <th>Designation</th>
                     <th>Joining Date</th>
-                    <th>Leaves Taken</th>
                     <th style="text-align:center;">Allow WFH</th>
                     <th>Actions</th>
                 </tr>
@@ -242,10 +241,10 @@
                 }
                 data.forEach(emp => {
                     const safeEmail = emp.email.replace(/[@.]/g, '');
-                    let leaveColor = "#1e293b";
+                    /*let leaveColor = "#1e293b";
                     if(emp.leavesTaken >= 24) leaveColor = "#ef4444";
                     else if(emp.leavesTaken >= 20) leaveColor = "#f59e0b";
-                    else if(emp.leavesTaken > 0) leaveColor = "#10b981";
+                    else if(emp.leavesTaken > 0) leaveColor = "#10b981";*/
 
                     tableBody.innerHTML += `
                         <tr id="row-${safeEmail}">
@@ -254,7 +253,6 @@
                             <td class="col-email">${emp.email}</td>
                             <td class="col-desig">${emp.designation}</td>
                             <td class="col-doj">${emp.doj ? emp.doj : 'Not Set'}</td>
-                            <td style="font-weight:700; color:${leaveColor}">${emp.leavesTaken || 0} / 24</td>
                             <td style="text-align:center;">
                                 <input type="checkbox" class="wfh-toggle"
                                     ${emp.wfhAllowed ? 'checked' : ''}
