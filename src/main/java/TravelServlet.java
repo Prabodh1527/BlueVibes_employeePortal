@@ -8,13 +8,15 @@ public class TravelServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String email = request.getParameter("email");
-        String from = request.getParameter("from_date");
-        String to = request.getParameter("to_date");
+        // 🔹 get data from frontend
+        String type = request.getParameter("type");
+        String fromLoc = request.getParameter("from");
+        String toLoc = request.getParameter("to");
+        String fromDate = request.getParameter("from_date");
+        String toDate = request.getParameter("to_date");
         String purpose = request.getParameter("purpose");
-        String type = request.getParameter("transfer_type");
-        String advance = request.getParameter("advance_amount");
-        String location = request.getParameter("location"); // ✅ ADDED
+        String amount = request.getParameter("amount");
+        String remarks = request.getParameter("remarks");
 
         try {
             Class.forName("org.postgresql.Driver");
@@ -25,26 +27,28 @@ public class TravelServlet extends HttpServlet {
                 "dHyhOQGsAdkp2bwdifqdewiz6l0YxwAp"
             );
 
-            // ✅ UPDATED QUERY (location added)
-            String query = "INSERT INTO travel_request (email, from_date, to_date, purpose, location, transfer_type, advance_amount, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')";
+            String query = "INSERT INTO travel_request " +
+                    "(type, from_location, to_location, from_date, to_date, purpose, amount, remarks, status) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')";
 
             PreparedStatement ps = con.prepareStatement(query);
 
-            ps.setString(1, email);
-            ps.setDate(2, Date.valueOf(from));
-            ps.setDate(3, Date.valueOf(to));
-            ps.setString(4, purpose);
-            ps.setString(5, location); // ✅ ADDED
-            ps.setString(6, type);
-            ps.setDouble(7, Double.parseDouble(advance)); // shifted index
+            ps.setString(1, type);
+            ps.setString(2, fromLoc);
+            ps.setString(3, toLoc);
+            ps.setDate(4, Date.valueOf(fromDate));
+            ps.setDate(5, Date.valueOf(toDate));
+            ps.setString(6, purpose);
+            ps.setDouble(7, Double.parseDouble(amount));
+            ps.setString(8, remarks);
 
             ps.executeUpdate();
 
-            response.getWriter().print("success");
+            response.getWriter().print("Saved Successfully");
 
         } catch (Exception e) {
             e.printStackTrace();
-            response.getWriter().print("error");
+            response.getWriter().print("Error");
         }
     }
 }
