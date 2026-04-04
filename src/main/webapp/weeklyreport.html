@@ -124,7 +124,7 @@
 <template id="rowTemplate">
     <tr>
         <input type="hidden" name="reportId" value="0">
-        <td><input type="text" name="taskId" class="form-input" placeholder="ID"/td>
+        <td><input type="text" name="taskId" class="form-input" readonly/td>
         <td><select name="taskDesc" class="form-input task-master-select"><option value="">Select Type</option></select></td>
         <td><select name="customer" class="form-input customer-master-select"><option value="">Select Customer</option></select></td>
         <td>
@@ -198,6 +198,8 @@
         }
 
         tbody.appendChild(newRow);
+        let count= document.querySelectorAll("#reportTbody tr").length;
+        newRow.querySelector('[name="taskId"]').value=count;
     }
 
     function removeRow(btn) {
