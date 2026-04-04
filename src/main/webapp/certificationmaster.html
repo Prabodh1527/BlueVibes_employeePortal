@@ -270,6 +270,7 @@
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb,ws,"Certification Master");
         XLSX.writeFile(wb,"Certification_Master.xlsx");
+    }
 
     function deleteCert(id) {
         if(confirm("Are you sure you want to remove this certification from the BlueVibes list?")) {
