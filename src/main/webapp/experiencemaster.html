@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>BlueVibes | Experience Master</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         :root { --sidebar-width: 280px; --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text: #1e293b; }
@@ -149,6 +150,9 @@
         </div>
 
         <div class="card">
+            <div style="margin-bottom: 15px;">
+                <button type="button" onclick="downloadMaster()" class="btn-add"> Download </button>
+            </div>
             <table class="data-table">
                 <thead>
                 <tr>
@@ -248,6 +252,23 @@
             loadOrganizations();
         });
     });
+
+    function downloadMaster(){
+        const rows=[];
+        rows.push(["ID","Experience Name"]);
+        document.querySelectorAll("#experienceBody tr").forEach(tr=>{
+            const cols = tr.querySelectorAll("td");
+            if(cols.length>1){
+                rows.push([
+                    cols[0].innerText,
+                    cols[1].innerText
+                ]);
+            }
+        });
+        const ws= XLSX.utils.aoa_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb,ws,"Experience Master");
+        XLSX.writeFile(wb,"Experience_Master.xlsx");
 
     function deleteOrg(id) {
         if(confirm("Are you sure you want to remove this organization from BlueVibes?")) {
