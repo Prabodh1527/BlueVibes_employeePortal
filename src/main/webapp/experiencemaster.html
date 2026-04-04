@@ -256,7 +256,7 @@
     function downloadMaster(){
         const rows=[];
         rows.push(["ID","Experience Name"]);
-        document.querySelectorAll("#experienceBody tr").forEach(tr=>{
+        document.querySelectorAll("#experience-list tr").forEach(tr=>{
             const cols = tr.querySelectorAll("td");
             if(cols.length>1){
                 rows.push([
