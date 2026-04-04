@@ -216,6 +216,23 @@
         });
     });
 
+    function downloadMaster(){
+        const rows=[];
+        rows.push(["ID","Customer Name"]);
+        document.querySelectorAll("#customerBody tr").forEach(tr=>{
+            const cols = tr.querySelectorAll("td");
+            if(cols.length>1){
+                rows.push([
+                    cols[0].innerText,
+                    cols[1].innerText
+                ]);
+            }
+        });
+        const ws= XLSX.utils.aoa_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb,ws,"Customer Master");
+        XLSX.writeFile(wb,"Customer_Master.xlsx");
+
     function deleteCustomer(id) {
         if(confirm("Remove this customer?")) {
             const params = new URLSearchParams();
