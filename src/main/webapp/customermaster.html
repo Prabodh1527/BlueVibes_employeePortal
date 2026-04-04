@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>BlueVibes | Customer Master</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         :root { --sidebar-width: 280px; --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text: #1e293b; }
@@ -142,6 +143,9 @@
             </form>
         </div>
         <div class="card">
+            <div style="margin-bottom: 15px;">
+                <button type="button" onclick="downloadMaster()" class="btn-add"> Download </button>
+            </div>
             <table class="data-table">
                 <thead><tr><th>ID</th><th>Customer Name</th><th>Actions</th></tr></thead>
                 <tbody id="customer-list"></tbody>
