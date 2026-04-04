@@ -236,7 +236,7 @@
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb,ws,"Customer Master");
         XLSX.writeFile(wb,"Customer_Master.xlsx");
-
+    }
     function deleteCustomer(id) {
         if(confirm("Remove this customer?")) {
             const params = new URLSearchParams();
