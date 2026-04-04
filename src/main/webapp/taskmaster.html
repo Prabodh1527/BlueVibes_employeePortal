@@ -208,7 +208,7 @@
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb,ws,"Task Master");
         XLSX.writeFile(wb,"Task_Master.xlsx");
-
+    }
     function deleteTask(id) {
         if(confirm("Remove this task type?")) {
             const params = new URLSearchParams();
