@@ -235,7 +235,7 @@
     function downloadMaster(){
         const rows=[];
         rows.push(["ID","Qualification Name"]);
-        document.querySelectorAll("#qualificationBody tr").forEach(tr=>{
+        document.querySelectorAll("#qualification-list tr").forEach(tr=>{
             const cols = tr.querySelectorAll("td");
             if(cols.length>1){
                 rows.push([
