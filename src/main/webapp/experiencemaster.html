@@ -269,7 +269,7 @@
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb,ws,"Experience Master");
         XLSX.writeFile(wb,"Experience_Master.xlsx");
-
+    }
     function deleteOrg(id) {
         if(confirm("Are you sure you want to remove this organization from BlueVibes?")) {
             const params = new URLSearchParams();
