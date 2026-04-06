@@ -135,8 +135,8 @@
             </select>
         </td>
         <td><input type="number" name="percent" class="form-input" min="0" max="100" value="0"></td>
-        <td><input type="date" name="startDate" class="form-input"></td>
-        <td><input type="date" name="endDate" class="form-input"></td>
+        <td><input type="date" name="startDate" class="form-input start-date"></td>
+        <td><input type="date" name="endDate" class="form-input end-date"></td>
         <td><input type="text" name="comments" class="form-input" placeholder="Notes..."></td>
         <td style="text-align:center;"><button type="button" class="btn-delete" onclick="removeRow(this)"><i class="ph ph-trash"></i></button></td>
     </tr>
@@ -172,6 +172,11 @@
         const template = document.getElementById('rowTemplate');
         const clone = template.content.cloneNode(true);
         const newRow = clone.querySelector('tr');
+        if(!data){
+            const today = new Date().toISOString().split('T')[0];
+            newRow.querySelector('.start-date').value=today;
+            newRow.querySelector('.end-date').value=today;
+        }
 
         const taskSelect = newRow.querySelector('.task-master-select');
         masterData.tasks.forEach(t => {
