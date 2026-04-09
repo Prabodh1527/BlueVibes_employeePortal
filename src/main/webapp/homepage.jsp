@@ -15,9 +15,26 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
-        .sidebar { width: var(--sidebar-width); background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.1); }
+        .sidebar { width: var(--sidebar-width); background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.1); overflow-y:auto; scrollbar-width: thin;}
         .sidebar-header { padding: 2.5rem 1.5rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .brand-container { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .brand-container{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .logo-main{
+            width: 100px;
+            height: auto;
+            object-fit: contain;
+        }
+        .logo-secondary{
+            width: 220px;
+            height: auto;
+            object-fit: contain;
+        }
+
         .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .sidebar-logo { width: 80px; height: 80px; background: transparent; padding: 0; border-radius: 8px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
 
@@ -45,7 +62,7 @@
 <body>
 <aside class="sidebar">
     <div class="sidebar-header">
-        <div class="brand-container"><img src="logo1.jpeg" class="sidebar-logo"><img src="logo.jpeg" class="sidebar-logo"></div>
+        <div class="brand-container"><img src="blueeye.png" class="logo-main"><img src="bluedigital.png" class="logo-secondary"></div>
         <div class="brand-name">BlueVibes</div>
     </div>
     <nav class="nav-links">
