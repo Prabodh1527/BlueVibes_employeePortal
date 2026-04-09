@@ -13,15 +13,26 @@
         .login-card { background: white; padding: 2.5rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 450px; text-align: center; }
 
         /* FIXED: SQUAD Dual Logo Branding Style with less white space */
-        .brand-container {
+        .brand-container{
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             gap: 15px;
-            margin-bottom: 1rem;
+            margin-bottom: 15px;
         }
+        .logo-main{
+            width: 100px;
+            height: auto;
+            object-fit: contain;
+        }
+        .logo-secondary{
+            width: 220px;
+            height: auto;
+            object-fit: contain;
+        }
+
         /* Adjusted width and removed padding to reduce white space - 80px Size */
-        .logo {
+        /*.logo {
             width: 80px;
             height: 80px;
             background: transparent;
@@ -29,7 +40,7 @@
             border-radius: 8px;
             object-fit: contain;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-        }
+        }*/
         .brand-name {
             font-size: 2rem;
             font-weight: 800;
@@ -66,8 +77,8 @@
 <body>
 <div class="login-card">
     <div class="brand-container">
-        <img src="logo1.jpeg" class="logo">
-        <img src="logo.jpeg" class="logo">
+        <img src="blueeye.png" class="logo">
+        <img src="bluedigital.png" class="logo">
     </div>
     <div class="brand-name">BlueVibes</div>
 
