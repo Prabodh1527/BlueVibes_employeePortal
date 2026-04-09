@@ -5,7 +5,6 @@
     <title>BlueVibes | KRA & Appraisal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="sidebar.css">
     <style>
         :root { --sidebar-width: 260px; --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text: #1e293b; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -19,7 +18,7 @@
             text-align: center;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }    
-        /*
+        
         .brand-container {
             display: flex;
             justify-content: center;
@@ -27,7 +26,7 @@
             gap: 12px;
             margin-bottom: 10px;
         }
-        */
+        
         .brand-name {
             font-size: 1.8rem;
             font-weight: 800;
@@ -38,7 +37,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        /*.sidebar-logo {
+        .sidebar-logo {
             width: 80px;
             height: 80px;
             background: transparent;
@@ -46,7 +45,7 @@
             border-radius: 8px;
             object-fit: contain;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
-        }*/
+        }
 
         .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.9rem; }
@@ -70,8 +69,6 @@
 <body>
 
 <aside class="sidebar">
-    <jsp: include page="header.jsp"/>
-            <!--
     <div class="sidebar-header">
         <div class="brand-container">
             <img src="logo1.jpeg" class="sidebar-logo">
@@ -79,7 +76,6 @@
         </div>
         <div class="brand-name">BlueVibes</div>
     </div>
-    -->
     <nav class="nav-links">
         <a href="homepage.jsp" class="nav-item"><i class="ph ph-house"></i> Dashboard</a>
         <a href="LoadProfileServlet" class="nav-item"><i class="ph ph-user"></i> My Profile</a>
