@@ -5,6 +5,7 @@
     <title>BlueVibes | KRA & Appraisal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="sidebar.css">
     <style>
         :root { --sidebar-width: 260px; --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text: #1e293b; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -68,7 +69,9 @@
 </head>
 <body>
 
-<aside class="sidebar"><!--
+<aside class="sidebar">
+    <jsp: include page="header.jsp"/>
+            <!--
     <div class="sidebar-header">
         <div class="brand-container">
             <img src="logo1.jpeg" class="sidebar-logo">
