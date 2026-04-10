@@ -196,6 +196,16 @@ public class AttendanceServlet extends HttpServlet {
                 out.print("{\"workingDays\": " + workingDaysThisMonthSoFar + ", \"present\": " + presentThisMonth + ", \"leaves\": " + (totalAbsences < 0 ? 0 : totalAbsences) + "}");
             }
             else if ("monthly_status".equals(action)) {
+                int totalLeaves=0;
+                String leaveSql = "SELECT COUNT(*) FROM attendance WHERE user_email=? AND status='LEAVE'";
+                try(PreparedStatement psLeave=con.prepareStatement(leaveSql)){
+                    psLeave.setString(1,targetEmail);
+                    try(ResultSet rsLeave=psLeave.executeQuery()){
+                        if(rsLeave.next()){
+                            totalLeaves=rsLeave.getInt(1);
+                        }
+                    }
+                }
                 StringBuilder json = new StringBuilder("{\"attendance\": {");
                 String sql = "SELECT EXTRACT(DAY FROM work_date)::int FROM attendance WHERE user_email=? AND EXTRACT(MONTH FROM work_date)=? AND EXTRACT(YEAR FROM work_date)=?";
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -225,7 +235,7 @@ public class AttendanceServlet extends HttpServlet {
                     json.append("\"").append(entry.getKey()).append("\": \"").append(entry.getValue().replace("\"", "\\\"")).append("\"");
                     first = false;
                 }
-                json.append("}}");
+                json.append("},\"leaves\":").append(totalLeaves).append("}");
                 out.print(json.toString());
             }
             else if ("toggle_holiday".equals(action)) {
