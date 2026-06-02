@@ -5,6 +5,8 @@ RUN mvn clean package
 
 FROM tomcat:9.0-jdk17
 
+RUN sed -i 's/maxParameterCount="1000"/maxParameterCount="10000"/g' /usr/local/tomcat/conf/server.xml || true
+
 RUN rm -rf /usr/local/tomcat/webapps/*
 
 COPY --from=build /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
