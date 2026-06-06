@@ -53,7 +53,8 @@ public class ForgotPasswordServlet extends HttpServlet {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.ssl.enable", "true");
-        props.put("mail.smtp.host", "smtp.gmail.com");
+        //props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.host","google.com");
         props.put("mail.smtp.port", "465");
 
         props.put("mail.smtp.connectiontimeout", "10000");
@@ -75,6 +76,7 @@ public class ForgotPasswordServlet extends HttpServlet {
             message.setSubject("SQUAD | Your Temporary Password");
             message.setText("Hello " + name + ",\n\nYour temporary password for SQUAD is: " + pass +
                     "\n\nPlease login and change it immediately in your profile.");
+            System.out.println("BEFORE MAIL");
 
             Transport.send(message);
         } catch (MessagingException e) {
