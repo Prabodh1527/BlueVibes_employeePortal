@@ -48,8 +48,8 @@ public class ForgotPasswordServlet extends HttpServlet {
         // --- ENTER YOUR DETAILS HERE ---
         final String fromEmail = "gprabodhchandra@gmail.com";
         final String appPassword = "btnzszjiogjhmywi"; // NO SPACES
-        System.out.println("USERNAME= " = fromEmail);
-        System.out.println("PASSWORD LENGTH= " = appPassword.length());
+        System.out.println("USERNAME= " + fromEmail);
+        System.out.println("PASSWORD LENGTH= " + appPassword.length());
         System.out.println("ENTERED sendEmail()");
 
         Properties props = new Properties();
