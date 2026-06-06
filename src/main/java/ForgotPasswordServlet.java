@@ -48,13 +48,15 @@ public class ForgotPasswordServlet extends HttpServlet {
         // --- ENTER YOUR DETAILS HERE ---
         final String fromEmail = "gprabodhchandra@gmail.com";
         final String appPassword = "btnzszjiogjhmywi"; // NO SPACES
+        System.out.println("USERNAME= " = fromEmail);
+        System.out.println("PASSWORD LENGTH= " = appPassword.length());
         System.out.println("ENTERED sendEmail()");
 
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.ssl.enable", "true");
-        //props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.host","google.com");
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        //props.put("mail.smtp.host","google.com");
         props.put("mail.smtp.port", "465");
 
         props.put("mail.smtp.connectiontimeout", "10000");
