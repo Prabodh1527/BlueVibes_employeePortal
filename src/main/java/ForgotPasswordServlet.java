@@ -13,6 +13,8 @@ public class ForgotPasswordServlet extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String email = request.getParameter("userEmail");
+        System.out.println("FORGOT PASSWORD HIT");
+        System.out.println("EMAIL = + email");
         String tempPassword = generateRandomPassword(8);
 
         try (Connection con = DBConnection.getConnection()) {
@@ -46,6 +48,7 @@ public class ForgotPasswordServlet extends HttpServlet {
         // --- ENTER YOUR DETAILS HERE ---
         final String fromEmail = "gprabodhchandra@gmail.com";
         final String appPassword = "btnzszjiogjhmywi"; // NO SPACES
+        System.out.println("ENTERED sendEmail()");
 
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
