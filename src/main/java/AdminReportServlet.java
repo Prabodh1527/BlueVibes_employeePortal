@@ -113,7 +113,7 @@ public class AdminReportServlet extends HttpServlet {
     private void sendEmail(String content) {
 
         final String from = "gprabodhchandra@gmail.com";
-        final String password = "votvwrdaqdabjwul";
+        final String password = "btnzszjiogjhmywi";
         final String to = "gprabodhchandra@gmail.com";
 
         Properties props = new Properties();
