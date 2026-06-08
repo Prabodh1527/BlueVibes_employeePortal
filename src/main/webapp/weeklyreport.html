@@ -184,7 +184,7 @@
             customerFilter.add(option);
         });
 
-            //customerFilter.onchange = filterByCustomer;
+            customerFilter.onchange = filterByCustomer;
 
             fetch('WeeklyReportServlet?action=fetchMyReports')
                 .then(res => res.json())
@@ -311,17 +311,7 @@
                 XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
             });
     }
-
-    window.onload = function() {
-        const now = new Date();
-        const first = now.getDate() - now.getDay() + 1;
-        const last = first + 5;
-        const start = new Date(new Date().setDate(first)).toLocaleDateString();
-        const end = new Date(new Date().setDate(last)).toLocaleDateString();
-        document.getElementById('weekRange').innerText = `Current Week: ${start} to ${end}`;
-
-        loadMastersAndReports();
-        function filterByCustomer() {
+    function filterByCustomer() {
             const selectedCustomer = document.getElementById("customerFilter").value.toLowerCase();
             const rows = document.querySelectorAll("#reportTbody tr");
             rows.forEach(row => {
@@ -335,7 +325,16 @@
                     row.style.display = "none";
                 }
             });
-}
+    }
+    window.onload = function() {
+        const now = new Date();
+        const first = now.getDate() - now.getDay() + 1;
+        const last = first + 5;
+        const start = new Date(new Date().setDate(first)).toLocaleDateString();
+        const end = new Date(new Date().setDate(last)).toLocaleDateString();
+        document.getElementById('weekRange').innerText = `Current Week: ${start} to ${end}`;
+
+        loadMastersAndReports();
 
         const params = new URLSearchParams(window.location.search);
         if(params.get('status') === 'success') alert('Weekly report saved successfully!');
