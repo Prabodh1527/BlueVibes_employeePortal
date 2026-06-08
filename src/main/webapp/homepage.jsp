@@ -34,6 +34,41 @@
             height: auto;
             object-fit: contain;
         }
+        .summary-card{
+            background:white;
+            border-radius:15px;
+            padding:25px;
+            border:1px solid #e2e8f0;
+        }
+        
+        .summary-card h3{
+            margin-bottom:20px;
+        }
+        
+        .summary-grid{
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:20px;
+        }
+        
+        .summary-box{
+            background:#f8fafc;
+            padding:20px;
+            border-radius:12px;
+            text-align:center;
+            border:1px solid #e2e8f0;
+        }
+        
+        .summary-box span{
+            display:block;
+            color:#64748b;
+            margin-bottom:10px;
+        }
+        
+        .summary-box strong{
+            font-size:2rem;
+            color:#0f172a;
+        }
 
         .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .sidebar-logo { width: 80px; height: 80px; background: transparent; padding: 0; border-radius: 8px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
@@ -96,14 +131,36 @@
                     <strong id="statAttendance" class="stat-value">-- Days</strong>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">Yearly Leaves</span>
-                    <strong id="statLeaves" class="stat-value">-- / 24</strong>
+                    <span class="stat-label">Total Tasks</span>
+                    <strong id="statTasks" class="stat-value">--</strong>
                 </div>
             </div>
         </div>
 
-        <div style="padding: 2rem; text-align: center; color: #94a3b8; border: 2px dashed #e2e8f0; border-radius: 15px;">
-            Additional dashboard modules will be added here.
+        <div class="summary-card">
+            <h3>Weekly Status Summary</h3>
+        
+            <div class="summary-grid">
+                <div class="summary-box">
+                    <span>Total Tasks</span>
+                    <strong id="totalTasks">0</strong>
+                </div>
+        
+                <div class="summary-box">
+                    <span>Completed</span>
+                    <strong id="completedTasks">0</strong>
+                </div>
+        
+                <div class="summary-box">
+                    <span>In Progress</span>
+                    <strong id="inProgressTasks">0</strong>
+                </div>
+        
+                <div class="summary-box">
+                    <span>Open</span>
+                    <strong id="openTasks">0</strong>
+                </div>
+            </div>
         </div>
     </div>
 
