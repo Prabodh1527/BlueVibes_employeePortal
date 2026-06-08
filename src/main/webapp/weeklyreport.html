@@ -104,9 +104,18 @@
                     <i class="ph ph-list-bullets"></i> Task Entry Sheet
                 </h3>
 
-                <select id="customerFilter" class="form-input" style="width:220px;">
-                    <option value="">All Customers</option>
-                </select>
+                <div style="display:flex; gap:10px;">
+                    <select id="customerFilter" class="form-input" style="width:220px;">
+                        <option value="">All Customers</option>
+                    </select>
+
+                    <select id="statusFilter" class="form-input" style="width:180px;">
+                        <option value="">All Status</option>
+                        <option value="Open">Open</option>
+                        <option value="InProgress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
             </div>
 
             <form id="reportForm" action="WeeklyReportServlet" method="POST">
@@ -185,6 +194,7 @@
         });
 
             customerFilter.onchange = filterByCustomer;
+            document.getElementById("statusFilter").onchange = filterByCustomer;
 
             fetch('WeeklyReportServlet?action=fetchMyReports')
                 .then(res => res.json())
@@ -311,7 +321,7 @@
                 XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
             });
     }
-    function filterByCustomer() {
+    /*function filterByCustomer() {
             const selectedCustomer = document.getElementById("customerFilter").value.toLowerCase();
             const rows = document.querySelectorAll("#reportTbody tr");
             rows.forEach(row => {
@@ -325,7 +335,49 @@
                     row.style.display = "none";
                 }
             });
-    }
+    }*/
+    function filterByCustomer() {
+
+    const selectedCustomer =
+        document.getElementById("customerFilter")
+        .value
+        .toLowerCase();
+
+    const selectedStatus =
+        document.getElementById("statusFilter")
+        .value
+        .toLowerCase();
+
+    const rows =
+        document.querySelectorAll("#reportTbody tr");
+
+    rows.forEach(row => {
+
+        const customer =
+            row.querySelector('[name="customer"]')
+            .value
+            .toLowerCase();
+
+        const status =
+            row.querySelector('[name="status"]')
+            .value
+            .toLowerCase();
+
+        const customerMatch =
+            selectedCustomer === "" ||
+            customer === selectedCustomer;
+
+        const statusMatch =
+            selectedStatus === "" ||
+            status === selectedStatus;
+
+        if (customerMatch && statusMatch) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
     window.onload = function() {
         const now = new Date();
         const first = now.getDate() - now.getDay() + 1;
