@@ -100,7 +100,13 @@
     <div class="content-area">
         <div class="card">
             <div class="card-header">
-                <h3 style="color: var(--primary);"><i class="ph ph-list-bullets"></i> Task Entry Sheet</h3>
+                <h3 style="color: var(--primary);">
+                    <i class="ph ph-list-bullets"></i> Task Entry Sheet
+                </h3>
+
+                <select id="customerFilter" class="form-input" style="width:220px;">
+                    <option value="">All Customers</option>
+                </select>
             </div>
 
             <form id="reportForm" action="WeeklyReportServlet" method="POST">
@@ -168,6 +174,17 @@
         ]).then(results => {
             masterData.tasks = results[0];
             masterData.customers = results[1];
+            const customerFilter = document.getElementById("customerFilter");
+
+            customerFilter.innerHTML = '<option value="">All Customers</option>';
+
+            masterData.customers.forEach(customer => {
+                let option = new Option(customer.name, customer.name);
+
+            customerFilter.add(option);
+        });
+
+            customerFilter.onchange = filterByCustomer;
 
             fetch('WeeklyReportServlet?action=fetchMyReports')
                 .then(res => res.json())
@@ -304,6 +321,21 @@
         document.getElementById('weekRange').innerText = `Current Week: ${start} to ${end}`;
 
         loadMastersAndReports();
+        function filterByCustomer() {
+            const selectedCustomer = document.getElementById("customerFilter").value.toLowerCase();
+            const rows = document.querySelectorAll("#reportTbody tr");
+            rows.forEach(row => {
+                const customer = row.querySelector('[name="customer"]').value.toLowerCase();
+                if (
+                    selectedCustomer === "" ||
+                    customer === selectedCustomer
+                ) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+}
 
         const params = new URLSearchParams(window.location.search);
         if(params.get('status') === 'success') alert('Weekly report saved successfully!');
