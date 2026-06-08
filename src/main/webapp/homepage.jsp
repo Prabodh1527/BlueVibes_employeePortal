@@ -178,10 +178,48 @@
                 });
         }
 
+        function loadTaskSummary() {
+        
+            fetch('WeeklyReportServlet?action=fetchMyReports')
+                .then(res => res.json())
+                .then(tasks => {
+        
+                    let total = tasks.length;
+                    let completed = 0;
+                    let open = 0;
+                    let inProgress = 0;
+        
+                    tasks.forEach(task => {
+        
+                        if (task.status === "Completed") {
+                            completed++;
+                        }
+                        else if (task.status === "Open") {
+                            open++;
+                        }
+                        else {
+                            inProgress++;
+                        }
+        
+                    });
+        
+                    document.getElementById("statTasks").innerText = total;
+        
+                    document.getElementById("totalTasks").innerText = total;
+                    document.getElementById("completedTasks").innerText = completed;
+                    document.getElementById("openTasks").innerText = open;
+                    document.getElementById("inProgressTasks").innerText = inProgress;
+                })
+                .catch(err => {
+                    console.error("Error loading task summary:", err);
+                });
+        }
+
         window.onload = function() {
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString(undefined, options);
             loadStats();
+            loadTaskSummary();
         };
     </script>
 </body>
