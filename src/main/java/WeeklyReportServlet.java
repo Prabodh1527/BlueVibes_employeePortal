@@ -106,7 +106,7 @@ public class WeeklyReportServlet extends HttpServlet {
             return;
         }
 
-        String sql = "SELECT * FROM user_weekly_reports WHERE user_email=? ORDER BY created_at ASC";
+        String sql = "SELECT * FROM user_weekly_reports WHERE user_email=? ORDER BY created_at DESC";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
