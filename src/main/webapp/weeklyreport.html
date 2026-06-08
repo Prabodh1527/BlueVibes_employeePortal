@@ -175,7 +175,10 @@
                     const tbody = document.getElementById('reportTbody');
                     tbody.innerHTML = "";
                     if (reports.length > 0) {
-                        reports.forEach(report => addRow(report));
+                        //reports.forEach(report => addRow(report));
+                        reports.forEach((report, index)=>{report.taskId=reports.length-index;
+                                                         addRow(report);
+                                                        });
                     } else {
                         addRow();
                     }
@@ -219,8 +222,11 @@
         }
 
         tbody.appendChild(newRow);
-        let count= document.querySelectorAll("#reportTbody tr").length;
-        newRow.querySelector('[name="taskId"]').value=count;
+        //let count= document.querySelectorAll("#reportTbody tr").length;
+        if(!data){
+            let count= document.querySelectorAll("#reportTbody tr").length;
+            newRow.querySelector('[name="taskId"]').value=count;
+        }
     }
 
     function removeRow(btn) {
