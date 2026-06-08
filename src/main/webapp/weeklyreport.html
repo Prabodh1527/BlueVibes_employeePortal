@@ -221,11 +221,27 @@
             newRow.querySelector('[name="comments"]').value = data.comments;
         }
 
-        tbody.appendChild(newRow);
+        //tbody.appendChild(newRow);
+        if(data){
+            tbody.appendChild(newRow);
+        }
+        else{
+            tbody.prepend(newRow);
+        }
         //let count= document.querySelectorAll("#reportTbody tr").length;
+        //if(!data){
+            //let count= document.querySelectorAll("#reportTbody tr").length;
+            //newRow.querySelector('[name="taskId"]').value=count;
+        //}
         if(!data){
-            let count= document.querySelectorAll("#reportTbody tr").length;
-            newRow.querySelector('[name="taskId"]').value=count;
+            let firstRow = document.querySelector("#reportTbody tr:nth-child(2) [name='taskId']");
+            if(firstRow){
+                newRow.querySelector('[name="taskId"]').value=
+                    parseInt(firstRow.value)+1;
+            }
+            else{
+                newRow.querySelector('[name="taskId"]').value=1;
+            }
         }
     }
 
