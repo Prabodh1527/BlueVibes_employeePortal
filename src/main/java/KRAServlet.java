@@ -75,7 +75,7 @@ public class KRAServlet extends HttpServlet {
         }
     }
 
-    private void getEmployees(HttpServletResponse response)
+    /*private void getEmployees(HttpServletResponse response)
         throws IOException {
 
         response.setContentType("application/json");
@@ -119,6 +119,61 @@ public class KRAServlet extends HttpServlet {
         }catch(Exception e){
             e.printStackTrace();
         }
+    
+        response.getWriter().print(arr.toString());
+    }*/
+    private void getEmployees(HttpServletResponse response)
+        throws IOException {
+
+        response.setContentType("application/json");
+    
+        JSONArray arr = new JSONArray();
+    
+        try(Connection con = DBConnection.getConnection()){
+    
+            System.out.println("DB Connected = " + (con != null));
+    
+            String sql =
+            "SELECT fullname,email,employee_id,designation,role " +
+            "FROM users " +
+            "ORDER BY fullname";
+    
+            PreparedStatement ps =
+            con.prepareStatement(sql);
+    
+            ResultSet rs =
+            ps.executeQuery();
+    
+            while(rs.next()){
+    
+                System.out.println(
+                    "Employee Found: "
+                    + rs.getString("fullname")
+                );
+    
+                JSONObject obj =
+                new JSONObject();
+    
+                obj.put("fullname",
+                        rs.getString("fullname"));
+    
+                obj.put("email",
+                        rs.getString("email"));
+    
+                obj.put("employeeId",
+                        rs.getString("employee_id"));
+    
+                obj.put("designation",
+                        rs.getString("designation"));
+    
+                arr.put(obj);
+            }
+    
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    
+        System.out.println(arr.toString());
     
         response.getWriter().print(arr.toString());
     }
