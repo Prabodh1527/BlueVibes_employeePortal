@@ -116,15 +116,238 @@
     </header>
 
     <div class="content-area">
-        <div class="card">
-            <div class="wip-container">
-                <i class="ph ph-hammer wip-icon"></i>
-                <h3 style="color: var(--primary); margin-bottom: 0.5rem;">KRA Module Under Development</h3>
-                <p>We are currently setting up the BlueVibes Appraisal system. Please check back later.</p>
+
+    <div class="card" style="margin-bottom:20px;text-align:left;">
+
+        <h2 style="margin-bottom:20px;color:#0f172a;">
+            My KRA Appraisal
+        </h2>
+
+        <div style="
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:20px;
+            margin-bottom:20px;
+        ">
+
+            <div>
+                <label>Assessment Year</label>
+                <input type="text"
+                       id="assessmentYear"
+                       readonly
+                       style="width:100%;padding:10px;">
             </div>
+
+            <div>
+                <label>Employee ID</label>
+                <input type="text"
+                       id="employeeId"
+                       readonly
+                       style="width:100%;padding:10px;">
+            </div>
+
+            <div>
+                <label>Designation</label>
+                <input type="text"
+                       id="designation"
+                       readonly
+                       style="width:100%;padding:10px;">
+            </div>
+
+            <div>
+                <label>Status</label>
+                <input type="text"
+                       id="status"
+                       value="Draft"
+                       readonly
+                       style="width:100%;padding:10px;">
+            </div>
+
         </div>
+
+        <table style="
+            width:100%;
+            border-collapse:collapse;
+            border:1px solid #e2e8f0;
+        ">
+
+            <thead>
+
+            <tr style="
+                background:#0f172a;
+                color:white;
+            ">
+
+                <th style="padding:12px;">Objective</th>
+                <th style="padding:12px;">Measurement Criteria</th>
+                <th style="padding:12px;">Sub Activity</th>
+                <th style="padding:12px;">Weightage</th>
+                <th style="padding:12px;">Self Appraisal</th>
+                <th style="padding:12px;">Rating</th>
+
+            </tr>
+
+            </thead>
+
+            <tbody id="appraisalBody">
+
+            </tbody>
+
+        </table>
+
+        <div style="
+            display:flex;
+            gap:15px;
+            margin-top:20px;
+        ">
+
+            <button
+                onclick="saveDraft()"
+                style="
+                background:#f59e0b;
+                color:white;
+                border:none;
+                padding:12px 20px;
+                border-radius:8px;
+                cursor:pointer;">
+                Save Draft
+            </button>
+
+            <button
+                onclick="submitAppraisal()"
+                style="
+                background:#16a34a;
+                color:white;
+                border:none;
+                padding:12px 20px;
+                border-radius:8px;
+                cursor:pointer;">
+                Submit Appraisal
+            </button>
+
+        </div>
+
     </div>
+
+</div>
 </main>
+
+<script>
+
+function loadMyKRA(){
+
+    fetch("KRAServlet?action=getEmployeeKRA")
+
+    .then(res=>res.json())
+
+    .then(data=>{
+        if(!data || !data.rows || data.rows.length===0){
+
+            document.getElementById("appraisalBody").innerHTML = `
+            <tr>
+                <td colspan="6"
+                    style="text-align:center;padding:25px;">
+                    No KRA has been published for you yet.
+                </td>
+            </tr>`;
+        
+            return;
+        }
+
+        document.getElementById("assessmentYear").value =
+        data.assessmentYear;
+
+        document.getElementById("employeeId").value =
+        data.employeeId;
+
+        document.getElementById("designation").value =
+        data.designation;
+
+        const body =
+        document.getElementById("appraisalBody");
+
+        body.innerHTML = "";
+
+        data.rows.forEach(r=>{
+
+            body.innerHTML += `
+
+            <tr>
+
+                <td>${r.objective}</td>
+
+                <td>${r.measurementCriteria}</td>
+
+                <td>${r.subActivity}</td>
+
+                <td>${r.weightage}</td>
+
+                <td>
+
+                    <textarea
+                        class="selfAppraisal"
+                        placeholder="Enter your self appraisal..."
+                        style="
+                        width:100%;
+                        min-height:90px;
+                        padding:10px;
+                        border:1px solid #e2e8f0;
+                        border-radius:6px;
+                        resize:vertical;">
+                    </textarea>
+
+                </td>
+
+                <td>
+
+                    <select
+                        class="selfRating">
+
+                        <option>1</option>
+                        <option>2</option>
+                        <option>3</option>
+                        <option>4</option>
+                        <option>5</option>
+
+                    </select>
+
+                </td>
+
+            </tr>
+
+            `;
+        });
+
+    });
+
+}
+
+function saveDraft(){
+
+    alert("Draft Saved");
+
+}
+
+function submitAppraisal(){
+
+    if(confirm("Submit Appraisal?")){
+
+        alert("Appraisal Submitted");
+
+        document
+        .getElementById("status")
+        .value = "Submitted";
+
+    }
+}
+
+window.onload=function(){
+
+    loadMyKRA();
+
+}
+
+</script>
 
 </body>
 </html>
