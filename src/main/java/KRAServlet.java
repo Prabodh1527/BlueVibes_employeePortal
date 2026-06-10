@@ -518,10 +518,20 @@ public class KRAServlet extends HttpServlet {
             "FROM kra_master k " +
             "LEFT JOIN kra_response r " +
             "ON k.id=r.kra_id " +
-            "WHERE r.response_status='SUBMITTED'";
+            "WHERE r.response_status='SUBMITTED' "+
+            "AND k.employee_email=? " +
+            "AND k.assessment_year=?";
     
             PreparedStatement ps =
             con.prepareStatement(sql);
+
+            ps.setString(
+                1,
+                request.getParameter("email"));
+            
+            ps.setString(
+                2,
+                request.getParameter("year"));
     
             ResultSet rs =
             ps.executeQuery();
