@@ -540,6 +540,14 @@ public class KRAServlet extends HttpServlet {
                     .print("Error");
         }
     }
-    
+
+    private void submitEmployeeAppraisal(
+        HttpServletRequest request,
+        HttpServletResponse response)
+        throws IOException {
+
+        response.getWriter().print(
+            "Employee Appraisal Submitted");
+    }
 
 }
