@@ -281,11 +281,87 @@ public class KRAServlet extends HttpServlet {
 
         try{
     
-            String body =
-            getRequestBody(request);
+            String body = getRequestBody(request);
     
-            System.out.println("SAVE DRAFT JSON:");
-            System.out.println(body);
+            JSONObject json =
+            new JSONObject(body);
+    
+            String assessmentYear =
+            json.getString("assessmentYear");
+    
+            String employeeEmail =
+            json.getString("employeeEmail");
+    
+            String employeeId =
+            json.getString("employeeId");
+    
+            String designation =
+            json.getString("designation");
+    
+            JSONArray rows =
+            json.getJSONArray("rows");
+    
+            Connection con =
+            DBConnection.getConnection();
+    
+            String deleteSql =
+            "DELETE FROM kra_master " +
+            "WHERE employee_email=? " +
+            "AND assessment_year=?";
+    
+            PreparedStatement deletePs =
+            con.prepareStatement(deleteSql);
+    
+            deletePs.setString(1,employeeEmail);
+            deletePs.setString(2,assessmentYear);
+    
+            deletePs.executeUpdate();
+    
+            String insertSql =
+    
+            "INSERT INTO kra_master(" +
+            "employee_email," +
+            "employee_id," +
+            "designation," +
+            "assessment_year," +
+            "objective," +
+            "measurement_criteria," +
+            "sub_activity," +
+            "weightage," +
+            "status," +
+            "created_on" +
+            ") VALUES(?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)";
+    
+            PreparedStatement ps =
+            con.prepareStatement(insertSql);
+    
+            for(int i=0;i<rows.length();i++){
+    
+                JSONObject row =
+                rows.getJSONObject(i);
+    
+                ps.setString(1,employeeEmail);
+                ps.setString(2,employeeId);
+                ps.setString(3,designation);
+                ps.setString(4,assessmentYear);
+    
+                ps.setString(5,
+                row.getString("objective"));
+    
+                ps.setString(6,
+                row.getString("measurementCriteria"));
+    
+                ps.setString(7,
+                row.getString("subActivity"));
+    
+                ps.setInt(8,
+                Integer.parseInt(
+                row.getString("weightage")));
+    
+                ps.setString(9,"DRAFT");
+    
+                ps.executeUpdate();
+            }
     
             response.getWriter()
                     .print("Draft Saved");
@@ -298,7 +374,7 @@ public class KRAServlet extends HttpServlet {
                     .print("Error");
         }
     }
-
+    
     private void publish(HttpServletRequest request,
                      HttpServletResponse response)
         throws IOException {
@@ -308,8 +384,32 @@ public class KRAServlet extends HttpServlet {
             String body =
             getRequestBody(request);
     
-            System.out.println("PUBLISH JSON:");
-            System.out.println(body);
+            JSONObject json =
+            new JSONObject(body);
+    
+            String assessmentYear =
+            json.getString("assessmentYear");
+    
+            String employeeEmail =
+            json.getString("employeeEmail");
+    
+            Connection con =
+            DBConnection.getConnection();
+    
+            String sql =
+    
+            "UPDATE kra_master " +
+            "SET status='PUBLISHED' " +
+            "WHERE employee_email=? " +
+            "AND assessment_year=?";
+    
+            PreparedStatement ps =
+            con.prepareStatement(sql);
+    
+            ps.setString(1,employeeEmail);
+            ps.setString(2,assessmentYear);
+    
+            ps.executeUpdate();
     
             response.getWriter()
                     .print("Published");
