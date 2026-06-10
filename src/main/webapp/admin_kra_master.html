@@ -1209,6 +1209,100 @@ window.onload=function(){
 
 }
 
+function loadReviewData(){
+
+    fetch("KRAServlet?action=getReviewData")
+
+    .then(res=>res.json())
+
+    .then(data=>{
+
+        const body =
+        document.getElementById("reviewBody");
+
+        body.innerHTML = "";
+
+        if(data.length===0){
+
+            body.innerHTML = `
+            <tr>
+                <td colspan="6"
+                    style="text-align:center;padding:20px;">
+                    No Submitted Appraisals Found
+                </td>
+            </tr>`;
+            return;
+        }
+
+        data.forEach(r=>{
+
+            body.innerHTML += `
+
+            <tr>
+
+                <td>
+                    <b>${r.objective}</b><br>
+                    <small>${r.employeeEmail}</small>
+                </td>
+
+                <td>
+                    ${r.weightage}
+                </td>
+
+                <td>
+                    ${r.selfAppraisal}
+                </td>
+
+                <td>
+                    ${r.selfRating}
+                </td>
+
+                <td>
+                    <textarea
+                        style="
+                        width:100%;
+                        min-height:80px;
+                        border:1px solid #e2e8f0;
+                        border-radius:6px;
+                        padding:8px;">
+                    </textarea>
+                </td>
+
+                <td>
+
+                    <select
+                        style="
+                        width:100%;
+                        padding:8px;
+                        border:1px solid #e2e8f0;
+                        border-radius:6px;">
+
+                        <option>1</option>
+                        <option>2</option>
+                        <option>3</option>
+                        <option>4</option>
+                        <option>5</option>
+
+                    </select>
+
+                </td>
+
+            </tr>
+
+            `;
+        });
+
+    })
+
+    .catch(err=>{
+
+        console.log(err);
+
+        alert(
+        "Unable to load appraisal data");
+    });
+}
+
 </script>
 
 </body>
