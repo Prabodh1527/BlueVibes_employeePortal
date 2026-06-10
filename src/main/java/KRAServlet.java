@@ -71,6 +71,14 @@ public class KRAServlet extends HttpServlet {
             case "publish":
                 publish(request,response);
                 break;
+                
+            case "saveEmployeeDraft":
+                saveEmployeeDraft(request,response);
+                break;
+            
+            case "submitAppraisal":
+                submitEmployeeAppraisal(request,response);
+                break;
 
             default:
                 response.getWriter().print("Invalid Action");
