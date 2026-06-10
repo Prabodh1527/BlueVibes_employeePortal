@@ -455,6 +455,24 @@ public class KRAServlet extends HttpServlet {
     
         return sb.toString();
     }
+
+    private void saveEmployeeDraft(
+        HttpServletRequest request,
+        HttpServletResponse response)
+        throws IOException {
+
+        response.getWriter().print(
+            "Employee Draft Saved");
+    }
+    
+    private void submitEmployeeAppraisal(
+            HttpServletRequest request,
+            HttpServletResponse response)
+            throws IOException {
+    
+        response.getWriter().print(
+            "Employee Appraisal Submitted");
+    }
     
 
 }
