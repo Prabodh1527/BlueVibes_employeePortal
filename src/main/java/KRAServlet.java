@@ -205,7 +205,7 @@ public class KRAServlet extends HttpServlet {
     
             String email =
             (String) request.getSession()
-                            .getAttribute("email");
+                            .getAttribute("userEmail");
             System.out.println("SESSION EMAIL = " + email);
             
             System.out.println(
