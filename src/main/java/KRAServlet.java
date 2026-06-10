@@ -14,6 +14,8 @@ import java.sql.SQLException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+
 @WebServlet("/KRAServlet")
 public class KRAServlet extends HttpServlet {
 
@@ -274,17 +276,51 @@ public class KRAServlet extends HttpServlet {
     }
 
     private void saveDraft(HttpServletRequest request,
-                           HttpServletResponse response)
-            throws IOException {
+                       HttpServletResponse response)
+        throws IOException {
 
-        response.getWriter().print("Draft Saved");
+        try{
+    
+            String body =
+            getRequestBody(request);
+    
+            System.out.println("SAVE DRAFT JSON:");
+            System.out.println(body);
+    
+            response.getWriter()
+                    .print("Draft Saved");
+    
+        }catch(Exception e){
+    
+            e.printStackTrace();
+    
+            response.getWriter()
+                    .print("Error");
+        }
     }
 
     private void publish(HttpServletRequest request,
-                         HttpServletResponse response)
-            throws IOException {
+                     HttpServletResponse response)
+        throws IOException {
 
-        response.getWriter().print("Published");
+        try{
+    
+            String body =
+            getRequestBody(request);
+    
+            System.out.println("PUBLISH JSON:");
+            System.out.println(body);
+    
+            response.getWriter()
+                    .print("Published");
+    
+        }catch(Exception e){
+    
+            e.printStackTrace();
+    
+            response.getWriter()
+                    .print("Error");
+        }
     }
 
     private void getReviewData(HttpServletRequest request,
@@ -295,4 +331,22 @@ public class KRAServlet extends HttpServlet {
 
         response.getWriter().print("[]");
     }
+
+    private String getRequestBody(HttpServletRequest request)
+        throws IOException {
+
+        StringBuilder sb = new StringBuilder();
+    
+        BufferedReader reader = request.getReader();
+    
+        String line;
+    
+        while((line = reader.readLine()) != null){
+            sb.append(line);
+        }
+    
+        return sb.toString();
+    }
+    
+
 }
