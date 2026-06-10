@@ -293,22 +293,20 @@ function loadMyKRA(){
                         padding:10px;
                         border:1px solid #e2e8f0;
                         border-radius:6px;
-                        resize:vertical;">
-                    </textarea>
+                        resize:vertical;">${r.selfAppraisal || ""}</textarea>
 
                 </td>
 
                 <td>
 
-                    <select
-                        class="selfRating">
+                    <select class="selfRating">
 
-                        <option>1</option>
-                        <option>2</option>
-                        <option>3</option>
-                        <option>4</option>
-                        <option>5</option>
-
+                        <option value="1" ${r.selfRating==1?"selected":""}>1</option>
+                        <option value="2" ${r.selfRating==2?"selected":""}>2</option>
+                        <option value="3" ${r.selfRating==3?"selected":""}>3</option>
+                        <option value="4" ${r.selfRating==4?"selected":""}>4</option>
+                        <option value="5" ${r.selfRating==5?"selected":""}>5</option>
+                    
                     </select>
 
                 </td>
