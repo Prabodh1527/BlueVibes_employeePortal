@@ -206,6 +206,13 @@ public class KRAServlet extends HttpServlet {
             String email =
             (String) request.getSession()
                             .getAttribute("email");
+            System.out.println("SESSION EMAIL = " + email);
+            
+            System.out.println(
+                "QUERY = SELECT * FROM kra_master " +
+                "WHERE employee_email='" + email +
+                "' AND status='PUBLISHED'"
+            );
     
             Connection con =
             DBConnection.getConnection();
