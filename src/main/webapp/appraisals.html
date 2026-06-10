@@ -324,21 +324,100 @@ function loadMyKRA(){
 
 function saveDraft(){
 
-    alert("Draft Saved");
+    const appraisals =
+    [];
 
+    document
+    .querySelectorAll("#appraisalBody tr")
+    .forEach(row=>{
+
+        appraisals.push({
+
+            selfAppraisal:
+            row.querySelector(".selfAppraisal").value,
+
+            selfRating:
+            row.querySelector(".selfRating").value
+
+        });
+
+    });
+
+    fetch(
+        "KRAServlet?action=saveEmployeeDraft",
+        {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+
+                assessmentYear:
+                document.getElementById(
+                "assessmentYear").value,
+
+                appraisals:appraisals
+
+            })
+        }
+    )
+    .then(res=>res.text())
+    .then(msg=>{
+
+        alert(msg);
+
+    });
 }
 
 function submitAppraisal(){
 
-    if(confirm("Submit Appraisal?")){
+    const appraisals =
+    [];
 
-        alert("Appraisal Submitted");
+    document
+    .querySelectorAll("#appraisalBody tr")
+    .forEach(row=>{
+
+        appraisals.push({
+
+            selfAppraisal:
+            row.querySelector(".selfAppraisal").value,
+
+            selfRating:
+            row.querySelector(".selfRating").value
+
+        });
+
+    });
+
+    fetch(
+        "KRAServlet?action=submitAppraisal",
+        {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+
+                assessmentYear:
+                document.getElementById(
+                "assessmentYear").value,
+
+                appraisals:appraisals
+
+            })
+        }
+    )
+    .then(res=>res.text())
+    .then(msg=>{
+
+        alert(msg);
 
         document
         .getElementById("status")
         .value = "Submitted";
 
-    }
+    });
 }
 
 window.onload=function(){
