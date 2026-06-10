@@ -506,7 +506,7 @@ public class KRAServlet extends HttpServlet {
                 JSONObject row =
                 appraisals.getJSONObject(i);
     
-                ps.setInt(1,1);
+                ps.setInt(1,2);
     
                 ps.setString(2,email);
     
