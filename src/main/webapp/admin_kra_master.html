@@ -848,6 +848,61 @@ document.addEventListener("change",function(e){
 
         document.getElementById("designation").value =
         selected.getAttribute("data-designation") || "";
+
+        fetch(
+        `KRAServlet?action=getKRADefinition&email=${e.target.value}`
+        )
+        .then(res=>res.json())
+        .then(data=>{
+
+            const body =
+            document.getElementById("kraTableBody");
+
+            body.innerHTML="";
+
+            data.forEach(row=>{
+
+                body.innerHTML += `
+
+                <tr>
+
+                    <td>
+                    <input type="text"
+                    class="objective"
+                    value="${row.objective}">
+                    </td>
+
+                    <td>
+                    <input type="text"
+                    class="measurement"
+                    value="${row.measurementCriteria}">
+                    </td>
+
+                    <td>
+                    <input type="text"
+                    class="activity"
+                    value="${row.subActivity}">
+                    </td>
+
+                    <td>
+                    <input type="number"
+                    class="weightage"
+                    value="${row.weightage}">
+                    </td>
+
+                    <td>
+                    <button
+                    class="btn btn-danger"
+                    onclick="deleteRow(this)">
+                    Delete
+                    </button>
+                    </td>
+
+                </tr>`;
+            });
+
+            updateSummary();
+        });
     }
 });
 
