@@ -1,11 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>BlueVibes | KRA Appraisals</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
 
@@ -15,6 +14,9 @@
     --bg:#f1f5f9;
     --border:#e2e8f0;
     --white:#ffffff;
+    --success:#16a34a;
+    --warning:#f59e0b;
+    --danger:#dc2626;
 }
 
 *{
@@ -31,7 +33,9 @@ body{
     overflow:hidden;
 }
 
-/* SIDEBAR */
+/* ======================
+SIDEBAR
+====================== */
 
 .sidebar{
     width:280px;
@@ -39,13 +43,14 @@ body{
     display:flex;
     flex-direction:column;
     flex-shrink:0;
+    border-right:1px solid rgba(255,255,255,.1);
     overflow-y:auto;
 }
 
 .sidebar-header{
     padding:2.5rem 1.5rem;
     text-align:center;
-    border-bottom:1px solid rgba(255,255,255,0.05);
+    border-bottom:1px solid rgba(255,255,255,.05);
 }
 
 .brand-container{
@@ -58,10 +63,12 @@ body{
 
 .logo-main{
     width:100px;
+    object-fit:contain;
 }
 
 .logo-secondary{
     width:220px;
+    object-fit:contain;
 }
 
 .brand-name{
@@ -70,6 +77,9 @@ body{
     color:white;
     letter-spacing:4px;
     margin-top:10px;
+    background:linear-gradient(to right,#fff,#64748b);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
 }
 
 .nav-links{
@@ -82,11 +92,11 @@ body{
     display:flex;
     align-items:center;
     gap:12px;
-    padding:0.8rem 1.2rem;
+    padding:.8rem 1.2rem;
     border-radius:8px;
     color:#94a3b8;
     text-decoration:none;
-    margin-bottom:0.5rem;
+    margin-bottom:.5rem;
     transition:.3s;
     font-size:.85rem;
 }
@@ -97,17 +107,47 @@ body{
     color:white;
 }
 
+.submenu{
+    display:none;
+    list-style:none;
+    padding-left:2.5rem;
+}
+
+.submenu.show{
+    display:block;
+}
+
+.submenu-item{
+    display:block;
+    padding:.6rem 1rem;
+    color:#94a3b8;
+    text-decoration:none;
+    font-size:.8rem;
+    border-radius:6px;
+}
+
+.submenu-item:hover{
+    color:white;
+    background:rgba(255,255,255,.05);
+}
+
 .logout-sect{
     padding:1.5rem;
-    border-top:1px solid rgba(255,255,255,0.1);
+    border-top:1px solid rgba(255,255,255,.1);
 }
 
 .logout-btn{
     color:#f87171;
     text-decoration:none;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:600;
 }
 
-/* MAIN */
+/* ======================
+MAIN
+====================== */
 
 .main-wrapper{
     flex-grow:1;
@@ -122,98 +162,212 @@ body{
     color:white;
     display:flex;
     align-items:center;
+    justify-content:space-between;
     padding:0 2rem;
 }
 
 .content-area{
     padding:2rem;
-    overflow:auto;
+    overflow-y:auto;
+    flex-grow:1;
 }
 
-/* CARD */
+/* ======================
+HEADER CARD
+====================== */
+
+.page-banner{
+    background:linear-gradient(
+        135deg,
+        #0f172a 0%,
+        #0284c7 100%
+    );
+    color:white;
+    padding:2rem;
+    border-radius:15px;
+    margin-bottom:25px;
+}
+
+.page-banner h1{
+    font-size:1.8rem;
+    margin-bottom:8px;
+}
+
+.page-banner p{
+    opacity:.9;
+}
+
+/* ======================
+TABS
+====================== */
+
+.tab-container{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.tab-btn{
+    border:none;
+    padding:12px 20px;
+    border-radius:10px;
+    cursor:pointer;
+    background:white;
+    border:1px solid var(--border);
+    font-weight:600;
+}
+
+.tab-btn.active{
+    background:var(--accent);
+    color:white;
+}
+
+/* ======================
+CARDS
+====================== */
 
 .card{
     background:white;
     border-radius:15px;
     padding:25px;
     border:1px solid var(--border);
-}
-
-.page-title{
-    font-size:22px;
-    font-weight:700;
     margin-bottom:20px;
 }
 
-.form-row{
-    display:flex;
+/* ======================
+FORM GRID
+====================== */
+
+.form-grid{
+    display:grid;
+    grid-template-columns:
+    repeat(4,1fr);
     gap:20px;
-    margin-bottom:20px;
 }
 
-input,
-textarea{
-    width:100%;
-    padding:10px;
+.form-group{
+    display:flex;
+    flex-direction:column;
+}
+
+.form-group label{
+    font-size:.85rem;
+    font-weight:600;
+    margin-bottom:6px;
+    color:#475569;
+}
+
+.form-control{
+    padding:11px;
     border:1px solid var(--border);
     border-radius:8px;
-    font-family:inherit;
+    font-size:.9rem;
 }
 
-table{
+/* ======================
+KRA TABLE
+====================== */
+
+.table-wrapper{
+    overflow-x:auto;
+}
+
+.kra-table{
     width:100%;
     border-collapse:collapse;
-    margin-top:20px;
 }
 
-th{
-    background:#0f172a;
+.kra-table th{
+    background:var(--primary);
     color:white;
     padding:12px;
     text-align:left;
+    font-size:.85rem;
 }
 
-td{
-    padding:10px;
-    border:1px solid #e5e7eb;
+.kra-table td{
+    border:1px solid var(--border);
+    padding:8px;
+}
+
+.kra-table input{
+    width:100%;
+    border:1px solid var(--border);
+    padding:8px;
+    border-radius:6px;
+}
+
+/* ======================
+BUTTONS
+====================== */
+
+.action-bar{
+    display:flex;
+    gap:12px;
+    margin-top:20px;
+    flex-wrap:wrap;
 }
 
 .btn{
     border:none;
     cursor:pointer;
-    padding:10px 18px;
+    padding:12px 20px;
     border-radius:8px;
     font-weight:600;
 }
 
 .btn-primary{
-    background:#0284c7;
+    background:var(--accent);
     color:white;
 }
 
 .btn-success{
-    background:#16a34a;
-    color:white;
-}
-
-.btn-danger{
-    background:#dc2626;
+    background:var(--success);
     color:white;
 }
 
 .btn-warning{
-    background:#f59e0b;
+    background:var(--warning);
     color:white;
 }
 
-.action-bar{
-    display:flex;
-    gap:10px;
-    margin-top:20px;
+.btn-danger{
+    background:var(--danger);
+    color:white;
 }
 
-textarea{
-    min-height:60px;
+/* ======================
+SUMMARY
+====================== */
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:
+    repeat(3,1fr);
+    gap:15px;
+}
+
+.summary-box{
+    background:#f8fafc;
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px;
+}
+
+.summary-box h4{
+    font-size:.8rem;
+    color:#64748b;
+    margin-bottom:8px;
+}
+
+.summary-box span{
+    font-size:1.4rem;
+    font-weight:700;
+    color:var(--primary);
+}
+
+.hidden{
+    display:none;
 }
 
 </style>
@@ -223,140 +377,335 @@ textarea{
 
 <aside class="sidebar">
 
-<div class="sidebar-header">
-<div class="brand-container">
-<img src="blueeye.png" class="logo-main">
-<img src="bluedigital.png" class="logo-secondary">
-</div>
-<div class="brand-name">BlueVibes</div>
-</div>
+    <div class="sidebar-header">
+        <div class="brand-container">
+            <img src="blueeye.png" class="logo-main">
+            <img src="bluedigital.png" class="logo-secondary">
+        </div>
+        <div class="brand-name">BlueVibes</div>
+    </div>
 
-<nav class="nav-links">
+    <nav class="nav-links">
 
-<a href="adminhome.html" class="nav-item">
-<i class="ph ph-house"></i>
-Admin Dashboard
-</a>
+        <a href="adminhome.html" class="nav-item">
+            <i class="ph ph-house"></i>
+            Admin Dashboard
+        </a>
 
-<a href="adminprofile.html" class="nav-item">
-<i class="ph ph-user"></i>
-My Profile
-</a>
+        <a href="adminprofile.html" class="nav-item">
+            <i class="ph ph-user"></i>
+            My Profile
+        </a>
 
-<a href="usermanagement.html" class="nav-item">
-<i class="ph ph-users-three"></i>
-User Management
-</a>
+        <a href="usermanagement.html" class="nav-item">
+            <i class="ph ph-users-three"></i>
+            User Management
+        </a>
 
-<a href="adminreports.html" class="nav-item">
-<i class="ph ph-clipboard-text"></i>
-View Weekly Reports
-</a>
+        <a href="adminreports.html" class="nav-item">
+            <i class="ph ph-clipboard-text"></i>
+            View Weekly Reports
+        </a>
 
-<a href="admin_kra_master.html" class="nav-item active">
-<i class="ph ph-chart-line-up"></i>
-KRA Appraisals
-</a>
+        <a href="admin_kra_master.html" class="nav-item active">
+            <i class="ph ph-chart-line-up"></i>
+            KRA Appraisals
+        </a>
 
-</nav>
+        <button class="nav-item" onclick="toggleMasters()">
+            <i class="ph ph-database"></i>
+            Masters
+            <i class="ph ph-caret-down" style="margin-left:auto;"></i>
+        </button>
 
-<div class="logout-sect">
-<a href="index.html" class="logout-btn">
-<i class="ph ph-power"></i>
-Logout Account
-</a>
-</div>
+        <ul id="mastersSubmenu" class="submenu">
+            <li><a href="designationmaster.html" class="submenu-item">Designation Master</a></li>
+            <li><a href="qualificationmaster.html" class="submenu-item">Qualification Master</a></li>
+            <li><a href="experiencemaster.html" class="submenu-item">Experience Master</a></li>
+            <li><a href="certificationmaster.html" class="submenu-item">Certification Master</a></li>
+            <li><a href="taskmaster.html" class="submenu-item">Task Description Master</a></li>
+            <li><a href="customermaster.html" class="submenu-item">Customer Master</a></li>
+        </ul>
+
+        <a href="admin_notifications.html" class="nav-item">
+            <i class="ph ph-megaphone"></i>
+            Publish Notifications
+        </a>
+
+        <a href="genpayslip.html" class="nav-item">
+            <i class="ph ph-receipt"></i>
+            Upload Payslips
+        </a>
+
+        <a href="policy.html" class="nav-item">
+            <i class="ph ph-scroll"></i>
+            Company Policies
+        </a>
+
+        <a href="adminleave.html" class="nav-item">
+            <i class="ph ph-calendar-x"></i>
+            Approve / Reject Leaves
+        </a>
+
+    </nav>
+
+    <div class="logout-sect">
+        <a href="index.html" class="logout-btn">
+            <i class="ph ph-power"></i>
+            Logout Account
+        </a>
+    </div>
 
 </aside>
 
 <main class="main-wrapper">
 
 <header class="top-header">
-<h2>KRA Appraisals</h2>
+    <h2>KRA Appraisals Management</h2>
 </header>
 
 <div class="content-area">
 
-<div class="card">
+    <div class="page-banner">
+        <h1>KRA Appraisals</h1>
+        <p>Create, Publish, Review and Export Employee KRA Assessments</p>
+    </div>
 
-<div class="page-title">
-KRA Definition Sheet
-</div>
+    <div class="tab-container">
 
-<div class="form-row">
+        <button class="tab-btn active"
+                id="definitionTabBtn"
+                onclick="showTab('definition')">
+            KRA Definition
+        </button>
 
-<div>
-<label>Assessment Year</label>
-<input type="text" id="assessmentYear" value="2026-27">
-</div>
+        <button class="tab-btn"
+                id="reviewTabBtn"
+                onclick="showTab('review')">
+            Review Appraisals
+        </button>
 
-</div>
+    </div>
 
-<table id="kraTable">
+    <!-- ================================================= -->
+    <!-- KRA DEFINITION TAB -->
+    <!-- ================================================= -->
 
-<thead>
-<tr>
-<th>Objective</th>
-<th>Measurement Criteria</th>
-<th>Sub Activity</th>
-<th>Weightage</th>
-<th>Delete</th>
-</tr>
-</thead>
+    <div id="definitionTab">
 
-<tbody id="kraBody">
+        <div class="card">
 
-<tr>
+            <div class="form-grid">
 
-<td>
-<textarea placeholder="Objective"></textarea>
-</td>
+                <div class="form-group">
+                    <label>Assessment Year</label>
+                    <select id="assessmentYear" class="form-control">
+                    </select>
+                </div>
 
-<td>
-<textarea placeholder="Measurement Criteria"></textarea>
-</td>
+                <div class="form-group">
+                    <label>Employee</label>
+                    <select id="employeeSelect" class="form-control">
+                        <option>Select Employee</option>
+                    </select>
+                </div>
 
-<td>
-<textarea placeholder="Sub Activity"></textarea>
-</td>
+                <div class="form-group">
+                    <label>Employee ID</label>
+                    <input type="text"
+                           id="employeeId"
+                           class="form-control"
+                           readonly>
+                </div>
 
-<td>
-<input type="number" value="5">
-</td>
+                <div class="form-group">
+                    <label>Designation</label>
+                    <input type="text"
+                           id="designation"
+                           class="form-control"
+                           readonly>
+                </div>
 
-<td>
-<button class="btn btn-danger" onclick="deleteRow(this)">
-Delete
-</button>
-</td>
+            </div>
 
-</tr>
+        </div>
 
-</tbody>
+        <div class="card">
 
-</table>
+            <div class="table-wrapper">
 
-<div class="action-bar">
+                <table class="kra-table">
 
-<button class="btn btn-primary" onclick="addRow()">
-+ Add Row
-</button>
+                    <thead>
 
-<button class="btn btn-success">
-Save KRA
-</button>
+                    <tr>
+                        <th style="width:25%">Objective</th>
+                        <th style="width:25%">Measurement Criteria</th>
+                        <th style="width:25%">Sub Activity</th>
+                        <th style="width:10%">Weightage</th>
+                        <th style="width:10%">Action</th>
+                    </tr>
 
-<button class="btn btn-warning">
-Publish
-</button>
+                    </thead>
 
-<button class="btn btn-primary">
-Export Sheet
-</button>
+                    <tbody id="kraTableBody">
 
-</div>
+                    </tbody>
 
-</div>
+                </table>
+
+            </div>
+
+            <div class="action-bar">
+
+                <button class="btn btn-primary"
+                        onclick="addRow()">
+                    + Add Row
+                </button>
+
+                <button class="btn btn-warning"
+                        onclick="saveDraft()">
+                    Save Draft
+                </button>
+
+                <button class="btn btn-success"
+                        onclick="publishKRA()">
+                    Publish
+                </button>
+
+                <button class="btn btn-primary"
+                        onclick="exportKRA()">
+                    Export Excel
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="card">
+
+            <div class="summary-grid">
+
+                <div class="summary-box">
+                    <h4>Total KRAs</h4>
+                    <span id="totalKRA">0</span>
+                </div>
+
+                <div class="summary-box">
+                    <h4>Total Weightage</h4>
+                    <span id="totalWeight">0</span>
+                </div>
+
+                <div class="summary-box">
+                    <h4>Status</h4>
+                    <span id="kraStatus">Draft</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================================================= -->
+    <!-- REVIEW TAB -->
+    <!-- ================================================= -->
+
+    <div id="reviewTab" class="hidden">
+
+        <div class="card">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label>Assessment Year</label>
+                    <select id="reviewYear"
+                            class="form-control">
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Employee</label>
+                    <select id="reviewEmployee"
+                            class="form-control">
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <select class="form-control">
+                        <option>All</option>
+                        <option>Submitted</option>
+                        <option>Approved</option>
+                        <option>Needs Improvement</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary"
+                            onclick="loadReviewData()">
+                        Load Appraisal
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card">
+
+            <div class="table-wrapper">
+
+                <table class="kra-table">
+
+                    <thead>
+
+                    <tr>
+                        <th>Objective</th>
+                        <th>Weightage</th>
+                        <th>Self Appraisal</th>
+                        <th>Employee Rating</th>
+                        <th>Manager Comments</th>
+                        <th>Manager Rating</th>
+                    </tr>
+
+                    </thead>
+
+                    <tbody id="reviewBody">
+
+                    <tr>
+                        <td colspan="6"
+                            style="text-align:center;padding:20px;">
+                            Select an employee and load appraisal.
+                        </td>
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <div class="action-bar">
+
+                <button class="btn btn-success">
+                    Approve
+                </button>
+
+                <button class="btn btn-danger">
+                    Needs Improvement
+                </button>
+
+                <button class="btn btn-primary">
+                    Export Review
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
 
 </div>
 
@@ -364,54 +713,500 @@ Export Sheet
 
 <script>
 
+<script>
+
+let currentStatus = "Draft";
+
+/* ==========================
+   TAB SWITCHING
+========================== */
+
+function showTab(tab){
+
+    document.getElementById("definitionTab").classList.add("hidden");
+    document.getElementById("reviewTab").classList.add("hidden");
+
+    document.getElementById("definitionTabBtn").classList.remove("active");
+    document.getElementById("reviewTabBtn").classList.remove("active");
+
+    if(tab==="definition"){
+        document.getElementById("definitionTab").classList.remove("hidden");
+        document.getElementById("definitionTabBtn").classList.add("active");
+    }
+    else{
+        document.getElementById("reviewTab").classList.remove("hidden");
+        document.getElementById("reviewTabBtn").classList.add("active");
+    }
+}
+
+/* ==========================
+   MASTERS MENU
+========================== */
+
+function toggleMasters(){
+    document
+        .getElementById("mastersSubmenu")
+        .classList
+        .toggle("show");
+}
+
+/* ==========================
+   YEAR DROPDOWN
+========================== */
+
+function loadAssessmentYears(){
+
+    const yearSelect =
+        document.getElementById("assessmentYear");
+
+    const reviewSelect =
+        document.getElementById("reviewYear");
+
+    yearSelect.innerHTML="";
+    reviewSelect.innerHTML="";
+
+    let startYear = 2026;
+
+    for(let i=0;i<5;i++){
+
+        let y1 = startYear + i;
+        let y2 = (y1 + 1).toString().slice(-2);
+
+        let yearText = `${y1}-${y2}`;
+
+        yearSelect.innerHTML +=
+        `<option value="${yearText}">
+            ${yearText}
+        </option>`;
+
+        reviewSelect.innerHTML +=
+        `<option value="${yearText}">
+            ${yearText}
+        </option>`;
+    }
+}
+
+/* ==========================
+   LOAD EMPLOYEES
+========================== */
+
+function loadEmployees(){
+
+    fetch("KRAServlet?action=getEmployees")
+
+    .then(res=>res.json())
+
+    .then(data=>{
+
+        const emp =
+            document.getElementById("employeeSelect");
+
+        const review =
+            document.getElementById("reviewEmployee");
+
+        emp.innerHTML =
+        `<option value="">Select Employee</option>`;
+
+        review.innerHTML =
+        `<option value="">Select Employee</option>`;
+
+        data.forEach(e=>{
+
+            emp.innerHTML += `
+            <option
+                value="${e.email}"
+                data-id="${e.employeeId}"
+                data-designation="${e.designation}">
+                ${e.fullname}
+            </option>`;
+
+            review.innerHTML += `
+            <option value="${e.email}">
+                ${e.fullname}
+            </option>`;
+        });
+
+    })
+
+    .catch(err=>{
+        console.log(err);
+    });
+}
+
+/* ==========================
+   EMPLOYEE AUTO FILL
+========================== */
+
+document.addEventListener("change",function(e){
+
+    if(e.target.id==="employeeSelect"){
+
+        const selected =
+        e.target.options[e.target.selectedIndex];
+
+        document.getElementById("employeeId").value =
+        selected.getAttribute("data-id") || "";
+
+        document.getElementById("designation").value =
+        selected.getAttribute("data-designation") || "";
+    }
+});
+
+/* ==========================
+   ADD ROW
+========================== */
+
 function addRow(){
 
-const row=`
+    const tbody =
+    document.getElementById("kraTableBody");
 
-<tr>
+    tbody.insertAdjacentHTML("beforeend",`
 
-<td>
-<textarea placeholder="Objective"></textarea>
-</td>
+    <tr>
 
-<td>
-<textarea placeholder="Measurement Criteria"></textarea>
-</td>
+        <td>
+            <input type="text"
+                   class="objective">
+        </td>
 
-<td>
-<textarea placeholder="Sub Activity"></textarea>
-</td>
+        <td>
+            <input type="text"
+                   class="measurement">
+        </td>
 
-<td>
-<input type="number" value="5">
-</td>
+        <td>
+            <input type="text"
+                   class="activity">
+        </td>
 
-<td>
-<button class="btn btn-danger" onclick="deleteRow(this)">
-Delete
-</button>
-</td>
+        <td>
+            <input type="number"
+                   class="weightage"
+                   value="0"
+                   min="0"
+                   oninput="updateSummary()">
+        </td>
 
-</tr>
+        <td>
+            <button
+                class="btn btn-danger"
+                onclick="deleteRow(this)">
+                Delete
+            </button>
+        </td>
 
-`;
+    </tr>
 
-document
-.getElementById("kraBody")
-.insertAdjacentHTML("beforeend",row);
+    `);
 
+    updateSummary();
 }
+
+/* ==========================
+   DELETE ROW
+========================== */
 
 function deleteRow(btn){
 
-const rows=document.querySelectorAll("#kraBody tr");
+    btn.closest("tr").remove();
 
-if(rows.length===1){
-alert("At least one KRA row is required.");
-return;
+    updateSummary();
 }
 
-btn.closest("tr").remove();
+/* ==========================
+   SUMMARY
+========================== */
+
+function updateSummary(){
+
+    const rows =
+    document.querySelectorAll(
+        "#kraTableBody tr"
+    );
+
+    document.getElementById("totalKRA")
+    .innerText = rows.length;
+
+    let totalWeight = 0;
+
+    document
+    .querySelectorAll(".weightage")
+    .forEach(w=>{
+
+        totalWeight +=
+        Number(w.value || 0);
+
+    });
+
+    document.getElementById("totalWeight")
+    .innerText = totalWeight;
+}
+
+/* ==========================
+   COLLECT DATA
+========================== */
+
+function collectKRAData(){
+
+    const rows = [];
+
+    document
+    .querySelectorAll("#kraTableBody tr")
+    .forEach(row=>{
+
+        rows.push({
+
+            objective:
+            row.querySelector(".objective").value,
+
+            measurementCriteria:
+            row.querySelector(".measurement").value,
+
+            subActivity:
+            row.querySelector(".activity").value,
+
+            weightage:
+            row.querySelector(".weightage").value
+        });
+
+    });
+
+    return rows;
+}
+
+/* ==========================
+   SAVE DRAFT
+========================== */
+
+function saveDraft(){
+
+    const payload = {
+
+        assessmentYear:
+        document.getElementById("assessmentYear").value,
+
+        employeeEmail:
+        document.getElementById("employeeSelect").value,
+
+        employeeId:
+        document.getElementById("employeeId").value,
+
+        designation:
+        document.getElementById("designation").value,
+
+        status:"DRAFT",
+
+        rows:collectKRAData()
+    };
+
+    fetch(
+        "KRAServlet?action=saveDraft",
+        {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify(payload)
+        }
+    )
+    .then(res=>res.text())
+    .then(msg=>{
+
+        currentStatus="Draft";
+
+        document.getElementById("kraStatus")
+        .innerText="Draft";
+
+        alert("Draft Saved Successfully");
+
+    });
+}
+
+/* ==========================
+   PUBLISH
+========================== */
+
+function publishKRA(){
+
+    let total =
+    Number(
+    document.getElementById("totalWeight")
+    .innerText);
+
+    if(total!==100){
+
+        alert(
+        "Total Weightage must equal 100");
+
+        return;
+    }
+
+    const payload = {
+
+        assessmentYear:
+        document.getElementById("assessmentYear").value,
+
+        employeeEmail:
+        document.getElementById("employeeSelect").value,
+
+        employeeId:
+        document.getElementById("employeeId").value,
+
+        designation:
+        document.getElementById("designation").value,
+
+        status:"PUBLISHED",
+
+        rows:collectKRAData()
+    };
+
+    fetch(
+        "KRAServlet?action=publish",
+        {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify(payload)
+        }
+    )
+    .then(res=>res.text())
+    .then(msg=>{
+
+        currentStatus="Published";
+
+        document.getElementById("kraStatus")
+        .innerText="Published";
+
+        alert("KRA Published");
+
+    });
+}
+
+/* ==========================
+   EXPORT EXCEL
+========================== */
+
+function exportKRA(){
+
+    const rows = [];
+
+    rows.push([
+        "Objective",
+        "Measurement Criteria",
+        "Sub Activity",
+        "Weightage"
+    ]);
+
+    document
+    .querySelectorAll("#kraTableBody tr")
+    .forEach(r=>{
+
+        rows.push([
+
+            r.querySelector(".objective").value,
+
+            r.querySelector(".measurement").value,
+
+            r.querySelector(".activity").value,
+
+            r.querySelector(".weightage").value
+
+        ]);
+    });
+
+    const ws =
+    XLSX.utils.aoa_to_sheet(rows);
+
+    const wb =
+    XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+        wb,
+        ws,
+        "KRA"
+    );
+
+    XLSX.writeFile(
+        wb,
+        "KRA_Appraisal.xlsx"
+    );
+}
+
+/* ==========================
+   REVIEW TAB
+========================== */
+
+function loadReviewData(){
+
+    const email =
+    document.getElementById("reviewEmployee").value;
+
+    const year =
+    document.getElementById("reviewYear").value;
+
+    fetch(
+        `KRAServlet?action=getReviewData&email=${email}&year=${year}`
+    )
+
+    .then(res=>res.json())
+
+    .then(data=>{
+
+        const body =
+        document.getElementById("reviewBody");
+
+        body.innerHTML="";
+
+        data.forEach(r=>{
+
+            body.innerHTML += `
+
+            <tr>
+
+                <td>${r.objective}</td>
+
+                <td>${r.weightage}</td>
+
+                <td>${r.selfAppraisal}</td>
+
+                <td>${r.selfRating}</td>
+
+                <td>
+                    <textarea
+                        style="
+                        width:100%;
+                        height:70px;">
+                    </textarea>
+                </td>
+
+                <td>
+                    <input
+                    type="number"
+                    min="1"
+                    max="5">
+                </td>
+
+            </tr>
+
+            `;
+        });
+
+    });
+}
+
+/* ==========================
+   INITIAL LOAD
+========================== */
+
+window.onload=function(){
+
+    loadAssessmentYears();
+
+    loadEmployees();
+
+    addRow();
 
 }
 
