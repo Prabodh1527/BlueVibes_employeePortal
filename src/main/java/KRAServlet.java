@@ -654,7 +654,12 @@ public class KRAServlet extends HttpServlet {
             ps.setString(2,email);
             ps.setString(3,assessmentYear);
     
+            int rowsUpdated =
             ps.executeUpdate();
+    
+            System.out.println(
+                "ROWS UPDATED = " +
+                rowsUpdated);
     
             response.getWriter()
                     .print(
