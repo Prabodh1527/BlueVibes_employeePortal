@@ -463,29 +463,6 @@ public class KRAServlet extends HttpServlet {
         return sb.toString();
     }
 
-    private void saveEmployeeDraft(
-        HttpServletRequest request,
-        HttpServletResponse response)
-        throws IOException {
-
-        try{
-    
-            String body =
-            getRequestBody(request);
-    
-            System.out.println(body);
-    
-            response.getWriter().print(
-                "Employee Draft Saved");
-    
-        }catch(Exception e){
-    
-            e.printStackTrace();
-    
-            response.getWriter().print(
-                "Error");
-        }
-    }
     
     private void saveEmployeeDraft(
         HttpServletRequest request,
