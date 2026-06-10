@@ -545,13 +545,39 @@ public class KRAServlet extends HttpServlet {
     
             PreparedStatement ps =
             con.prepareStatement(sql);
+
+            String kraSql =
+
+                "SELECT id FROM kra_master " +
+                "WHERE employee_email=? " +
+                "AND assessment_year=? " +
+                "AND status='PUBLISHED'";
+                
+                PreparedStatement kraPs =
+                con.prepareStatement(kraSql);
+                
+                kraPs.setString(1,email);
+                
+                kraPs.setString(
+                    2,
+                    json.getString("assessmentYear"));
+                
+                ResultSet kraRs =
+                kraPs.executeQuery();
+                
+                int kraId = 0;
+                
+                if(kraRs.next()){
+                
+                    kraId = kraRs.getInt("id");
+                }
     
             for(int i=0;i<appraisals.length();i++){
     
                 JSONObject row =
                 appraisals.getJSONObject(i);
     
-                ps.setInt(1,2);
+                ps.setInt(1,kraId);
     
                 ps.setString(2,email);
     
@@ -591,8 +617,56 @@ public class KRAServlet extends HttpServlet {
         HttpServletResponse response)
         throws IOException {
 
-        response.getWriter().print(
-            "Employee Appraisal Submitted");
+        try{
+    
+            String email =
+            (String)request.getSession()
+                           .getAttribute("userEmail");
+    
+            String body =
+            getRequestBody(request);
+    
+            JSONObject json =
+            new JSONObject(body);
+    
+            String assessmentYear =
+            json.getString("assessmentYear");
+    
+            Connection con =
+            DBConnection.getConnection();
+    
+            String sql =
+    
+            "UPDATE kra_response " +
+            "SET response_status='SUBMITTED' " +
+            "WHERE employee_email=? " +
+            "AND kra_id IN (" +
+            "SELECT id FROM kra_master " +
+            "WHERE employee_email=? " +
+            "AND assessment_year=? " +
+            "AND status='PUBLISHED'" +
+            ")";
+    
+            PreparedStatement ps =
+            con.prepareStatement(sql);
+    
+            ps.setString(1,email);
+            ps.setString(2,email);
+            ps.setString(3,assessmentYear);
+    
+            ps.executeUpdate();
+    
+            response.getWriter()
+                    .print(
+                    "Employee Appraisal Submitted");
+    
+        }catch(Exception e){
+    
+            e.printStackTrace();
+    
+            response.getWriter()
+                    .print("Error");
+        }
     }
 
 }
