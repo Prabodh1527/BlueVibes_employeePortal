@@ -1266,7 +1266,17 @@ window.onload=function(){
 
 function loadReviewData(){
 
-    fetch("KRAServlet?action=getReviewData")
+    const email =
+        document.getElementById(
+        "reviewEmployee").value;
+        
+        const year =
+        document.getElementById(
+        "reviewYear").value;
+        
+        fetch(
+        `KRAServlet?action=getReviewData&email=${email}&year=${year}`
+        )
 
     .then(res=>res.json())
 
