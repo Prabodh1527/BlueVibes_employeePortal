@@ -45,6 +45,10 @@ public class KRAServlet extends HttpServlet {
                 getEmployeeKRA(request,response);
                 break;
 
+            case "getKRADefinition":
+                getKRADefinition(request,response);
+                break;
+
             default:
                 response.getWriter().print("Invalid Action");
         }
@@ -768,5 +772,67 @@ public class KRAServlet extends HttpServlet {
                     .print("Error");
         }
     }
+
+    private void getKRADefinition(
+    HttpServletRequest request,
+    HttpServletResponse response)
+    throws IOException {
+
+    response.setContentType("application/json");
+
+    JSONArray arr = new JSONArray();
+
+    try{
+
+        String email =
+        request.getParameter("email");
+
+        Connection con =
+        DBConnection.getConnection();
+
+        String sql =
+
+        "SELECT * FROM kra_master " +
+        "WHERE employee_email=?";
+
+        PreparedStatement ps =
+        con.prepareStatement(sql);
+
+        ps.setString(1,email);
+
+        ResultSet rs =
+        ps.executeQuery();
+
+        while(rs.next()){
+
+            JSONObject obj =
+            new JSONObject();
+
+            obj.put(
+                "objective",
+                rs.getString("objective"));
+
+            obj.put(
+                "measurementCriteria",
+                rs.getString("measurement_criteria"));
+
+            obj.put(
+                "subActivity",
+                rs.getString("sub_activity"));
+
+            obj.put(
+                "weightage",
+                rs.getInt("weightage"));
+
+            arr.put(obj);
+        }
+
+    }catch(Exception e){
+
+        e.printStackTrace();
+    }
+
+    response.getWriter().print(arr.toString());
+}
 
 }
