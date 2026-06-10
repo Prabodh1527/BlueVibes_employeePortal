@@ -487,13 +487,81 @@ public class KRAServlet extends HttpServlet {
         }
     }
     
-    private void submitEmployeeAppraisal(
-            HttpServletRequest request,
-            HttpServletResponse response)
-            throws IOException {
+    private void saveEmployeeDraft(
+        HttpServletRequest request,
+        HttpServletResponse response)
+        throws IOException {
+
+        try{
     
-        response.getWriter().print(
-            "Employee Appraisal Submitted");
+            String email =
+            (String)request.getSession()
+                           .getAttribute("userEmail");
+    
+            String body =
+            getRequestBody(request);
+    
+            JSONObject json =
+            new JSONObject(body);
+    
+            JSONArray appraisals =
+            json.getJSONArray("appraisals");
+    
+            Connection con =
+            DBConnection.getConnection();
+    
+            String sql =
+    
+            "INSERT INTO kra_response(" +
+            "kra_id," +
+            "employee_email," +
+            "self_appraisal," +
+            "self_rating," +
+            "response_status," +
+            "submitted_on" +
+            ") VALUES(?,?,?,?,?,CURRENT_TIMESTAMP)";
+    
+            PreparedStatement ps =
+            con.prepareStatement(sql);
+    
+            for(int i=0;i<appraisals.length();i++){
+    
+                JSONObject row =
+                appraisals.getJSONObject(i);
+    
+                ps.setInt(1,1);
+    
+                ps.setString(2,email);
+    
+                ps.setString(
+                    3,
+                    row.getString(
+                    "selfAppraisal"));
+    
+                ps.setInt(
+                    4,
+                    Integer.parseInt(
+                    row.getString(
+                    "selfRating")));
+    
+                ps.setString(
+                    5,
+                    "DRAFT");
+    
+                ps.executeUpdate();
+            }
+    
+            response.getWriter()
+                    .print(
+                    "Employee Draft Saved");
+    
+        }catch(Exception e){
+    
+            e.printStackTrace();
+    
+            response.getWriter()
+                    .print("Error");
+        }
     }
     
 
