@@ -276,6 +276,51 @@ public class KRAServlet extends HttpServlet {
                 row.put(
                     "weightage",
                     rs.getInt("weightage"));
+
+                String responseSql =
+                    
+                    "SELECT self_appraisal,self_rating " +
+                    "FROM kra_response " +
+                    "WHERE kra_id=? " +
+                    "AND employee_email=? " +
+                    "ORDER BY id DESC LIMIT 1";
+                    
+                    PreparedStatement responsePs =
+                    con.prepareStatement(responseSql);
+                    
+                    responsePs.setInt(
+                        1,
+                        rs.getInt("id"));
+                    
+                    responsePs.setString(
+                        2,
+                        email);
+                    
+                    ResultSet responseRs =
+                    responsePs.executeQuery();
+                    
+                    if(responseRs.next()){
+                    
+                        row.put(
+                            "selfAppraisal",
+                            responseRs.getString(
+                            "self_appraisal"));
+                    
+                        row.put(
+                            "selfRating",
+                            responseRs.getInt(
+                            "self_rating"));
+                    }
+                    else{
+                    
+                        row.put(
+                            "selfAppraisal",
+                            "");
+                    
+                        row.put(
+                            "selfRating",
+                            0);
+                    }
     
                 rows.put(row);
             }
