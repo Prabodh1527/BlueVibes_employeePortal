@@ -24,41 +24,52 @@ public class LoginServlet extends HttpServlet {
                 return;
             }
 
-            String sql = "SELECT fullname, role FROM users WHERE email=? AND password=? AND role=?";
+            // FIXED SQL: Select the password hash alongside other fields using just the email
+            String sql = "SELECT password, fullname, role FROM users WHERE email=?";
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, email);
-                ps.setString(2, password);
-                ps.setString(3, role);
 
                 try (ResultSet rs = ps.executeQuery()) {
+                    // Check if the user even exists with that email
                     if (rs.next()) {
-                        HttpSession session = request.getSession();
                         
-                        // Set attributes exactly as expected by other Servlets
-                        session.setAttribute("userEmail", email);
-                        
-                        // We take the role directly from the DB to be safe
+                        // 1. Grab the stored password string (could be plain-text or a Bcrypt hash)
+                        String storedPasswordFromDb = rs.getString("password");
                         String dbRole = rs.getString("role");
-                        session.setAttribute("userRole", dbRole);
-                        
-                        // Store the real name for the dashboard
-                        String fullName = rs.getString("fullname");
-                        session.setAttribute("userName", (fullName != null) ? fullName : "User");
 
-                        // Redirect based on the DB role
-                        if ("Admin".equalsIgnoreCase(dbRole)) {
-                            response.sendRedirect("adminhome.html");
+                        // 2. FIXED: Use our smart PasswordUtil to evaluate if it matches
+                        // This handles both old plain text entries and your new secure hashes!
+                        if (PasswordUtil.verifyPassword(password, storedPasswordFromDb) && dbRole.equalsIgnoreCase(role)) {
+                            
+                            HttpSession session = request.getSession();
+                            
+                            // Set attributes exactly as expected by other Servlets
+                            session.setAttribute("userEmail", email);
+                            session.setAttribute("userRole", dbRole);
+                            
+                            // Store the real name for the dashboard
+                            String fullName = rs.getString("fullname");
+                            session.setAttribute("userName", (fullName != null) ? fullName : "User");
+
+                            // Redirect based on the DB role
+                            if ("Admin".equalsIgnoreCase(dbRole)) {
+                                response.sendRedirect("adminhome.html");
+                            } else {
+                                response.sendRedirect("homepage.jsp");
+                            }
                         } else {
-                            response.sendRedirect("homepage.jsp");
+                            // Password failed verification or the role didn't match up
+                            response.sendRedirect("index.html?error=true");
                         }
                     } else {
-                        // Invalid credentials
+                        // User email not found in the records
                         response.sendRedirect("index.html?error=true");
                     }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
+            response.setStatus(500);
             response.getWriter().println("Database Error: " + e.getMessage());
         }
     }

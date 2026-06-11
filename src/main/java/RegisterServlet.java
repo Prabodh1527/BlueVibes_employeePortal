@@ -46,10 +46,19 @@ public class RegisterServlet extends HttpServlet {
                              "VALUES (?, ?, ?, ?, 'User', ?, ?, CAST(? AS DATE), ?)";
                 
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
+                    // Fetch the standard password string
+                    String defaultRawPassword = "dummypassword";
+                    
+                    // ==============================================================
+                    // FIXED: Using your PasswordUtil design to hash the password string
+                    // ==============================================================
+                    String encryptedPassword = PasswordUtil.hashPassword(defaultRawPassword);
+                    // ==============================================================
+
                     ps.setString(1, empid);
                     ps.setString(2, fullname);
                     ps.setString(3, email);
-                    ps.setString(4, "dummypassword");
+                    ps.setString(4, encryptedPassword); // <--- Injected secure hash into parameter 4
                     ps.setString(5, gender);
                     ps.setString(6, designation);
                     ps.setString(7, doj);
