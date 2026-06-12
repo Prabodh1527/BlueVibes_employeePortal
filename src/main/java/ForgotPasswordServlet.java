@@ -12,8 +12,8 @@ public class ForgotPasswordServlet extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String email = request.getParameter("userEmail");
-        System.out.println("FORGOT PASSWORD HIT");
-        System.out.println("EMAIL = " + email);
+        System.out.println("=== FORGOT PASSWORD SERVLET ACTIVATED ===");
+        System.out.println("Target User Email: " + email);
         
         String tempPassword = generateRandomPassword(8);
 
@@ -29,16 +29,16 @@ public class ForgotPasswordServlet extends HttpServlet {
             int rowsAffected = pst.executeUpdate();
             
             if (rowsAffected > 0) {
-                System.out.println("Database updated successfully. Attempting Brevo email dispatch...");
+                System.out.println("Database updated successfully. Triggering Brevo pipeline...");
                 sendEmail(email, tempPassword, "Your Temporary Password");
                 response.sendRedirect("forgotpassword.html?status=sent");
             } else {
-                System.out.println("Email not found in database table.");
+                System.out.println("Warning: Email Address '" + email + "' not found in Database 'users' table.");
                 response.sendRedirect("forgotpassword.html?status=notfound");
             }
             
         } catch (Exception e) {
-            System.err.println("ERROR RUNNING FORGOT PASSWORD SERVLET:");
+            System.err.println("CRITICAL FAILURE IN FORGOT PASSWORD SERVLET:");
             e.printStackTrace();
             response.sendRedirect("forgotpassword.html?status=error");
         } finally {
@@ -49,15 +49,21 @@ public class ForgotPasswordServlet extends HttpServlet {
     }
 
     private void sendEmail(String to, String tempPassword, String subject) throws MessagingException {
-        final String fromEmail = System.getenv("SUPPORT_EMAIL");
-        final String appPassword = System.getenv("SUPPORT_EMAIL_PASSWORD"); 
+        final String smtpUser = System.getenv("SUPPORT_EMAIL");
+        final String smtpKey = System.getenv("SUPPORT_EMAIL_PASSWORD"); 
+        
+        // Use a fallback to prevent strict Brevo authentication rejection rules
+        String senderEmail = System.getenv("BREVO_SENDER_EMAIL");
+        if (senderEmail == null || senderEmail.trim().isEmpty()) {
+            senderEmail = smtpUser; // Fallback to login user if not specified
+        }
 
-        if (fromEmail == null || appPassword == null) {
+        if (smtpUser == null || smtpKey == null) {
             System.err.println("ERROR: SUPPORT_EMAIL or SUPPORT_EMAIL_PASSWORD variables are completely missing in Render Environment!");
             return;
         }
 
-        // Dedicated Brevo Relay Configuration
+        System.out.println("Initializing SMTP Configurations for smtp-relay.brevo.com...");
         Properties props = new Properties();
         props.put("mail.smtp.host", "smtp-relay.brevo.com"); 
         props.put("mail.smtp.port", "587"); 
@@ -65,25 +71,26 @@ public class ForgotPasswordServlet extends HttpServlet {
         props.put("mail.smtp.starttls.enable", "true"); 
         props.put("mail.smtp.ssl.protocols", "TLSv1.2");
         
-        props.put("mail.smtp.connectiontimeout", "5000"); 
-        props.put("mail.smtp.timeout", "5000");           
+        // Strict network limits to break out of infinite spinner cycles
+        props.put("mail.smtp.connectiontimeout", "6000"); 
+        props.put("mail.smtp.timeout", "6000");           
 
         Session session = Session.getInstance(props, new javax.mail.Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(fromEmail, appPassword);
+                return new PasswordAuthentication(smtpUser, smtpKey);
             }
         });
 
         Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(fromEmail));
+        message.setFrom(new InternetAddress(senderEmail));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
         message.setSubject(subject);
         message.setText("Hello,\n\nYour temporary login credentials are:\nPassword: " + tempPassword + "\n\nPlease login and update your password immediately.");
 
-        System.out.println("Dispatched connection request to smtp-relay.brevo.com...");
+        System.out.println("Handshaking with smtp-relay.brevo.com. Transmitting data packet...");
         Transport.send(message);
-        System.out.println("Email sent successfully via Brevo to: " + to);
+        System.out.println("SUCCESS: Message acknowledged and dispatched by Brevo Relay to: " + to);
     }
 
     private String generateRandomPassword(int length) {
