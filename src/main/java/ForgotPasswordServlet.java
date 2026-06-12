@@ -1,115 +1,99 @@
-package com.bluevibes; // Verify that this matches your actual project package folder!
+package com.bluevibes; // Matches your project package structure
 
 import java.io.IOException;
 import java.sql.*;
 import java.util.Properties;
 import java.util.Random;
-import jakarta.mail.*;
-import jakarta.mail.internet.*;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
 
-// IMPORTANT: Ensure this matches the action URL inside your forgotpassword.html form!
+// Replaced jakarta libraries with javax for Tomcat 9 compatibility
+import javax.mail.*;
+import javax.mail.internet.*;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.*;
+
 @WebServlet("/ForgotPasswordServlet")
 public class ForgotPasswordServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Captures "userEmail" parameter from your front-end form input fields
         String email = request.getParameter("userEmail");
         System.out.println("FORGOT PASSWORD HIT");
         System.out.println("EMAIL = " + email);
         
-        // 1. Generate the plain-text random 8-character string for the user's email
         String tempPassword = generateRandomPassword(8);
+        HttpSession mySession = request.getSession();
 
-        try (Connection con = DBConnection.getConnection()) {
-            // 2. Check if user exists inside Render DB
-            PreparedStatement psCheck = con.prepareStatement("SELECT fullname FROM users WHERE email = ?");
-            psCheck.setString(1, email);
-            ResultSet rs = psCheck.executeQuery();
-
-            if (rs.next()) {
-                String fullName = rs.getString("fullname");
-
-                // CRITICAL SECURITY FIX: Hash the temporary password before saving it to the DB!
-                // This stops your login system from breaking due to plain-text entries.
-                String hashedTempPassword = PasswordUtil.hashPassword(tempPassword);
-
-                // 3. Update DB with the secure BCrypt version of the temporary password
-                PreparedStatement psUpdate = con.prepareStatement("UPDATE users SET password = ? WHERE email = ?");
-                psUpdate.setString(1, hashedTempPassword);
-                psUpdate.setString(2, email);
-                psUpdate.executeUpdate();
-
-                // 4. Send the PLAIN-TEXT temporary password via email to their inbox
-                sendEmail(email, fullName, tempPassword);
-                
-                response.sendRedirect("forgotpassword.html?status=sent");
+        Connection con = null;
+        try {
+            // Database update logic
+            con = DBConnection.getConnection();
+            String hashedPassword = PasswordUtil.hashPassword(tempPassword);
+            
+            PreparedStatement pst = con.prepareStatement("UPDATE employee SET password = ? WHERE email = ?");
+            pst.setString(1, hashedPassword);
+            pst.setString(2, email);
+            
+            int rowsAffected = pst.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                // Trigger the email transmission using secure SSL Port 465
+                sendEmail(email, tempPassword, "Your Temporary Password");
+                mySession.setAttribute("status", "success");
             } else {
-                response.sendRedirect("forgotpassword.html?status=notfound");
+                mySession.setAttribute("status", "emailNotFound");
             }
+            
+            response.sendRedirect("forgotpassword.jsp");
+            
         } catch (Exception e) {
             e.printStackTrace();
-            response.sendRedirect("forgotpassword.html?status=error");
+            mySession.setAttribute("status", "error");
+            response.sendRedirect("forgotpassword.jsp");
+        } finally {
+            if (con != null) {
+                try { con.close(); } catch (SQLException e) { e.printStackTrace(); }
+            }
         }
     }
 
-    private void sendEmail(String toEmail, String name, String pass) {
-        // DYNAMIC ENV VARIABLES: Grabs credentials from the operating system or hosting environment
-        final String fromEmail = System.getenv("SUPPORT_EMAIL");
-        final String appPassword = System.getenv("SUPPORT_EMAIL_PASSWORD"); 
-        
-        System.out.println("USERNAME= " + fromEmail);
-        System.out.println("ENTERED sendEmail()");
-
-        // Fail-safe protection check if configurations are missing in the runtime environment
-        if (fromEmail == null || appPassword == null) {
-            System.err.println("ERROR: SUPPORT_EMAIL or SUPPORT_EMAIL_PASSWORD environment variables are missing!");
-            return;
-        }
-
+    private void sendEmail(String to, String tempPassword, String subject) throws MessagingException {
+        // Mail server properties configured for SSL Port 465 bypass
         Properties props = new Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.port", "465");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.ssl.enable", "true");
+        props.put("mail.smtp.socketFactory.port", "465");
+        props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
 
-        props.put("mail.smtp.connectiontimeout", "10000");
-        props.put("mail.smtp.timeout", "10000");
-        props.put("mail.smtp.writetimeout", "10000");
-        props.put("mail.debug", "true");
+        // Update these credentials with your actual sender details/App Password
+        final String username = "your-email@gmail.com"; 
+        final String password = "your-app-password"; 
 
-        Session session = Session.getInstance(props, new Authenticator() {
-            @Override
+        Session session = Session.getInstance(props, new javax.mail.Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(fromEmail, appPassword);
+                return new PasswordAuthentication(username, password);
             }
         });
 
-        try {
-            Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(fromEmail));
-            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
-            message.setSubject("SQUAD | Your Temporary Password");
-            
-            // Clean, personalized string message showing the user their plain text key
-            message.setText("Hello " + name + ",\n\nYour temporary password for SQUAD is: " + pass +
-                    "\n\nPlease login and change it immediately inside your profile dashboard settings.");
-            System.out.println("BEFORE MAIL SEND EXECUTION");
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(username));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+        message.setSubject(subject);
+        message.setText("Hello,\n\nYour temporary login credentials are:\nPassword: " + tempPassword + "\n\nPlease login and update your password immediately.");
 
-            Transport.send(message);
-            System.out.println("MAIL SENT SUCCESSFULLY TO " + toEmail);
-        } catch (MessagingException e) {
-            e.printStackTrace();
-        }
+        Transport.send(message);
+        System.out.println("Email sent successfully to: " + to);
     }
 
     private String generateRandomPassword(int length) {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
         Random rnd = new Random();
         StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) sb.append(chars.charAt(rnd.nextInt(chars.length())));
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(rnd.nextInt(chars.length())));
+        }
         return sb.toString();
     }
 }
