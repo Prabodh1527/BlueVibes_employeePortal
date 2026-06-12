@@ -1,18 +1,16 @@
-package com.bluevibes; // Matches your project package structure
+package com.bluevibes; 
 
 import java.io.IOException;
 import java.sql.*;
 import java.util.Properties;
 import java.util.Random;
 
-// Using javax libraries for Tomcat 9 compatibility
 import javax.mail.*;
 import javax.mail.internet.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
-// NOTE: @WebServlet annotation removed to prevent web.xml duplication crashes!
 public class ForgotPasswordServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
@@ -29,7 +27,6 @@ public class ForgotPasswordServlet extends HttpServlet {
             con = DBConnection.getConnection();
             String hashedPassword = PasswordUtil.hashPassword(tempPassword);
             
-            // Matches your database table structure
             PreparedStatement pst = con.prepareStatement("UPDATE users SET password = ? WHERE email = ?");
             pst.setString(1, hashedPassword);
             pst.setString(2, email);
@@ -37,7 +34,6 @@ public class ForgotPasswordServlet extends HttpServlet {
             int rowsAffected = pst.executeUpdate();
             
             if (rowsAffected > 0) {
-                // Route email traffic via secure port 465
                 sendEmail(email, tempPassword, "Your Temporary Password");
                 response.sendRedirect("forgotpassword.html?status=sent");
             } else {
@@ -55,7 +51,6 @@ public class ForgotPasswordServlet extends HttpServlet {
     }
 
     private void sendEmail(String to, String tempPassword, String subject) throws MessagingException {
-        // Securely pull environment variables configured on your Render dashboard
         final String fromEmail = System.getenv("SUPPORT_EMAIL");
         final String appPassword = System.getenv("SUPPORT_EMAIL_PASSWORD"); 
 
@@ -64,7 +59,6 @@ public class ForgotPasswordServlet extends HttpServlet {
             return;
         }
 
-        // Mail properties explicitly designed for secure SSL tunnel port 465 bypass
         Properties props = new Properties();
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "465");
