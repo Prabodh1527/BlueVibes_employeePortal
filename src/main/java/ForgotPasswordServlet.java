@@ -1,10 +1,7 @@
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.sql.*;
 import java.util.Properties;
 import java.util.Random;
-
-// Using javax libraries for Tomcat 9 compatibility
 import javax.mail.*;
 import javax.mail.internet.*;
 import javax.servlet.ServletException;
@@ -19,19 +16,12 @@ public class ForgotPasswordServlet extends HttpServlet {
         System.out.println("EMAIL = " + email);
         
         String tempPassword = generateRandomPassword(8);
-        HttpSession mySession = request.getSession();
 
         Connection con = null;
         try {
-            // Bypass package visibility blocks using Reflection to get the DB Connection
-            Class<?> dbClass = Class.forName("com.bluevibes.DBConnection");
-            Method getConnectionMethod = dbClass.getMethod("getConnection");
-            con = (Connection) getConnectionMethod.invoke(null);
-
-            // Bypass package visibility blocks using Reflection to hash the password
-            Class<?> cryptoClass = Class.forName("com.bluevibes.PasswordUtil");
-            Method hashMethod = cryptoClass.getMethod("hashPassword", String.class);
-            String hashedPassword = (String) hashMethod.invoke(null, tempPassword);
+            // No packages! It references DBConnection directly right next to it
+            con = DBConnection.getConnection();
+            String hashedPassword = PasswordUtil.hashPassword(tempPassword);
             
             PreparedStatement pst = con.prepareStatement("UPDATE users SET password = ? WHERE email = ?");
             pst.setString(1, hashedPassword);
@@ -43,10 +33,12 @@ public class ForgotPasswordServlet extends HttpServlet {
                 sendEmail(email, tempPassword, "Your Temporary Password");
                 response.sendRedirect("forgotpassword.html?status=sent");
             } else {
+                System.out.println("Email not found in database table.");
                 response.sendRedirect("forgotpassword.html?status=notfound");
             }
             
         } catch (Exception e) {
+            System.err.println("ERROR RUNNING FORGOT PASSWORD SERVLET:");
             e.printStackTrace();
             response.sendRedirect("forgotpassword.html?status=error");
         } finally {
@@ -61,7 +53,7 @@ public class ForgotPasswordServlet extends HttpServlet {
         final String appPassword = System.getenv("SUPPORT_EMAIL_PASSWORD"); 
 
         if (fromEmail == null || appPassword == null) {
-            System.err.println("ERROR: SUPPORT_EMAIL or SUPPORT_EMAIL_PASSWORD variables missing on Render!");
+            System.err.println("ERROR: SUPPORT_EMAIL or SUPPORT_EMAIL_PASSWORD variables are completely missing in Render Environment!");
             return;
         }
 
@@ -72,10 +64,6 @@ public class ForgotPasswordServlet extends HttpServlet {
         props.put("mail.smtp.ssl.enable", "true");
         props.put("mail.smtp.socketFactory.port", "465");
         props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-        
-        props.put("mail.smtp.connectiontimeout", "10000");
-        props.put("mail.smtp.timeout", "10000");
-        props.put("mail.smtp.writetimeout", "10000");
 
         Session session = Session.getInstance(props, new javax.mail.Authenticator() {
             @Override
