@@ -29,7 +29,7 @@ public class ForgotPasswordServlet extends HttpServlet {
             int rowsAffected = pst.executeUpdate();
             
             if (rowsAffected > 0) {
-                System.out.println("Database updated successfully. Attempting email dispatch...");
+                System.out.println("Database updated successfully. Attempting Brevo email dispatch...");
                 sendEmail(email, tempPassword, "Your Temporary Password");
                 response.sendRedirect("forgotpassword.html?status=sent");
             } else {
@@ -57,15 +57,16 @@ public class ForgotPasswordServlet extends HttpServlet {
             return;
         }
 
+        // Dedicated Brevo Relay Configuration
         Properties props = new Properties();
-        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.host", "smtp-relay.brevo.com"); 
         props.put("mail.smtp.port", "587"); 
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true"); 
+        props.put("mail.smtp.ssl.protocols", "TLSv1.2");
         
-        // CRITICAL TIME LIMITS: Stop the infinite spinning
-        props.put("mail.smtp.connectiontimeout", "5000"); // 5 seconds max to connect
-        props.put("mail.smtp.timeout", "5000");           // 5 seconds max to read data
+        props.put("mail.smtp.connectiontimeout", "5000"); 
+        props.put("mail.smtp.timeout", "5000");           
 
         Session session = Session.getInstance(props, new javax.mail.Authenticator() {
             @Override
@@ -80,9 +81,9 @@ public class ForgotPasswordServlet extends HttpServlet {
         message.setSubject(subject);
         message.setText("Hello,\n\nYour temporary login credentials are:\nPassword: " + tempPassword + "\n\nPlease login and update your password immediately.");
 
-        System.out.println("Dispatched connection request to smtp.gmail.com...");
+        System.out.println("Dispatched connection request to smtp-relay.brevo.com...");
         Transport.send(message);
-        System.out.println("Email sent successfully to: " + to);
+        System.out.println("Email sent successfully via Brevo to: " + to);
     }
 
     private String generateRandomPassword(int length) {
