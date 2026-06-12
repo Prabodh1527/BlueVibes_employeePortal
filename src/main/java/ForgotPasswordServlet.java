@@ -1,16 +1,18 @@
-package com.bluevibes; 
+// Removed the 'package com.bluevibes;' line so it matches its current root directory!
 
 import java.io.IOException;
 import java.sql.*;
 import java.util.Properties;
 import java.util.Random;
 
+// Using javax libraries for Tomcat 9 compatibility
 import javax.mail.*;
 import javax.mail.internet.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
+// NOTE: @WebServlet annotation removed to let your web.xml file handle the mapping safely
 public class ForgotPasswordServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
@@ -24,8 +26,9 @@ public class ForgotPasswordServlet extends HttpServlet {
 
         Connection con = null;
         try {
-            con = DBConnection.getConnection();
-            String hashedPassword = PasswordUtil.hashPassword(tempPassword);
+            // Updated to reference your utility classes without the com.bluevibes prefix
+            con = com.bluevibes.DBConnection.getConnection();
+            String hashedPassword = com.bluevibes.PasswordUtil.hashPassword(tempPassword);
             
             PreparedStatement pst = con.prepareStatement("UPDATE users SET password = ? WHERE email = ?");
             pst.setString(1, hashedPassword);
