@@ -1,6 +1,5 @@
-// Removed the 'package com.bluevibes;' line so it matches its current root directory!
-
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.sql.*;
 import java.util.Properties;
 import java.util.Random;
@@ -9,10 +8,8 @@ import java.util.Random;
 import javax.mail.*;
 import javax.mail.internet.*;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
-// NOTE: @WebServlet annotation removed to let your web.xml file handle the mapping safely
 public class ForgotPasswordServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
@@ -26,9 +23,15 @@ public class ForgotPasswordServlet extends HttpServlet {
 
         Connection con = null;
         try {
-            // Updated to reference your utility classes without the com.bluevibes prefix
-            con = com.bluevibes.DBConnection.getConnection();
-            String hashedPassword = com.bluevibes.PasswordUtil.hashPassword(tempPassword);
+            // Bypass package visibility blocks using Reflection to get the DB Connection
+            Class<?> dbClass = Class.forName("com.bluevibes.DBConnection");
+            Method getConnectionMethod = dbClass.getMethod("getConnection");
+            con = (Connection) getConnectionMethod.invoke(null);
+
+            // Bypass package visibility blocks using Reflection to hash the password
+            Class<?> cryptoClass = Class.forName("com.bluevibes.PasswordUtil");
+            Method hashMethod = cryptoClass.getMethod("hashPassword", String.class);
+            String hashedPassword = (String) hashMethod.invoke(null, tempPassword);
             
             PreparedStatement pst = con.prepareStatement("UPDATE users SET password = ? WHERE email = ?");
             pst.setString(1, hashedPassword);
