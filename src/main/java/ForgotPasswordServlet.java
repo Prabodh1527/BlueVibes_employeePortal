@@ -5,14 +5,14 @@ import java.sql.*;
 import java.util.Properties;
 import java.util.Random;
 
-// Replaced jakarta libraries with javax for Tomcat 9 compatibility
+// Using javax libraries for Tomcat 9 compatibility
 import javax.mail.*;
 import javax.mail.internet.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
-@WebServlet("/ForgotPasswordServlet")
+// NOTE: @WebServlet annotation removed to prevent web.xml duplication crashes!
 public class ForgotPasswordServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
@@ -26,30 +26,27 @@ public class ForgotPasswordServlet extends HttpServlet {
 
         Connection con = null;
         try {
-            // Database update logic
             con = DBConnection.getConnection();
             String hashedPassword = PasswordUtil.hashPassword(tempPassword);
             
-            PreparedStatement pst = con.prepareStatement("UPDATE employee SET password = ? WHERE email = ?");
+            // Matches your database table structure
+            PreparedStatement pst = con.prepareStatement("UPDATE users SET password = ? WHERE email = ?");
             pst.setString(1, hashedPassword);
             pst.setString(2, email);
             
             int rowsAffected = pst.executeUpdate();
             
             if (rowsAffected > 0) {
-                // Trigger the email transmission using secure SSL Port 465
+                // Route email traffic via secure port 465
                 sendEmail(email, tempPassword, "Your Temporary Password");
-                mySession.setAttribute("status", "success");
+                response.sendRedirect("forgotpassword.html?status=sent");
             } else {
-                mySession.setAttribute("status", "emailNotFound");
+                response.sendRedirect("forgotpassword.html?status=notfound");
             }
-            
-            response.sendRedirect("forgotpassword.jsp");
             
         } catch (Exception e) {
             e.printStackTrace();
-            mySession.setAttribute("status", "error");
-            response.sendRedirect("forgotpassword.jsp");
+            response.sendRedirect("forgotpassword.html?status=error");
         } finally {
             if (con != null) {
                 try { con.close(); } catch (SQLException e) { e.printStackTrace(); }
@@ -58,7 +55,16 @@ public class ForgotPasswordServlet extends HttpServlet {
     }
 
     private void sendEmail(String to, String tempPassword, String subject) throws MessagingException {
-        // Mail server properties configured for SSL Port 465 bypass
+        // Securely pull environment variables configured on your Render dashboard
+        final String fromEmail = System.getenv("SUPPORT_EMAIL");
+        final String appPassword = System.getenv("SUPPORT_EMAIL_PASSWORD"); 
+
+        if (fromEmail == null || appPassword == null) {
+            System.err.println("ERROR: SUPPORT_EMAIL or SUPPORT_EMAIL_PASSWORD variables missing on Render!");
+            return;
+        }
+
+        // Mail properties explicitly designed for secure SSL tunnel port 465 bypass
         Properties props = new Properties();
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "465");
@@ -66,19 +72,20 @@ public class ForgotPasswordServlet extends HttpServlet {
         props.put("mail.smtp.ssl.enable", "true");
         props.put("mail.smtp.socketFactory.port", "465");
         props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-
-        // Update these credentials with your actual sender details/App Password
-        final String username = "your-email@gmail.com"; 
-        final String password = "your-app-password"; 
+        
+        props.put("mail.smtp.connectiontimeout", "10000");
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.writetimeout", "10000");
 
         Session session = Session.getInstance(props, new javax.mail.Authenticator() {
+            @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(username, password);
+                return new PasswordAuthentication(fromEmail, appPassword);
             }
         });
 
         Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(username));
+        message.setFrom(new InternetAddress(fromEmail));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
         message.setSubject(subject);
         message.setText("Hello,\n\nYour temporary login credentials are:\nPassword: " + tempPassword + "\n\nPlease login and update your password immediately.");
@@ -88,7 +95,7 @@ public class ForgotPasswordServlet extends HttpServlet {
     }
 
     private String generateRandomPassword(int length) {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         Random rnd = new Random();
         StringBuilder sb = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
