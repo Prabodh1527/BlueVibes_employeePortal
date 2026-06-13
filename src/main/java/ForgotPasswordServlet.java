@@ -16,7 +16,7 @@ public class ForgotPasswordServlet extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String email = request.getParameter("userEmail");
-        LOGGER.info("=== FORGOT PASSWORD SERVLET ACTIVATED (DIRECT API MODE) ===");
+        LOGGER.info("=== FORGOT PASSWORD SERVLET ACTIVATED (API COMPAT MODE) ===");
         LOGGER.info("Target User Email: " + email);
         
         String tempPassword = generateRandomPassword(8);
@@ -33,7 +33,7 @@ public class ForgotPasswordServlet extends HttpServlet {
             int rowsAffected = pst.executeUpdate();
             
             if (rowsAffected > 0) {
-                LOGGER.info("Database updated successfully. Dispatching payload over HTTPS...");
+                LOGGER.info("Database updated successfully. Launching API request pipeline...");
                 sendEmailViaAPI(email, tempPassword, "Your Temporary Password");
                 response.sendRedirect("forgotpassword.html?status=sent");
             } else {
@@ -52,9 +52,14 @@ public class ForgotPasswordServlet extends HttpServlet {
     }
 
     private void sendEmailViaAPI(String toEmail, String tempPassword, String subject) throws Exception {
-        // Direct credentials implementation to safeguard network delivery
-        final String apiKey = "xsmtpsib-ec9dbd831b260572b4b49e93550ec3c42100b61313b6c274451f98b55b3ba11f-6nZMgrbU7XsxcyKM";
-        final String senderEmail = "gprabodhchandra@gmail.com";
+        // Safe Environment Fetching to cleanly bypass GitHub filters
+        String apiKey = System.getenv("BREVO_API_KEY");
+        String senderEmail = System.getenv("BREVO_SENDER_EMAIL");
+
+        if (apiKey == null || senderEmail == null) {
+            LOGGER.severe("ERROR: BREVO_API_KEY or BREVO_SENDER_EMAIL is completely missing from Render variables configuration!");
+            throw new RuntimeException("Missing credentials config.");
+        }
 
         URL url = new URL("https://api.brevo.com/v3/smtp/email");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -64,8 +69,8 @@ public class ForgotPasswordServlet extends HttpServlet {
         conn.setDoOutput(true);
 
         String jsonPayload = "{"
-                + "\"sender\":{\"email\":\"" + senderEmail + "\",\"name\":\"Support Team\"},"
-                + "\"to\":[{\"email\":\"" + toEmail + "\"}],"
+                + "\"sender\":{\"email\":\"" + senderEmail.trim() + "\",\"name\":\"Support Team\"},"
+                + "\"to\":[{\"email\":\"" + toEmail.trim() + "\"}],"
                 + "\"subject\":\"" + subject + "\","
                 + "\"textContent\":\"Hello,\\n\\nYour temporary login credentials are:\\nPassword: " + tempPassword + "\\n\\nPlease login and update your credentials immediately.\""
                 + "}";
@@ -77,7 +82,7 @@ public class ForgotPasswordServlet extends HttpServlet {
 
         int responseCode = conn.getResponseCode();
         if (responseCode == 201 || responseCode == 200) {
-            LOGGER.info("SUCCESS! Brevo API accepted request. Code: " + responseCode);
+            LOGGER.info("SUCCESS! Brevo Web API accepted payload. Response Status Code: " + responseCode);
         } else {
             LOGGER.severe("Brevo API Rejected Transaction! Response Code: " + responseCode);
             throw new RuntimeException("API Transmission Failure. Code: " + responseCode);
