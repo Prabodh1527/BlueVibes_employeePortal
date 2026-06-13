@@ -8,19 +8,18 @@ import java.util.Random;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet; // REQUIRED FOR ROUTING
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
-// Explicitly maps the servlet path so your HTML form can find it
 @WebServlet("/ForgotPasswordServlet")
 public class ForgotPasswordServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = Logger.getLogger(ForgotPasswordServlet.class.getName());
 
+    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String email = request.getParameter("userEmail");
         
-        // This log will print instantly before anything else can fail!
         LOGGER.info("=== FORGOT PASSWORD SERVLET CRITICAL ENTRY POINT TRIGGERED ===");
         LOGGER.info("User Email Received from HTML Form: " + email);
         
@@ -45,7 +44,7 @@ public class ForgotPasswordServlet extends HttpServlet {
             LOGGER.info("Database query completed. Rows affected: " + rowsAffected);
             
             if (rowsAffected > 0) {
-                LOGGER.info("User verified. Opening Brevo HTTP API tunnel...");
+                LOGGER.info("User verified in DB. Opening Brevo HTTP API tunnel...");
                 sendEmailViaAPI(email, tempPassword, "Your Temporary Password");
                 response.sendRedirect("forgotpassword.html?status=sent");
             } else {
@@ -54,29 +53,33 @@ public class ForgotPasswordServlet extends HttpServlet {
             }
             
         } catch (Exception e) {
-            // This prints the exact line number and code library that is causing the crash
             LOGGER.log(Level.SEVERE, "!! CODESYSTEM CRASH ROUTINE DETECTED !! Error Message: " + e.getMessage(), e);
             response.sendRedirect("forgotpassword.html?status=error");
         } finally {
             if (con != null) {
-                try { con.close(); } catch (SQLException e) { LOGGER.log(Level.SEVERE, "Error closing connection", e); }
+                try { 
+                    con.close(); 
+                } catch (SQLException e) { 
+                    LOGGER.log(Level.SEVERE, "Error closing connection", e); 
+                }
             }
         }
     }
 
     private void sendEmailViaAPI(String toEmail, String tempPassword, String subject) throws Exception {
-        String apiKey = System.getenv("BREVO_API_KEY");
-        String senderEmail = System.getenv("BREVO_SENDER_EMAIL");
+        // Tied exactly to your Render Dashboard Environment Config mapping keys!
+        String apiKey = System.getenv("SUPPORT_EMAIL_PASSWORD"); 
+        String senderEmail = System.getenv("SUPPORT_EMAIL");
 
         if (apiKey == null || senderEmail == null) {
-            LOGGER.severe("CONFIGURATION ERROR: BREVO_API_KEY or BREVO_SENDER_EMAIL environment variable is missing!");
-            throw new RuntimeException("Missing environment keys.");
+            LOGGER.severe("CONFIGURATION ERROR: SUPPORT_EMAIL_PASSWORD or SUPPORT_EMAIL environment variable is missing from Render!");
+            throw new RuntimeException("Missing environment credentials keys.");
         }
 
         URL url = new URL("https://api.brevo.com/v3/smtp/email");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
-        conn.setRequestProperty("api-key", apiKey);
+        conn.setRequestProperty("api-key", apiKey.trim());
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setDoOutput(true);
 
