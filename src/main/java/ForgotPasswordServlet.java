@@ -56,23 +56,22 @@ public class ForgotPasswordServlet extends HttpServlet {
         final String senderEmail = System.getenv("BREVO_SENDER_EMAIL");
 
         if (smtpUser == null || smtpKey == null || senderEmail == null) {
-            LOGGER.severe("ERROR: Missing Environment Variables! Ensure SUPPORT_EMAIL, SUPPORT_EMAIL_PASSWORD, and BREVO_SENDER_EMAIL are set in Render.");
+            LOGGER.severe("ERROR: Missing Environment Variables!");
             throw new MessagingException("Missing email provider configuration variables.");
         }
 
-        LOGGER.info("Initializing Secure SMTP Configurations via SSL Port 465...");
         Properties props = new Properties();
         props.put("mail.smtp.host", "smtp-relay.brevo.com"); 
+        props.put("mail.smtp.port", "465"); 
         props.put("mail.smtp.auth", "true");
         
-        // SSL CONFIGURATION TO BYPASS CLOUD FILTERS
-        props.put("mail.smtp.port", "465"); 
+        // Strict SSL rules to force JavaMail over the secure port
+        props.put("mail.smtp.ssl.enable", "true");
+        props.put("mail.smtp.ssl.required", "true");
         props.put("mail.smtp.socketFactory.port", "465");
         props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-        props.put("mail.smtp.socketFactory.fallback", "false");
         props.put("mail.smtp.ssl.protocols", "TLSv1.2");
         
-        // 6-second safety connection cutoffs
         props.put("mail.smtp.connectiontimeout", "6000"); 
         props.put("mail.smtp.timeout", "6000");           
 
@@ -89,7 +88,6 @@ public class ForgotPasswordServlet extends HttpServlet {
         message.setSubject(subject);
         message.setText("Hello,\n\nYour temporary login credentials are:\nPassword: " + tempPassword + "\n\nPlease login and update your password immediately.");
 
-        LOGGER.info("Handshaking with smtp-relay.brevo.com on Port 465. Sending packet...");
         Transport.send(message);
         LOGGER.info("SUCCESS: Message securely dispatched via Brevo Relay to: " + to);
     }
