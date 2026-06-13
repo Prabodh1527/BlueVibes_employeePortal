@@ -32,7 +32,7 @@ public class ForgotPasswordServlet extends HttpServlet {
             int rowsAffected = pst.executeUpdate();
             
             if (rowsAffected > 0) {
-                LOGGER.info("Database updated successfully. Triggering secure Brevo pipeline...");
+                LOGGER.info("Database updated successfully. Triggering secure Brevo pipeline via Port 2525...");
                 sendEmail(email, tempPassword, "Your Temporary Password");
                 response.sendRedirect("forgotpassword.html?status=sent");
             } else {
@@ -56,22 +56,21 @@ public class ForgotPasswordServlet extends HttpServlet {
         final String senderEmail = System.getenv("BREVO_SENDER_EMAIL");
 
         if (smtpUser == null || smtpKey == null || senderEmail == null) {
-            LOGGER.severe("ERROR: Missing Environment Variables!");
+            LOGGER.severe("ERROR: Missing Environment Variables! Ensure SUPPORT_EMAIL, SUPPORT_EMAIL_PASSWORD, and BREVO_SENDER_EMAIL are set in Render.");
             throw new MessagingException("Missing email provider configuration variables.");
         }
 
+        LOGGER.info("Initializing SMTP Configurations via Alternate Port 2525...");
         Properties props = new Properties();
         props.put("mail.smtp.host", "smtp-relay.brevo.com"); 
-        props.put("mail.smtp.port", "465"); 
         props.put("mail.smtp.auth", "true");
         
-        // Strict SSL rules to force JavaMail over the secure port
-        props.put("mail.smtp.ssl.enable", "true");
-        props.put("mail.smtp.ssl.required", "true");
-        props.put("mail.smtp.socketFactory.port", "465");
-        props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+        // SWITCH TO PORT 2525 WITH STARTTLS TO EVADE BLOCKADES
+        props.put("mail.smtp.port", "2525"); 
+        props.put("mail.smtp.starttls.enable", "true"); 
         props.put("mail.smtp.ssl.protocols", "TLSv1.2");
         
+        // Network timeout rules (6 seconds max before safety cutoff)
         props.put("mail.smtp.connectiontimeout", "6000"); 
         props.put("mail.smtp.timeout", "6000");           
 
@@ -88,8 +87,9 @@ public class ForgotPasswordServlet extends HttpServlet {
         message.setSubject(subject);
         message.setText("Hello,\n\nYour temporary login credentials are:\nPassword: " + tempPassword + "\n\nPlease login and update your password immediately.");
 
+        LOGGER.info("Handshaking with smtp-relay.brevo.com on Port 2525. Dispatching data...");
         Transport.send(message);
-        LOGGER.info("SUCCESS: Message securely dispatched via Brevo Relay to: " + to);
+        LOGGER.info("SUCCESS: Message acknowledged and dispatched by Brevo Relay to: " + to);
     }
 
     private String generateRandomPassword(int length) {
