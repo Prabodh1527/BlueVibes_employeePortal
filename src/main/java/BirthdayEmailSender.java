@@ -11,8 +11,8 @@ public class BirthdayEmailSender {
         String apiKey = System.getenv("SUPPORT_EMAIL_PASSWORD"); 
         String senderEmail = System.getenv("SUPPORT_EMAIL");
         
-        // This links to your uploaded corporate greeting graphic
-        String imageUrl = "https://i.ibb.co/3ykMv5K/bluevibes-birthday-card.png"; 
+        // UPDATED: This now points directly to your newly uploaded clean graphic asset link
+        String imageUrl = "https://i.ibb.co/9dg844p/Whats-App-Image-2026-06-14-at-17-57-12.jpg"; 
 
         if (apiKey == null || senderEmail == null) {
             LOGGER.severe("CONFIGURATION ERROR: Birthday system missing Render environment credentials!");
