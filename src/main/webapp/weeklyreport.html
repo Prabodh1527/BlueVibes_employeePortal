@@ -32,7 +32,7 @@
         }
 
         .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-       
+        
         .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; overflow-y: auto; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.9rem; }
         .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
@@ -324,17 +324,12 @@
                 }
                 const blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
 
-                // 4. Extract current user's email dynamically from browser storage
-                // (Adjust 'userEmail' if your app stores the login string under a different session name)
-                const currentUserEmail = sessionStorage.getItem("userEmail") || "employee@bluevibes.com";
-
-                // 5. Build Form parameters to transmit to your backend controller endpoint
+                // 4. Build Form parameters to transmit to your backend custom servlet action
                 const formData = new FormData();
                 formData.append("file", blob, "My_Weekly_Status_Report.xlsx");
-                formData.append("userEmail", currentUserEmail);
 
-                // 6. Post everything to your live backend endpoint
-                fetch('/api/reports/export-email', {
+                // 5. Post everything directly to your live Java Servlet endpoint hook
+                fetch('WeeklyReportServlet?action=exportEmail', {
                     method: 'POST',
                     body: formData
                 })
@@ -342,6 +337,7 @@
                     if (response.ok) {
                         alert("✨ Report emailed successfully to you and prasanthrambharadwaj@gmail.com!");
                     } else {
+                        alert("⚠️ Excel spreadsheet exported locally, but failed to broadcast email.");
                         console.error("Server processing failed.");
                     }
                 })
