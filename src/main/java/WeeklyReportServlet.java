@@ -1,10 +1,12 @@
 import java.io.*;
 import java.sql.*;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 
 @WebServlet("/WeeklyReportServlet")
+@MultipartConfig // ⚠️ CRITICAL: Tells the container to parse multipart/form-data requests
 public class WeeklyReportServlet extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -19,11 +21,53 @@ public class WeeklyReportServlet extends HttpServlet {
         }
 
         String action = request.getParameter("action");
+        
+        // NEW FEATURE HANDLER: Catch Excel Export Email Transmission
+        if ("exportEmail".equals(action)) {
+            try {
+                // 1. Intercept file attachment stream parameters from FormData
+                Part filePart = request.getPart("file");
+                if (filePart == null || filePart.getSize() == 0) {
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    response.getWriter().print("{\"success\":false,\"message\":\"File data payload is empty.\"}");
+                    return;
+                }
+                String fileName = filePart.getSubmittedFileName();
+
+                // 2. Read incoming binary data from input stream channel
+                byte[] fileBytes;
+                try (InputStream is = filePart.getInputStream();
+                     ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        bos.write(buffer, 0, bytesRead);
+                    }
+                    fileBytes = bos.toByteArray();
+                }
+
+                // 3. Dispatch data block to Brevo targeting auditor and employee
+                ExcelEmailSender.sendReportWithAttachment(fileBytes, fileName, userEmail);
+
+                // 4. Return structural success acknowledgment response back to JavaScript fetch
+                response.setContentType("application/json");
+                response.getWriter().print("{\"success\":true}");
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                response.getWriter().print("{\"success\":false,\"message\":\"" + e.getMessage() + "\"}");
+                return;
+            }
+        }
+
+        // --- EXISTING SYSTEM LOGIC FOR DELETE ACTION ---
         if ("delete".equals(action)) {
             deleteReport(request, response, userEmail);
             return;
         }
 
+        // --- EXISTING SYSTEM LOGIC FOR SAVE/UPDATE ACTION ---
         String[] reportIds = request.getParameterValues("reportId");
         String[] taskIds = request.getParameterValues("taskId");
         String[] taskDescs = request.getParameterValues("taskDesc");
@@ -34,7 +78,6 @@ public class WeeklyReportServlet extends HttpServlet {
         String[] endDates = request.getParameterValues("endDate");
         String[] comments = request.getParameterValues("comments");
 
-        // PostgreSQL fix: use explicit DATE casting
         String insertSql = "INSERT INTO user_weekly_reports " +
                 "(user_email, task_id, task_description, customer, status, percentage_completed, start_date, end_date, comments) " +
                 "VALUES (?,?,?,?,?,?,CAST(? AS DATE),CAST(? AS DATE),?)";
@@ -73,7 +116,7 @@ public class WeeklyReportServlet extends HttpServlet {
                             ps.setString(2, taskDescs[i]);
                             ps.setString(3, customers[i]);
                             ps.setString(4, statuses[i]);
-                            ps.setInt(5, percentValue);
+                            ps.setInt(6, percentValue);
                             ps.setString(6, (startDates[i] == null || startDates[i].isEmpty()) ? null : startDates[i]);
                             ps.setString(7, (endDates[i] == null || endDates[i].isEmpty()) ? null : endDates[i]);
                             ps.setString(8, comments[i]);
