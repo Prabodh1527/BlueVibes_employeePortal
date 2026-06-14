@@ -32,7 +32,7 @@
         }
 
         .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-      
+       
         .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; overflow-y: auto; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.9rem; }
         .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
@@ -155,7 +155,7 @@
 <template id="rowTemplate">
     <tr>
         <input type="hidden" name="reportId" value="0">
-        <td><input type="text" name="taskId" class="form-input" readonly/td>
+        <td><input type="text" name="taskId" class="form-input" readonly></td>
         <td><select name="taskDesc" class="form-input task-master-select"><option value="">Select Type</option></select></td>
         <td><select name="customer" class="form-input customer-master-select"><option value="">Select Customer</option></select></td>
         <td>
@@ -189,9 +189,8 @@
 
             masterData.customers.forEach(customer => {
                 let option = new Option(customer.name, customer.name);
-
-            customerFilter.add(option);
-        });
+                customerFilter.add(option);
+            });
 
             customerFilter.onchange = filterByCustomer;
             document.getElementById("statusFilter").onchange = filterByCustomer;
@@ -202,10 +201,10 @@
                     const tbody = document.getElementById('reportTbody');
                     tbody.innerHTML = "";
                     if (reports.length > 0) {
-                        //reports.forEach(report => addRow(report));
-                        reports.forEach((report, index)=>{report.taskId=reports.length-index;
-                                                         addRow(report);
-                                                        });
+                        reports.forEach((report, index)=>{
+                            report.taskId=reports.length-index;
+                            addRow(report);
+                        });
                     } else {
                         addRow();
                     }
@@ -248,26 +247,18 @@
             newRow.querySelector('[name="comments"]').value = data.comments;
         }
 
-        //tbody.appendChild(newRow);
         if(data){
             tbody.appendChild(newRow);
-        }
-        else{
+        } else {
             tbody.prepend(newRow);
         }
-        //let count= document.querySelectorAll("#reportTbody tr").length;
-        //if(!data){
-            //let count= document.querySelectorAll("#reportTbody tr").length;
-            //newRow.querySelector('[name="taskId"]').value=count;
-        //}
+
         if(!data){
             let firstRow = document.querySelector("#reportTbody tr:nth-child(2) [name='taskId']");
             if(firstRow){
-                newRow.querySelector('[name="taskId"]').value=
-                    parseInt(firstRow.value)+1;
-            }
-            else{
-                newRow.querySelector('[name="taskId"]').value=1;
+                newRow.querySelector('[name="taskId"]').value = parseInt(firstRow.value)+1;
+            } else {
+                newRow.querySelector('[name="taskId"]').value = 1;
             }
         }
     }
@@ -315,69 +306,69 @@
                     ]);
                 });
 
+                // 1. Generate workbook elements
                 const ws = XLSX.utils.aoa_to_sheet(rows);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
+                
+                // 2. Download local copy for the user
                 XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
+
+                // 3. Convert workbook data directly to a binary Blob to send via email
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+                function s2ab(s) {
+                    const buf = new ArrayBuffer(s.length);
+                    const view = new Uint8Array(buf);
+                    for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+                    return buf;
+                }
+                const blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
+
+                // 4. Extract current user's email dynamically from browser storage
+                // (Adjust 'userEmail' if your app stores the login string under a different session name)
+                const currentUserEmail = sessionStorage.getItem("userEmail") || "employee@bluevibes.com";
+
+                // 5. Build Form parameters to transmit to your backend controller endpoint
+                const formData = new FormData();
+                formData.append("file", blob, "My_Weekly_Status_Report.xlsx");
+                formData.append("userEmail", currentUserEmail);
+
+                // 6. Post everything to your live backend endpoint
+                fetch('/api/reports/export-email', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert("✨ Report emailed successfully to you and prasanthrambharadwaj@gmail.com!");
+                    } else {
+                        console.error("Server processing failed.");
+                    }
+                })
+                .catch(error => console.error("Error pushing file to backend routing service:", error));
             });
     }
-    /*function filterByCustomer() {
-            const selectedCustomer = document.getElementById("customerFilter").value.toLowerCase();
-            const rows = document.querySelectorAll("#reportTbody tr");
-            rows.forEach(row => {
-                const customer = row.querySelector('[name="customer"]').value.toLowerCase();
-                if (
-                    selectedCustomer === "" ||
-                    customer === selectedCustomer
-                ) {
-                    row.style.display = "";
-                } else {
-                    row.style.display = "none";
-                }
-            });
-    }*/
+
     function filterByCustomer() {
+        const selectedCustomer = document.getElementById("customerFilter").value.toLowerCase();
+        const selectedStatus = document.getElementById("statusFilter").value.toLowerCase();
+        const rows = document.querySelectorAll("#reportTbody tr");
 
-    const selectedCustomer =
-        document.getElementById("customerFilter")
-        .value
-        .toLowerCase();
+        rows.forEach(row => {
+            const customer = row.querySelector('[name="customer"]').value.toLowerCase();
+            const status = row.querySelector('[name="status"]').value.toLowerCase();
 
-    const selectedStatus =
-        document.getElementById("statusFilter")
-        .value
-        .toLowerCase();
+            const customerMatch = selectedCustomer === "" || customer === selectedCustomer;
+            const statusMatch = selectedStatus === "" || status === selectedStatus;
 
-    const rows =
-        document.querySelectorAll("#reportTbody tr");
+            if (customerMatch && statusMatch) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
 
-    rows.forEach(row => {
-
-        const customer =
-            row.querySelector('[name="customer"]')
-            .value
-            .toLowerCase();
-
-        const status =
-            row.querySelector('[name="status"]')
-            .value
-            .toLowerCase();
-
-        const customerMatch =
-            selectedCustomer === "" ||
-            customer === selectedCustomer;
-
-        const statusMatch =
-            selectedStatus === "" ||
-            status === selectedStatus;
-
-        if (customerMatch && statusMatch) {
-            row.style.display = "";
-        } else {
-            row.style.display = "none";
-        }
-    });
-}
     window.onload = function() {
         const now = new Date();
         const first = now.getDate() - now.getDay() + 1;
