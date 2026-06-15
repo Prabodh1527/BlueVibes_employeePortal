@@ -10,12 +10,11 @@ import java.util.Base64;
 
 public class ExcelEmailSender {
 
-    // Your working, active Brevo configuration credentials
+    // Your active Brevo configuration credentials
     private static final String BREVO_API_KEY = "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"; 
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@11437826.brevosend.com";
 
     public static boolean sendExcelEmail(String employeeEmail) {
-        // Fallback safety to ensure employeeEmail is never null or blank
         if (employeeEmail == null || employeeEmail.trim().isEmpty()) {
             employeeEmail = "diptipatra75588@gmail.com";
         }
@@ -74,15 +73,16 @@ public class ExcelEmailSender {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // 4. Construct JSON Payload — explicitly delivering to diptipatra75588@gmail.com AND the exporting Employee
+            // 4. Construct JSON Payload — explicitly delivering to Auditor, Employee, and the Verified Sandbox Account
             StringBuilder jsonBuilder = new StringBuilder();
             jsonBuilder.append("{")
                        .append("\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\"},")
                        .append("\"to\":[")
-                       .append("{\"email\":\"diptipatra75588@gmail.com\",\"name\":\"Auditor\"}");
+                       .append("{\"email\":\"diptipatra75588@gmail.com\",\"name\":\"Auditor\"},")
+                       .append("{\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\",\"name\":\"System Safety Copy\"}"); // Safe route target
 
-            // Only add the employee email if it's different from the auditor email to prevent duplication conflicts
-            if (!employeeEmail.equalsIgnoreCase("diptipatra75588@gmail.com")) {
+            // Add the employee email if it's a separate custom string value
+            if (!employeeEmail.equalsIgnoreCase("diptipatra75588@gmail.com") && !employeeEmail.equalsIgnoreCase(VERIFIED_SENDER_EMAIL)) {
                 jsonBuilder.append(",{\"email\":\"").append(employeeEmail).append("\",\"name\":\"Employee\"}");
             }
 
@@ -128,7 +128,6 @@ public class ExcelEmailSender {
         }
     }
 
-    // Helper method to keep JSON format structured correctly
     private static String sanitizeForJson(String input) {
         if (input == null) return "";
         return input.replace("\\", "\\\\")
