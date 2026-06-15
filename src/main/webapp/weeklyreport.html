@@ -279,9 +279,9 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        alert(" Spreadsheet saved locally & copy delivered successfully to Auditor's inbox!");
+                        alert("Spreadsheet saved locally & copy delivered successfully to Auditor's inbox!");
                     } else {
-                        alert(" Local copy generated, but email delivery failed: " + result.message);
+                        alert("Local copy generated, but email delivery failed: " + result.message);
                     }
                 })
                 .catch(err => {
