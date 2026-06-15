@@ -10,11 +10,17 @@ import java.util.Base64;
 
 public class ExcelEmailSender {
 
-    // Your working, verified Brevo API Key & Sender Email
+    // Your working, active Brevo configuration credentials
     private static final String BREVO_API_KEY = "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"; 
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@11437826.brevosend.com";
 
     public static boolean sendExcelEmail(String employeeEmail) {
+        // Fallback safety to ensure employeeEmail is never null or blank
+        if (employeeEmail == null || employeeEmail.trim().isEmpty()) {
+            employeeEmail = "diptipatra75588@gmail.com";
+        }
+        employeeEmail = employeeEmail.trim();
+
         try {
             // 1. Fetch live database records and build the CSV content string
             StringBuilder csvBuilder = new StringBuilder();
@@ -68,22 +74,30 @@ public class ExcelEmailSender {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // 4. Construct JSON Payload — explicitly delivering to prasanthrambharadwaj@gmail.com AND the exporting Employee
-            String jsonPayload = "{"
-                + "\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"" + VERIFIED_SENDER_EMAIL + "\"},"
-                + "\"to\":["
-                    + "{\"email\":\"prasanthrambharadwaj@gmail.com\",\"name\":\"Auditor\"},"
-                    + "{\"email\":\"" + employeeEmail.trim() + "\",\"name\":\"Employee\"}"
-                + "],"
-                + "\"subject\":\"✨ Weekly Status Report Submission\","
-                + "\"htmlContent\":\"<html><body><h3>Hello,</h3><p>Please find attached the copy of the weekly status report spreadsheet file submitted via the BlueVibes Employee Portal.</p></body></html>\","
-                + "\"attachment\":["
-                    + "{"
-                        + "\"content\":\"" + base64Content + "\","
-                        + "\"name\":\"Weekly_Status_Report.csv\""
-                    + "}"
-                + "]"
-                + "}";
+            // 4. Construct JSON Payload — explicitly delivering to diptipatra75588@gmail.com AND the exporting Employee
+            StringBuilder jsonBuilder = new StringBuilder();
+            jsonBuilder.append("{")
+                       .append("\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\"},")
+                       .append("\"to\":[")
+                       .append("{\"email\":\"diptipatra75588@gmail.com\",\"name\":\"Auditor\"}");
+
+            // Only add the employee email if it's different from the auditor email to prevent duplication conflicts
+            if (!employeeEmail.equalsIgnoreCase("diptipatra75588@gmail.com")) {
+                jsonBuilder.append(",{\"email\":\"").append(employeeEmail).append("\",\"name\":\"Employee\"}");
+            }
+
+            jsonBuilder.append("],")
+                       .append("\"subject\":\"✨ Weekly Status Report Submission\",")
+                       .append("\"htmlContent\":\"<html><body><h3>Hello,</h3><p>Please find attached the copy of the weekly status report spreadsheet file submitted via the BlueVibes Employee Portal.</p></body></html>\",")
+                       .append("\"attachment\":[")
+                       .append("{")
+                       .append("\"content\":\"").append(base64Content).append("\",")
+                       .append("\"name\":\"Weekly_Status_Report.csv\"")
+                       .append("}")
+                       .append("]")
+                       .append("}");
+
+            String jsonPayload = jsonBuilder.toString();
 
             // 5. Pipe payload downstream to Brevo servers
             try (OutputStream os = conn.getOutputStream()) {
