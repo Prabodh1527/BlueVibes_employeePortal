@@ -36,6 +36,7 @@ public class LoadProfileServlet extends HttpServlet {
                         user.put("dob", rs.getString("date_of_birth") != null ? rs.getString("date_of_birth") : "");
                         user.put("aadhar", clean(rs.getString("aadhar")));
                         user.put("pan", clean(rs.getString("pan")));
+                        user.put("communication_email", clean(rs.getString("communication_email")));
                         user.put("pf_num", clean(rs.getString("pf_number")));
                         user.put("phone", clean(rs.getString("phone")));
                         user.put("m_father", clean(rs.getString("mobile_father")));
