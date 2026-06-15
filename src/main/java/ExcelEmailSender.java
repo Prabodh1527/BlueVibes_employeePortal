@@ -10,16 +10,13 @@ import java.util.Base64;
 
 public class ExcelEmailSender {
 
-    // Brevo Connection Configuration Credentials
     private static final String BREVO_API_KEY = "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"; 
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@11437826.brevosend.com";
 
     public static boolean sendExcelEmail(String employeeEmail) {
         try {
-            // 1. Build a clean CSV data document stream from the live database rows
+            // 1. Extract live dataset dynamically from PostgreSQL database rows
             StringBuilder csvBuilder = new StringBuilder();
-            
-            // Adding clean standard columns matching your BlueVibes dashboard grid exactly
             csvBuilder.append("Task ID,Task Description,Customer,Status,% Completed,Start Date,End Date,Comments\n");
 
             String sql = "SELECT * FROM user_weekly_reports WHERE user_email=? ORDER BY created_at DESC";
@@ -40,24 +37,40 @@ public class ExcelEmailSender {
                         String endDate = rs.getString("end_date") != null ? rs.getString("end_date") : "";
                         String comments = rs.getString("comments") != null ? rs.getString("comments") : "";
 
-                        // Standard escaping for values containing commas or quotes
+                        // Clean data elements by stripping out internal double-quotes to prevent CSV layout splitting
+                        taskDesc = taskDesc.replace("\"", "'");
+                        customer = customer.replace("\"", "'");
+                        comments = comments.replace("\"", "'");
+
                         csvBuilder.append(taskId).append(",")
-                                  .append("\"").append(taskDesc.replace("\"", "\"\"")).append("\",")
-                                  .append("\"").append(customer.replace("\"", "\"\"")).append("\",")
+                                  .append("\"").append(taskDesc).append("\",")
+                                  .append("\"").append(customer).append("\",")
                                   .append(status).append(",")
                                   .append(percent).append(",")
                                   .append(startDate).append(",")
                                   .append(endDate).append(",")
-                                  .append("\"").append(comments.replace("\"", "\"\"")).append("\"\n");
+                                  .append("\"").append(comments).append("\"\n");
                     }
                 }
             }
 
-            // 2. Conver the CSV plain text directly into a valid Base64 attachment byte array
-            byte[] csvBytes = csvBuilder.toString().getBytes(StandardCharsets.UTF_8);
-            String base64Attachment = Base64.getEncoder().encodeToString(csvBytes);
+            // 2. Convert raw text dataset directly into an isolated Base64 string
+            String base64Content = Base64.getEncoder().encodeToString(csvBuilder.toString().getBytes(StandardCharsets.UTF_8));
 
-            // 3. Configure Outbound Http Parameters to Brevo SMTP REST API Endpoint
+            // 3. Build a completely sanitised, escape-proof JSON body payload manually using primitive clean targets
+            // This structure completely isolates variables to avoid breaking the root JSON array schema
+            String cleanPayload = "{"
+                + "\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"" + VERIFIED_SENDER_EMAIL + "\"},"
+                + "\"to\":[{\"email\":\"bharadwaj@bluedigital.co.in\",\"name\":\"Auditor\"},{\"email\":\"" + employeeEmail + "\",\"name\":\"Employee\"}],"
+                + "\"subject\":\"✨ Weekly Status Report Submission\","
+                + "\"htmlContent\":\"<html><body><h3>Hello Auditor,</h3><p>Please find attached the weekly status report submitted by employee: <b>" + employeeEmail + "</b>.</p></body></html>\","
+                + "\"attachment\":[{"
+                    + "\"content\":\"" + base64Content + "\","
+                    + "\"name\":\"Weekly_Status_Report.csv\""
+                + "}]"
+                + "}";
+
+            // 4. Set up Connection socket to Brevo API Endpoint
             URL url = new URL("https://api.brevo.com/v3/smtp/email");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
@@ -66,45 +79,25 @@ public class ExcelEmailSender {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // Constructing strict clean layout schema mapping structure payload
-            String jsonPayload = "{"
-                + "\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"" + VERIFIED_SENDER_EMAIL + "\"},"
-                + "\"to\":["
-                    + "{\"email\":\"bharadwaj@bluedigital.co.in\",\"name\":\"Auditor\"},"
-                    + "{\"email\":\"" + employeeEmail + "\",\"name\":\"Employee\"}"
-                + "],"
-                + "\"subject\":\"✨ Weekly Status Report Submission\","
-                + "\"htmlContent\":\"<html><body style='font-family: Arial, sans-serif; color: #1e293b;'>"
-                    + "<h3>Hello,</h3>"
-                    + "<p>Please find attached the weekly status report spreadsheet file submitted by <b>" + employeeEmail + "</b>.</p>"
-                    + "<br><p style='font-size: 12px; color: #64748b;'><i>This is an automated operational notification processed via BlueVibes Portal.</i></p>"
-                    + "</body></html>\","
-                + "\"attachment\":["
-                    + "{"
-                        + "\"content\":\"" + base64Attachment + "\","
-                        + "\"name\":\"Weekly_Status_Report.csv\""
-                    + "}"
-                + "]"
-                + "}";
-
-            // 4. Pipe out data payload packet
+            // Write verified payload array out to wire connection
             try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
+                byte[] input = cleanPayload.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
                 os.flush();
             }
 
-            // 5. Evaluate Response Flags
+            // 5. Evaluate HTTP Response Validation Codes
             int responseCode = conn.getResponseCode();
-            System.out.println("Brevo Engine Server Response Status Log Code: " + responseCode);
+            System.out.println("DEBUG LOG - Brevo HTTP Status: " + responseCode);
 
             if (responseCode == 201 || responseCode == 200) {
                 return true;
             } else {
+                // Read the exact backend error reason directly to the console if rejection repeats
                 try (InputStream errorStream = conn.getErrorStream()) {
                     if (errorStream != null) {
                         String errorResponse = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
-                        System.err.println("Brevo Error Internal Trace breakdown: " + errorResponse);
+                        System.err.println("DEBUG LOG - Brevo API Response Error: " + errorResponse);
                     }
                 }
                 return false;
