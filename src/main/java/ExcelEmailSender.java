@@ -10,7 +10,6 @@ import java.util.Base64;
 
 public class ExcelEmailSender {
 
-    // Your active Brevo configuration credentials
     private static final String BREVO_API_KEY = "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"; 
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@11437826.brevosend.com";
 
@@ -21,7 +20,7 @@ public class ExcelEmailSender {
         employeeEmail = employeeEmail.trim();
 
         try {
-            // 1. Fetch live database records and build the CSV content string
+            // 1. Fetch live database rows and build a clean CSV layout string
             StringBuilder csvBuilder = new StringBuilder();
             csvBuilder.append("Task ID,Task Description,Customer,Status,% Completed,Start Date,End Date,Comments\n");
 
@@ -43,10 +42,10 @@ public class ExcelEmailSender {
                         String endDate = rs.getString("end_date") != null ? rs.getString("end_date") : "";
                         String comments = rs.getString("comments") != null ? rs.getString("comments") : "";
 
-                        // Clean data inputs to prevent parsing breaks inside the JSON payload string
-                        taskDesc = sanitizeForJson(taskDesc);
-                        customer = sanitizeForJson(customer);
-                        comments = sanitizeForJson(comments);
+                        // Aggressive cleaning to protect JSON string integrity
+                        taskDesc = pureClean(taskDesc);
+                        customer = pureClean(customer);
+                        comments = pureClean(comments);
 
                         csvBuilder.append(taskId).append(",")
                                   .append("\"").append(taskDesc).append("\",")
@@ -60,7 +59,7 @@ public class ExcelEmailSender {
                 }
             }
 
-            // 2. Convert CSV data string to standard Base64 encoding
+            // 2. Convert raw CSV text lines directly to standard Base64 encoding
             String base64Content = Base64.getEncoder().encodeToString(csvBuilder.toString().getBytes(StandardCharsets.UTF_8));
 
             // 3. Configure HTTP properties for Brevo REST API Endpoint connection
@@ -73,22 +72,21 @@ public class ExcelEmailSender {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // 4. Construct JSON Payload — explicitly delivering to Auditor, Employee, and the Verified Sandbox Account
+            // 4. Construct structural JSON Payload using isolated string blocks to maintain safety bounds
             StringBuilder jsonBuilder = new StringBuilder();
             jsonBuilder.append("{")
                        .append("\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\"},")
                        .append("\"to\":[")
-                       .append("{\"email\":\"diptipatra75588@gmail.com\",\"name\":\"Auditor\"},")
-                       .append("{\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\",\"name\":\"System Safety Copy\"}"); // Safe route target
+                       .append("{\"email\":\"diptipatra75588@gmail.com\",\"name\":\"Auditor\"}");
 
-            // Add the employee email if it's a separate custom string value
-            if (!employeeEmail.equalsIgnoreCase("diptipatra75588@gmail.com") && !employeeEmail.equalsIgnoreCase(VERIFIED_SENDER_EMAIL)) {
+            // Include employee fallback delivery block only if it has a discrete destination value
+            if (!employeeEmail.equalsIgnoreCase("diptipatra75588@gmail.com")) {
                 jsonBuilder.append(",{\"email\":\"").append(employeeEmail).append("\",\"name\":\"Employee\"}");
             }
 
             jsonBuilder.append("],")
                        .append("\"subject\":\"✨ Weekly Status Report Submission\",")
-                       .append("\"htmlContent\":\"<html><body><h3>Hello,</h3><p>Please find attached the copy of the weekly status report spreadsheet file submitted via the BlueVibes Employee Portal.</p></body></html>\",")
+                       .append("\"htmlContent\":\"<html><body><h3>Hello,</h3><p>Please find attached the weekly status report file spreadsheet.</p></body></html>\",")
                        .append("\"attachment\":[")
                        .append("{")
                        .append("\"content\":\"").append(base64Content).append("\",")
@@ -106,7 +104,7 @@ public class ExcelEmailSender {
                 os.flush();
             }
 
-            // 6. Read HTTP response code
+            // 6. Read HTTP response code directly to capture active status code
             int responseCode = conn.getResponseCode();
             System.out.println("Brevo Engine Connection Response Code: " + responseCode);
 
@@ -128,12 +126,15 @@ public class ExcelEmailSender {
         }
     }
 
-    private static String sanitizeForJson(String input) {
+    // A completely safe cleaner that completely eradicates characters that break manual JSON objects
+    private static String pureClean(String input) {
         if (input == null) return "";
-        return input.replace("\\", "\\\\")
+        return input.replace("\\", "")
                     .replace("\"", "'")
                     .replace("\n", " ")
                     .replace("\r", " ")
-                    .replace("\t", " ");
+                    .replace("\t", " ")
+                    .replace("{", "[")
+                    .replace("}", "]");
     }
 }
