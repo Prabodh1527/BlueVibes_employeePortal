@@ -10,8 +10,8 @@ import java.util.Base64;
 
 public class ExcelEmailSender {
 
-    // Using your active key configuration
-    private static final String BREVO_API_KEY = "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"; 
+    // Updated with your active Brevo API Key string
+    private static final String BREVO_API_KEY = "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"; 
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@11437826.brevosend.com";
 
     public static boolean sendExcelEmail(String employeeEmail) {
@@ -38,10 +38,10 @@ public class ExcelEmailSender {
                         String endDate = rs.getString("end_date") != null ? rs.getString("end_date") : "";
                         String comments = rs.getString("comments") != null ? rs.getString("comments") : "";
 
-                        // Strip internal formatting characters that ruin JSON/CSV schemas
-                        taskDesc = escapeJsonString(taskDesc);
-                        customer = escapeJsonString(customer);
-                        comments = escapeJsonString(comments);
+                        // Strip internal formatting characters that break manual JSON strings
+                        taskDesc = sanitizeForJson(taskDesc);
+                        customer = sanitizeForJson(customer);
+                        comments = sanitizeForJson(comments);
 
                         csvBuilder.append(taskId).append(",")
                                   .append("\"").append(taskDesc).append("\",")
@@ -62,9 +62,8 @@ public class ExcelEmailSender {
             URL url = new URL("https://api.brevo.com/v3/smtp/email");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             
-            // Set methods and properties BEFORE pushing out stream data bytes
             conn.setRequestMethod("POST");
-            conn.setRequestProperty("api-key", BREVO_API_KEY);
+            conn.setRequestProperty("api-key", BREVO_API_KEY.trim());
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
@@ -116,7 +115,7 @@ public class ExcelEmailSender {
     }
 
     // Helper method to completely strip quotes and newlines from user input
-    private static String escapeJsonString(String input) {
+    private static String sanitizeForJson(String input) {
         if (input == null) return "";
         return input.replace("\\", "\\\\")
                     .replace("\"", "'")
