@@ -10,7 +10,7 @@ import java.util.Base64;
 
 public class ExcelEmailSender {
 
-    // Your working, verified Brevo API Key
+    // Your working, verified Brevo API Key & Sender Email
     private static final String BREVO_API_KEY = "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"; 
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@11437826.brevosend.com";
 
@@ -68,15 +68,15 @@ public class ExcelEmailSender {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // 4. Construct JSON Payload — explicitly delivering to both the Auditor AND the exporting Employee
+            // 4. Construct JSON Payload — explicitly delivering to prasanthrambharadwaj@gmail.com AND the exporting Employee
             String jsonPayload = "{"
                 + "\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"" + VERIFIED_SENDER_EMAIL + "\"},"
                 + "\"to\":["
-                    + "{\"email\":\"bharadwaj@bluedigital.co.in\",\"name\":\"Auditor\"},"
+                    + "{\"email\":\"prasanthrambharadwaj@gmail.com\",\"name\":\"Auditor\"},"
                     + "{\"email\":\"" + employeeEmail.trim() + "\",\"name\":\"Employee\"}"
                 + "],"
                 + "\"subject\":\"✨ Weekly Status Report Submission\","
-                + "\"htmlContent\":\"<html><body><h3>Hello,</h3><p>Please find attached the copy of your weekly status report spreadsheet file submitted via the BlueVibes Employee Portal.</p></body></html>\","
+                + "\"htmlContent\":\"<html><body><h3>Hello,</h3><p>Please find attached the copy of the weekly status report spreadsheet file submitted via the BlueVibes Employee Portal.</p></body></html>\","
                 + "\"attachment\":["
                     + "{"
                         + "\"content\":\"" + base64Content + "\","
