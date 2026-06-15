@@ -50,14 +50,14 @@ public class UpdateProfileServlet extends HttpServlet {
                 psUser.setString(2, aadhar);
                 psUser.setString(3, pan);
                 psUser.setString(4, communicationEmail);
-                psUser.setString(4, phone);
-                psUser.setString(5, mFather);
-                psUser.setString(6, mMother);
-                psUser.setString(7, mGuardian);
-                psUser.setString(8, pAddr);
-                psUser.setString(9, cAddr);
-                psUser.setString(10, pfNum);
-                psUser.setString(11, email);
+                psUser.setString(5, phone);
+                psUser.setString(6, mFather);
+                psUser.setString(7, mMother);
+                psUser.setString(8, mGuardian);
+                psUser.setString(9, pAddr);
+                psUser.setString(10, cAddr);
+                psUser.setString(11, pfNum);
+                psUser.setString(12, email);
                 psUser.executeUpdate();
             }
 
