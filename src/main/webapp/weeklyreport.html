@@ -13,23 +13,9 @@
 
         .sidebar { width: var(--sidebar-width); background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.1); overflow-y:auto; scrollbar-width: thin;}
         .sidebar-header { padding: 2.5rem 1.5rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .brand-container{
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        .logo-main{
-            width: 100px;
-            height: auto;
-            object-fit: contain;
-        }
-        .logo-secondary{
-            width: 220px;
-            height: auto;
-            object-fit: contain;
-        }
+        .brand-container{ display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .logo-main{ width: 100px; height: auto; object-fit: contain; }
+        .logo-secondary{ width: 220px; height: auto; object-fit: contain; }
 
         .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
       
@@ -100,15 +86,11 @@
     <div class="content-area">
         <div class="card">
             <div class="card-header">
-                <h3 style="color: var(--primary);">
-                    <i class="ph ph-list-bullets"></i> Task Entry Sheet
-                </h3>
-
+                <h3 style="color: var(--primary);"><i class="ph ph-list-bullets"></i> Task Entry Sheet</h3>
                 <div style="display:flex; gap:10px;">
                     <select id="customerFilter" class="form-input" style="width:220px;">
                         <option value="">All Customers</option>
                     </select>
-
                     <select id="statusFilter" class="form-input" style="width:180px;">
                         <option value="">All Status</option>
                         <option value="Open">Open</option>
@@ -134,8 +116,7 @@
                             <th style="width: 50px;">Action</th>
                         </tr>
                         </thead>
-                        <tbody id="reportTbody">
-                        </tbody>
+                        <tbody id="reportTbody"></tbody>
                     </table>
                 </div>
 
@@ -144,7 +125,7 @@
                 </button>
 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-excel" onclick="exportToExcel()"><i class="ph ph-file-xls"></i> Export to Excel</button>
+                    <button type="button" class="btn btn-excel" onclick="exportToExcel()"><i class="ph ph-file-xls"></i> Export & Send Mail</button>
                     <button type="submit" class="btn btn-save"><i class="ph ph-floppy-disk"></i> Save Weekly Report</button>
                 </div>
             </form>
@@ -184,7 +165,6 @@
             masterData.tasks = results[0];
             masterData.customers = results[1];
             const customerFilter = document.getElementById("customerFilter");
-
             customerFilter.innerHTML = '<option value="">All Customers</option>';
 
             masterData.customers.forEach(customer => {
@@ -217,10 +197,11 @@
         const template = document.getElementById('rowTemplate');
         const clone = template.content.cloneNode(true);
         const newRow = clone.querySelector('tr');
+        
         if(!data){
             const today = new Date().toISOString().split('T')[0];
-            newRow.querySelector('.start-date').value=today;
-            newRow.querySelector('.end-date').value=today;
+            newRow.querySelector('.start-date').value = today;
+            newRow.querySelector('.end-date').value = today;
         }
 
         const taskSelect = newRow.querySelector('.task-master-select');
@@ -247,21 +228,15 @@
             newRow.querySelector('[name="comments"]').value = data.comments;
         }
 
-        if(data){
-            tbody.appendChild(newRow);
-        }
-        else{
-            tbody.prepend(newRow);
-        }
+        if(data){ tbody.appendChild(newRow); }
+        else { tbody.prepend(newRow); }
 
         if(!data){
             let firstRow = document.querySelector("#reportTbody tr:nth-child(2) [name='taskId']");
             if(firstRow){
-                newRow.querySelector('[name="taskId"]').value=
-                    parseInt(firstRow.value)+1;
-            }
-            else{
-                newRow.querySelector('[name="taskId"]').value=1;
+                newRow.querySelector('[name="taskId"]').value = parseInt(firstRow.value) + 1;
+            } else {
+                newRow.querySelector('[name="taskId"]').value = 1;
             }
         }
     }
@@ -269,89 +244,49 @@
     function removeRow(btn) {
         const row = btn.closest('tr');
         const id = row.querySelector('[name="reportId"]').value;
-
         if (id !== "0") {
             if (confirm("This task is saved in the database. Delete permanently?")) {
                 fetch(`WeeklyReportServlet?action=delete&id=${id}`, { method: 'POST' })
                     .then(res => res.json())
-                    .then(result => {
-                        if (result.success) row.remove();
-                    });
+                    .then(result => { if (result.success) row.remove(); });
             }
-        } else {
-            row.remove();
-        }
+        } else { row.remove(); }
     }
 
-    // UPDATED PIPELINE: Now exports locally AND dispatches an automated email backup downstream!
+    // --- CRITICAL UPDATE: EXPORT & EMAIL TRIGGER ---
     function exportToExcel() {
         fetch('WeeklyReportServlet?action=fetchMyReports')
             .then(res => res.json())
             .then(data => {
                 if (!data || data.length === 0) {
-                    alert("No data available to export.");
+                    alert("No task entries found to export!");
                     return;
                 }
 
-                // 1. Build out the standard matrix header array
-                const rows = [
-                    ["Task ID", "Task Description", "Customer", "Status", "Percentage Completed", "Start Date", "End Date", "Comments"]
-                ];
-
-                // 2. Loop database records array elements
+                // 1. Generate Local Spreadsheet File Download (.xlsx)
+                const rows = [["Task ID", "Task Description", "Customer", "Status", "% Completed", "Start Date", "End Date", "Comments"]];
                 data.forEach(r => {
-                    rows.push([
-                        r.taskId,
-                        r.taskDesc,
-                        r.customer,
-                        r.status,
-                        r.percent,
-                        r.startDate,
-                        r.endDate,
-                        r.comments
-                    ]);
+                    rows.push([r.taskId, r.taskDesc, r.customer, r.status, r.percent, r.startDate, r.endDate, r.comments]);
                 });
 
-                // 3. Transform structure into SheetJS binary object
                 const ws = XLSX.utils.aoa_to_sheet(rows);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
-
-                // Trigger direct instant local user desktop file download
                 XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
 
-                // 4. Package workbook as raw binary tracking data array for Brevo
-                const wbout = XLSX.write(wb, {bookType: 'xlsx', type: 'binary'});
-                
-                function s2ab(s) {
-                    const buf = new ArrayBuffer(s.length);
-                    const view = new Uint8Array(buf);
-                    for (let i = 0; i < s.length; i++) {
-                        view[i] = s.charCodeAt(i) & 0xFF;
-                    }
-                    return buf;
-                }
-
-                const blob = new Blob([s2ab(wbout)], {type: "application/octet-stream"});
-                const formData = new FormData();
-                formData.append("file", blob, "Weekly_Status_Report.xlsx");
-
-                // 5. Fire background AJAX fetch directly to your Multipart Servlet backend setup
-                fetch('WeeklyReportServlet?action=exportEmail', {
-                    method: 'POST',
-                    body: formData
-                })
+                // 2. Fire Async Request to Backend Servlet to Email Attachment via Brevo
+                fetch('WeeklyReportServlet?action=exportEmail', { method: 'POST' })
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        alert("✨ Excel sheet downloaded locally and delivered successfully via email to you and the Auditor!");
+                        alert(" Spreadsheet saved locally & copy delivered successfully to Auditor's inbox!");
                     } else {
-                        alert("⚠️ Excel downloaded locally, but automated email failed: " + (result.message || "Unknown error"));
+                        alert(" Local copy generated, but email delivery failed: " + result.message);
                     }
                 })
-                .catch(error => {
-                    console.error("Pipeline failure:", error);
-                    alert("⚠️ Sheet downloaded locally, but couldn't reach the email backend.");
+                .catch(err => {
+                    console.error(err);
+                    alert("⚠️ Local file saved, but connection to mail utility dropped.");
                 });
             });
     }
@@ -364,15 +299,11 @@
         rows.forEach(row => {
             const customer = row.querySelector('[name="customer"]').value.toLowerCase();
             const status = row.querySelector('[name="status"]').value.toLowerCase();
-
             const customerMatch = selectedCustomer === "" || customer === selectedCustomer;
             const statusMatch = selectedStatus === "" || status === selectedStatus;
 
-            if (customerMatch && statusMatch) {
-                row.style.display = "";
-            } else {
-                row.style.display = "none";
-            }
+            if (customerMatch && statusMatch) { row.style.display = ""; } 
+            else { row.style.display = "none"; }
         });
     }
 
@@ -390,6 +321,5 @@
         if(params.get('status') === 'success') alert('Weekly report saved successfully!');
     };
 </script>
-
 </body>
 </html>
