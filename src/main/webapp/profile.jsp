@@ -140,6 +140,7 @@
                     <div class="form-group"><label>Gender</label><input type="text" class="form-input" readonly value="<%= user.getOrDefault("gender", "") %>"></div>
                     <div class="form-group"><label>Aadhar Number</label><input type="text" name="aadhar" class="form-input" value="<%= user.getOrDefault("aadhar", "") %>"></div>
                     <div class="form-group"><label>PAN Number</label><input type="text" name="pan" class="form-input" value="<%= user.getOrDefault("pan", "") %>"></div>
+                    <div class="form-group"><label>Communication Email</label><input type="email" name="communication_email" class="form-input" placeholder="Enter email for communication" value="<%= user.getOrDefault("communication_email", "") %>"></div>
                 </div>
             </div>
 
