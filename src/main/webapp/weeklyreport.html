@@ -3,104 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlueVibes Employee Portal - Weekly Report</title>
+    <title>BlueVibes - Weekly Status Report</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body { background-color: #f8f9fa; padding-top: 30px; }
-        .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8; overflow-x: hidden; }
+        .sidebar { background-color: #0b132b; color: #fff; min-height: 100vh; width: 240px; position: fixed; padding: 20px 10px; }
+        .sidebar .brand-container { text-align: center; margin-bottom: 25px; background: white; padding: 10px; border-radius: 4px; }
+        .sidebar .brand-title { font-size: 22px; font-weight: bold; letter-spacing: 2px; text-align: center; margin-bottom: 30px; color: #fff; }
+        .sidebar-menu a { display: block; color: #a4b0be; padding: 12px 15px; text-decoration: none; border-radius: 5px; margin-bottom: 5px; font-size: 14px; }
+        .sidebar-menu a:hover, .sidebar-menu a.active { background-color: #1c2541; color: #fff; font-weight: 500; }
+        .logout-btn { position: absolute; bottom: 20px; left: 20px; color: #ff6b6b; text-decoration: none; font-size: 14px; }
+        
+        .main-content { margin-left: 240px; width: calc(100% - 240px); }
+        .top-navbar { background-color: #0b132b; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .top-navbar h4 { margin: 0; font-size: 20px; font-weight: 600; }
+        .top-navbar .week-info { font-size: 13px; color: #cbd5e1; }
+        
+        .content-body { padding: 30px; }
+        .task-sheet-card { background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 24px; }
+        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; }
+        .sheet-header h5 { margin: 0; color: #1e293b; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        
+        .table th { background-color: #0f172a !important; color: white !important; font-size: 12px; font-weight: 600; text-transform: uppercase; text-align: center; vertical-align: middle; }
+        .table td { vertical-align: middle; padding: 8px; }
+        .form-control, .form-select { font-size: 13px; padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e1; }
+        .btn-action-container { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+        .btn-success { background-color: #10b981; border: none; font-weight: 500; font-size: 14px; padding: 8px 16px; }
+        .btn-success:hover { background-color: #059669; }
+        .btn-primary { background-color: #1e293b; border: none; font-weight: 500; font-size: 14px; padding: 8px 16px; }
+        .btn-primary:hover { background-color: #0f172a; }
+        .btn-delete { background-color: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; padding: 4px 8px; border-radius: 4px; }
+        .btn-delete:hover { background-color: #fca5a5; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>📊 Weekly Status Reports Dashboard</h2>
-            <div>
-                <button class="btn btn-success btn-success">📤 Export and Email Report</button>
-                <a href="index.html" class="btn btn-danger">Logout</a>
-            </div>
+    <div class="sidebar">
+        <div class="brand-container">
+            <h5 class="text-dark m-0 font-weight-bold">✨ blueeye | BLUEDIGITAL</h5>
+        </div>
+        <div class="brand-title">BlueVibes</div>
+        <div class="sidebar-menu">
+            <a href="#">🏠 Dashboard</a>
+            <a href="#">👤 My Profile</a>
+            <a href="#">📅 Attendance & Calender</a>
+            <a href="#" class="active">📝 Weekly Status Report</a>
+            <a href="#">🔔 Notifications</a>
+            <a href="#">💵 Payslips</a>
+        </div>
+        <a href="index.html" class="logout-btn">⏰ Logout Account</a>
+    </div>
+
+    <div class="main-content">
+        <div class="top-navbar">
+            <h4>Weekly Status Report</h4>
+            <div class="week-info">Current Week: 6/15/2026 to 6/20/2026</div>
         </div>
 
-        <div class="card">
-            <div class="card-body">
-                <table class="table table-striped table-bordered" id="taskTable">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Task ID</th>
-                            <th>Description</th>
-                            <th>Customer/Project</th>
-                            <th>Status</th>
-                            <th>% Done</th>
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Comments</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reportTableBody">
-                        <tr>
-                            <td>TASK-101</td>
-                            <td>Configured production mailing router microservice integration</td>
-                            <td>BlueVibes Corporate</td>
-                            <td>Completed</td>
-                            <td>100</td>
-                            <td>2026-06-10</td>
-                            <td>2026-06-15</td>
-                            <td>Pushed to production successfully via Brevo relay.</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div class="content-body">
+            <div class="task-sheet-card">
+                <div class="sheet-header">
+                    <h5>📋 Task Entry Sheet</h5>
+                    <div class="d-flex gap-2">
+                        <select class="form-select" style="width: 180px;"><option>All Customers</option></select>
+                        <select class="form-select" style="width: 150px;"><option>All Status</option></select>
+                    </div>
+                </div>
+
+                <form id="reportForm" action="WeeklyReportServlet" method="POST">
+                    <table class="table table-bordered align-middle" id="taskTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">Task ID</th>
+                                <th>Task Description</th>
+                                <th style="width: 150px;">Customer</th>
+                                <th style="width: 130px;">Status</th>
+                                <th style="width: 100px;">% Completed</th>
+                                <th style="width: 140px;">Start Date</th>
+                                <th style="width: 140px;">End Date</th>
+                                <th>Comments</th>
+                                <th style="width: 60px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskTableBody">
+                            <tr>
+                                <td><input type="text" name="taskId" class="form-control text-center" value="2"></td>
+                                <td>
+                                    <select name="taskDesc" class="form-select">
+                                        <option selected>AD Approvals</option>
+                                        <option>Development</option>
+                                        <option>Testing</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="customer" class="form-select">
+                                        <option selected>Abaran</option>
+                                        <option>Internal Project</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="status" class="form-select">
+                                        <option selected>Open</option>
+                                        <option>In Progress</option>
+                                        <option>Completed</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" name="percent" class="form-control text-center" value="78"></td>
+                                <td><input type="text" name="startDate" class="form-control" value="13-06-2026"></td>
+                                <td><input type="text" name="endDate" class="form-control" value="14-06-2026"></td>
+                                <td><input type="text" name="comments" class="form-control" placeholder="Notes..."></td>
+                                <td class="text-center"><button type="button" class="btn-delete" onclick="this.closest('tr').remove()">🗑️</button></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" name="taskId" class="form-control text-center" value="1"></td>
+                                <td>
+                                    <select name="taskDesc" class="form-select">
+                                        <option selected>AD Approvals</option>
+                                        <option>Development</option>
+                                        <option>Testing</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="customer" class="form-select">
+                                        <option selected>Abaran</option>
+                                        <option>Internal Project</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="status" class="form-select">
+                                        <option selected>Open</option>
+                                        <option>In Progress</option>
+                                        <option>Completed</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" name="percent" class="form-control text-center" value="66"></td>
+                                <td><input type="text" name="startDate" class="form-control" value="10-06-2026"></td>
+                                <td><input type="text" name="endDate" class="form-control" value="14-06-2026"></td>
+                                <td><input type="text" name="comments" class="form-control" placeholder="Notes..."></td>
+                                <td class="text-center"><button type="button" class="btn-delete" onclick="this.closest('tr').remove()">🗑️</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <button type="button" class="btn btn-sm btn-outline-primary mb-3" id="addBtn">➕ Add Task Row</button>
+
+                    <div class="btn-action-container">
+                        <button type="button" class="btn btn-success">📤 Export to Excel</button>
+                        <button type="submit" class="btn btn-primary">💾 Save Weekly Report</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
-    document.querySelector('.btn-success').addEventListener('click', function(e) {
-        e.preventDefault(); 
+    document.addEventListener("DOMContentLoaded", function() {
         
-        var table = document.getElementById("taskTable");
-        if (!table) {
-            alert("Error: The data table target could not be localized on screen.");
-            return;
-        }
-        
-        // 1. Pack the table into an Excel binary workbook structure
-        var wb = XLSX.utils.table_to_book(table, {sheet: "Weekly Status"});
-        var wbout = XLSX.write(wb, {bookType: 'xlsx', type: 'binary'});
-        
-        // 2. Buffer array translation conversion
-        function s2ab(s) {
-            var buf = new ArrayBuffer(s.length);
-            var view = new Uint8Array(buf);
-            for (var i = 0; i < s.length; i++) {
-                view[i] = s.charCodeAt(i) & 0xFF;
-            }
-            return buf;
-        }
-        
-        var blob = new Blob([s2ab(wbout)], {type: "application/octet-stream"});
-        
-        // 3. Package the payload parameters
-        var formData = new FormData();
-        formData.append("file", blob, "Weekly_Status_Report.xlsx");
-        
-        // 4. Hit the servlet with AJAX fetch pipeline
-        fetch('WeeklyReportServlet?action=exportEmail', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert("✨ Excel Report generated and emailed successfully to you and the Auditor!");
-            } else {
-                alert("⚠️ Failed to distribute report emails: " + (data.message || "Unknown Error"));
-            }
-        })
-        .catch(error => {
-            console.error("Transmission breakdown:", error);
-            alert("❌ Error connecting to backend server routing pipeline.");
+        // Dynamic row spawning handler
+        document.getElementById('addBtn').addEventListener('click', function() {
+            const tbody = document.getElementById('taskTableBody');
+            const newRow = tbody.rows[0].cloneNode(true);
+            newRow.querySelectorAll('input').forEach(i => i.value = '');
+            tbody.appendChild(newRow);
         });
+
+        // Target your "Export to Excel" action button
+        const exportBtn = document.querySelector('.btn-success');
+        
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function(e) {
+                e.preventDefault(); 
+                
+                const originalTable = document.getElementById("taskTable");
+                if (!originalTable) return;
+                
+                // Clone the active DOM state matrix to scrape form elements values
+                const clonedTable = originalTable.cloneNode(true);
+                
+                originalTable.querySelectorAll('tr').forEach((sourceRow, rowIndex) => {
+                    const targetRow = clonedTable.querySelectorAll('tr')[rowIndex];
+                    if (!targetRow) return;
+                    
+                    sourceRow.querySelectorAll('input').forEach((input, cellIndex) => {
+                        const targetCell = targetRow.querySelectorAll('td')[cellIndex] || targetRow.querySelectorAll('th')[cellIndex];
+                        if (targetCell) targetCell.innerText = input.value;
+                    });
+                    
+                    sourceRow.querySelectorAll('select').forEach((select, cellIndex) => {
+                        const targetCell = targetRow.querySelectorAll('td')[cellIndex] || targetRow.querySelectorAll('th')[cellIndex];
+                        if (targetCell) {
+                            const selectedOption = select.options[select.selectedIndex];
+                            targetCell.innerText = selectedOption ? selectedOption.text : '';
+                        }
+                    });
+                });
+                
+                // Build output spreadsheet parameters
+                const wb = XLSX.utils.table_to_book(clonedTable, {sheet: "Weekly Status"});
+                const wbout = XLSX.write(wb, {bookType: 'xlsx', type: 'binary'});
+                
+                function s2ab(s) {
+                    const buf = new ArrayBuffer(s.length);
+                    const view = new Uint8Array(buf);
+                    for (let i = 0; i < s.length; i++) {
+                        view[i] = s.charCodeAt(i) & 0xFF;
+                    }
+                    return buf;
+                }
+                
+                const blob = new Blob([s2ab(wbout)], {type: "application/octet-stream"});
+                const formData = new FormData();
+                formData.append("file", blob, "Weekly_Status_Report.xlsx");
+                
+                // Fire async transfer stream to backend servlet endpoint
+                fetch('WeeklyReportServlet?action=exportEmail', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("✨ Excel Report generated and emailed successfully to you and the Auditor!");
+                    } else {
+                        alert("⚠️ Server caught file payload but Brevo failed to deliver: " + (data.message || "Unknown Error"));
+                    }
+                })
+                .catch(error => {
+                    console.error("Pipeline failure:", error);
+                    alert("❌ Error communicating with the live backend environment.");
+                });
+            });
+        }
     });
     </script>
 </body>
