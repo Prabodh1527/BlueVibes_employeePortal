@@ -11,13 +11,12 @@ import java.util.Base64;
 public class ExcelEmailSender {
 
     private static final String BREVO_API_KEY = "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"; 
-    
-    // 🌟 CHANGED THIS TO YOUR REAL LOGIN EMAIL (Brevo's Default Verified Sender) 🌟
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@gmail.com"; 
 
     public static boolean sendExcelEmail(String employeeEmail) {
+        // Set fallback to the new Auditor email if the string parameter arrives empty
         if (employeeEmail == null || employeeEmail.trim().isEmpty()) {
-            employeeEmail = "diptipatra75588@gmail.com";
+            employeeEmail = "prasanthrambharadwaj@gmail.com";
         }
         employeeEmail = employeeEmail.trim();
 
@@ -73,19 +72,20 @@ public class ExcelEmailSender {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // 4. Construct JSON Payload delivering to both the Auditor and the dynamic Employee user
+            // 4. Construct JSON Payload delivering to both Prasanth (Auditor) and the logged-in Employee user
             StringBuilder jsonBuilder = new StringBuilder();
             jsonBuilder.append("{")
                        .append("\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\"},")
                        .append("\"to\":[")
-                       .append("{\"email\":\"diptipatra75588@gmail.com\",\"name\":\"Auditor\"}");
+                       .append("{\"email\":\"prasanthrambharadwaj@gmail.com\",\"name\":\"Auditor\"}"); // Updated Auditor Target
 
-            if (!employeeEmail.equalsIgnoreCase("diptipatra75588@gmail.com")) {
+            // Only add the employee recipient if it is distinct from Prasanth's address
+            if (!employeeEmail.equalsIgnoreCase("prasanthrambharadwaj@gmail.com")) {
                 jsonBuilder.append(",{\"email\":\"").append(employeeEmail).append("\",\"name\":\"Employee\"}");
             }
 
             jsonBuilder.append("],")
-                       .append("\"subject\":\"✨ Weekly Status Report Submission\",")
+                       .append("\"subject\":\"Weekly Status Report Submission\",")
                        .append("\"htmlContent\":\"<html><body><h3>Hello,</h3><p>Please find attached the copy of the weekly status report spreadsheet file.</p></body></html>\",")
                        .append("\"attachment\":[")
                        .append("{")
