@@ -155,7 +155,7 @@
 <template id="rowTemplate">
     <tr>
         <input type="hidden" name="reportId" value="0">
-        <td><input type="text" name="taskId" class="form-input" readonly/td>
+        <td><input type="text" name="taskId" class="form-input" readonly></td>
         <td><select name="taskDesc" class="form-input task-master-select"><option value="">Select Type</option></select></td>
         <td><select name="customer" class="form-input customer-master-select"><option value="">Select Customer</option></select></td>
         <td>
@@ -189,9 +189,8 @@
 
             masterData.customers.forEach(customer => {
                 let option = new Option(customer.name, customer.name);
-
-            customerFilter.add(option);
-        });
+                customerFilter.add(option);
+            });
 
             customerFilter.onchange = filterByCustomer;
             document.getElementById("statusFilter").onchange = filterByCustomer;
@@ -202,10 +201,10 @@
                     const tbody = document.getElementById('reportTbody');
                     tbody.innerHTML = "";
                     if (reports.length > 0) {
-                        //reports.forEach(report => addRow(report));
-                        reports.forEach((report, index)=>{report.taskId=reports.length-index;
-                                                         addRow(report);
-                                                        });
+                        reports.forEach((report, index)=>{
+                            report.taskId = reports.length - index;
+                            addRow(report);
+                        });
                     } else {
                         addRow();
                     }
@@ -248,18 +247,13 @@
             newRow.querySelector('[name="comments"]').value = data.comments;
         }
 
-        //tbody.appendChild(newRow);
         if(data){
             tbody.appendChild(newRow);
         }
         else{
             tbody.prepend(newRow);
         }
-        //let count= document.querySelectorAll("#reportTbody tr").length;
-        //if(!data){
-            //let count= document.querySelectorAll("#reportTbody tr").length;
-            //newRow.querySelector('[name="taskId"]').value=count;
-        //}
+
         if(!data){
             let firstRow = document.querySelector("#reportTbody tr:nth-child(2) [name='taskId']");
             if(firstRow){
@@ -289,19 +283,22 @@
         }
     }
 
+    // UPDATED PIPELINE: Now exports locally AND dispatches an automated email backup downstream!
     function exportToExcel() {
         fetch('WeeklyReportServlet?action=fetchMyReports')
             .then(res => res.json())
             .then(data => {
                 if (!data || data.length === 0) {
-                    alert("No data to export");
+                    alert("No data available to export.");
                     return;
                 }
 
+                // 1. Build out the standard matrix header array
                 const rows = [
-                    ["Task ID", "Task Description", "Customer", "Status", "% Completed", "Start Date", "End Date", "Comments"]
+                    ["Task ID", "Task Description", "Customer", "Status", "Percentage Completed", "Start Date", "End Date", "Comments"]
                 ];
 
+                // 2. Loop database records array elements
                 data.forEach(r => {
                     rows.push([
                         r.taskId,
@@ -315,69 +312,70 @@
                     ]);
                 });
 
+                // 3. Transform structure into SheetJS binary object
                 const ws = XLSX.utils.aoa_to_sheet(rows);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
+
+                // Trigger direct instant local user desktop file download
                 XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
+
+                // 4. Package workbook as raw binary tracking data array for Brevo
+                const wbout = XLSX.write(wb, {bookType: 'xlsx', type: 'binary'});
+                
+                function s2ab(s) {
+                    const buf = new ArrayBuffer(s.length);
+                    const view = new Uint8Array(buf);
+                    for (let i = 0; i < s.length; i++) {
+                        view[i] = s.charCodeAt(i) & 0xFF;
+                    }
+                    return buf;
+                }
+
+                const blob = new Blob([s2ab(wbout)], {type: "application/octet-stream"});
+                const formData = new FormData();
+                formData.append("file", blob, "Weekly_Status_Report.xlsx");
+
+                // 5. Fire background AJAX fetch directly to your Multipart Servlet backend setup
+                fetch('WeeklyReportServlet?action=exportEmail', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert("✨ Excel sheet downloaded locally and delivered successfully via email to you and the Auditor!");
+                    } else {
+                        alert("⚠️ Excel downloaded locally, but automated email failed: " + (result.message || "Unknown error"));
+                    }
+                })
+                .catch(error => {
+                    console.error("Pipeline failure:", error);
+                    alert("⚠️ Sheet downloaded locally, but couldn't reach the email backend.");
+                });
             });
     }
-    /*function filterByCustomer() {
-            const selectedCustomer = document.getElementById("customerFilter").value.toLowerCase();
-            const rows = document.querySelectorAll("#reportTbody tr");
-            rows.forEach(row => {
-                const customer = row.querySelector('[name="customer"]').value.toLowerCase();
-                if (
-                    selectedCustomer === "" ||
-                    customer === selectedCustomer
-                ) {
-                    row.style.display = "";
-                } else {
-                    row.style.display = "none";
-                }
-            });
-    }*/
+
     function filterByCustomer() {
+        const selectedCustomer = document.getElementById("customerFilter").value.toLowerCase();
+        const selectedStatus = document.getElementById("statusFilter").value.toLowerCase();
+        const rows = document.querySelectorAll("#reportTbody tr");
 
-    const selectedCustomer =
-        document.getElementById("customerFilter")
-        .value
-        .toLowerCase();
+        rows.forEach(row => {
+            const customer = row.querySelector('[name="customer"]').value.toLowerCase();
+            const status = row.querySelector('[name="status"]').value.toLowerCase();
 
-    const selectedStatus =
-        document.getElementById("statusFilter")
-        .value
-        .toLowerCase();
+            const customerMatch = selectedCustomer === "" || customer === selectedCustomer;
+            const statusMatch = selectedStatus === "" || status === selectedStatus;
 
-    const rows =
-        document.querySelectorAll("#reportTbody tr");
+            if (customerMatch && statusMatch) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
 
-    rows.forEach(row => {
-
-        const customer =
-            row.querySelector('[name="customer"]')
-            .value
-            .toLowerCase();
-
-        const status =
-            row.querySelector('[name="status"]')
-            .value
-            .toLowerCase();
-
-        const customerMatch =
-            selectedCustomer === "" ||
-            customer === selectedCustomer;
-
-        const statusMatch =
-            selectedStatus === "" ||
-            status === selectedStatus;
-
-        if (customerMatch && statusMatch) {
-            row.style.display = "";
-        } else {
-            row.style.display = "none";
-        }
-    });
-}
     window.onload = function() {
         const now = new Date();
         const first = now.getDate() - now.getDay() + 1;
