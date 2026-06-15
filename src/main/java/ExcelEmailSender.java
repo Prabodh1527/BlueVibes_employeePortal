@@ -15,7 +15,7 @@ public class ExcelEmailSender {
 
     public static boolean sendExcelEmail(String employeeEmail) {
         try {
-            // 1. Extract live dataset dynamically from PostgreSQL database rows
+            // 1. Fetch live data from PostgreSQL and build a clean CSV string
             StringBuilder csvBuilder = new StringBuilder();
             csvBuilder.append("Task ID,Task Description,Customer,Status,% Completed,Start Date,End Date,Comments\n");
 
@@ -37,10 +37,10 @@ public class ExcelEmailSender {
                         String endDate = rs.getString("end_date") != null ? rs.getString("end_date") : "";
                         String comments = rs.getString("comments") != null ? rs.getString("comments") : "";
 
-                        // Clean data elements by stripping out internal double-quotes to prevent CSV layout splitting
-                        taskDesc = taskDesc.replace("\"", "'");
+                        // Strip quotes to avoid breaking the CSV layout structure
+                        taskDesc = taskDesc.replace("\"", "'").replace("\n", " ").replace("\r", " ");
                         customer = customer.replace("\"", "'");
-                        comments = comments.replace("\"", "'");
+                        comments = comments.replace("\"", "'").replace("\n", " ").replace("\r", " ");
 
                         csvBuilder.append(taskId).append(",")
                                   .append("\"").append(taskDesc).append("\",")
@@ -54,23 +54,10 @@ public class ExcelEmailSender {
                 }
             }
 
-            // 2. Convert raw text dataset directly into an isolated Base64 string
+            // 2. Convert raw string into Base64 format for attachment transfer
             String base64Content = Base64.getEncoder().encodeToString(csvBuilder.toString().getBytes(StandardCharsets.UTF_8));
 
-            // 3. Build a completely sanitised, escape-proof JSON body payload manually using primitive clean targets
-            // This structure completely isolates variables to avoid breaking the root JSON array schema
-            String cleanPayload = "{"
-                + "\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"" + VERIFIED_SENDER_EMAIL + "\"},"
-                + "\"to\":[{\"email\":\"bharadwaj@bluedigital.co.in\",\"name\":\"Auditor\"},{\"email\":\"" + employeeEmail + "\",\"name\":\"Employee\"}],"
-                + "\"subject\":\"✨ Weekly Status Report Submission\","
-                + "\"htmlContent\":\"<html><body><h3>Hello Auditor,</h3><p>Please find attached the weekly status report submitted by employee: <b>" + employeeEmail + "</b>.</p></body></html>\","
-                + "\"attachment\":[{"
-                    + "\"content\":\"" + base64Content + "\","
-                    + "\"name\":\"Weekly_Status_Report.csv\""
-                + "}]"
-                + "}";
-
-            // 4. Set up Connection socket to Brevo API Endpoint
+            // 3. Set up Connection to Brevo REST API
             URL url = new URL("https://api.brevo.com/v3/smtp/email");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
@@ -79,25 +66,42 @@ public class ExcelEmailSender {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // Write verified payload array out to wire connection
+            // 4. Construct JSON Body Payload exactly according to Brevo's schema standards
+            String jsonPayload = "{"
+                + "\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"" + VERIFIED_SENDER_EMAIL + "\"},"
+                + "\"to\":["
+                    + "{\"email\":\"bharadwaj@bluedigital.co.in\",\"name\":\"Auditor\"},"
+                    + "{\"email\":\"" + employeeEmail + "\",\"name\":\"Employee\"}"
+                + "],"
+                + "\"subject\":\"✨ Weekly Status Report Submission\","
+                + "\"htmlContent\":\"<html><body><h3>Hello,</h3><p>Please find attached the weekly status report submitted by <b>" + employeeEmail + "</b>.</p></body></html>\","
+                + "\"attachment\":["
+                    + "{"
+                        + "\"content\":\"" + base64Content + "\","
+                        + "\"name\":\"Weekly_Status_Report.csv\""
+                    + "}"
+                + "]"
+                + "}";
+
+            // 5. Send out Payload Stream
             try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = cleanPayload.getBytes(StandardCharsets.UTF_8);
+                byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
                 os.flush();
             }
 
-            // 5. Evaluate HTTP Response Validation Codes
+            // 6. Check Response Status
             int responseCode = conn.getResponseCode();
-            System.out.println("DEBUG LOG - Brevo HTTP Status: " + responseCode);
+            System.out.println("Brevo Response Code: " + responseCode);
 
             if (responseCode == 201 || responseCode == 200) {
                 return true;
             } else {
-                // Read the exact backend error reason directly to the console if rejection repeats
+                // Read exact failure log from Brevo if something is rejected
                 try (InputStream errorStream = conn.getErrorStream()) {
                     if (errorStream != null) {
                         String errorResponse = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
-                        System.err.println("DEBUG LOG - Brevo API Response Error: " + errorResponse);
+                        System.err.println("Brevo API Rejection Reason: " + errorResponse);
                     }
                 }
                 return false;
