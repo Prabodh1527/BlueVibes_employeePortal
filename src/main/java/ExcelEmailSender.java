@@ -10,9 +10,10 @@ import java.util.Base64;
 
 public class ExcelEmailSender {
 
-    // Updated with your fresh, active Brevo API Key
     private static final String BREVO_API_KEY = "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"; 
-    private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@11437826.brevosend.com";
+    
+    // 🌟 CHANGED THIS TO YOUR REAL LOGIN EMAIL (Brevo's Default Verified Sender) 🌟
+    private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@gmail.com"; 
 
     public static boolean sendExcelEmail(String employeeEmail) {
         if (employeeEmail == null || employeeEmail.trim().isEmpty()) {
@@ -43,7 +44,6 @@ public class ExcelEmailSender {
                         String endDate = rs.getString("end_date") != null ? rs.getString("end_date") : "";
                         String comments = rs.getString("comments") != null ? rs.getString("comments") : "";
 
-                        // Prevent internal formatting breaks in JSON conversion
                         taskDesc = pureClean(taskDesc);
                         customer = pureClean(customer);
                         comments = pureClean(comments);
@@ -80,7 +80,6 @@ public class ExcelEmailSender {
                        .append("\"to\":[")
                        .append("{\"email\":\"diptipatra75588@gmail.com\",\"name\":\"Auditor\"}");
 
-            // Include the employee only if it's a unique recipient address
             if (!employeeEmail.equalsIgnoreCase("diptipatra75588@gmail.com")) {
                 jsonBuilder.append(",{\"email\":\"").append(employeeEmail).append("\",\"name\":\"Employee\"}");
             }
