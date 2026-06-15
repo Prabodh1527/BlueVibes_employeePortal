@@ -279,7 +279,7 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        alert("Spreadsheet saved locally & copy delivered successfully to Auditor's inbox!");
+                        alert("Spreadsheet saved locally & copy delivered successfully to both the Auditor and your email address!");
                     } else {
                         alert("Local copy generated, but email delivery failed: " + result.message);
                     }
