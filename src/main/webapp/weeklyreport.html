@@ -2,240 +2,396 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BlueVibes - Weekly Status Report</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <title>BlueVibes | Weekly Status Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8; overflow-x: hidden; }
-        .sidebar { background-color: #0b132b; color: #fff; min-height: 100vh; width: 240px; position: fixed; padding: 20px 10px; }
-        .sidebar .brand-container { text-align: center; margin-bottom: 25px; background: white; padding: 10px; border-radius: 4px; }
-        .sidebar .brand-title { font-size: 22px; font-weight: bold; letter-spacing: 2px; text-align: center; margin-bottom: 30px; color: #fff; }
-        .sidebar-menu a { display: block; color: #a4b0be; padding: 12px 15px; text-decoration: none; border-radius: 5px; margin-bottom: 5px; font-size: 14px; }
-        .sidebar-menu a:hover, .sidebar-menu a.active { background-color: #1c2541; color: #fff; font-weight: 500; }
-        .logout-btn { position: absolute; bottom: 20px; left: 20px; color: #ff6b6b; text-decoration: none; font-size: 14px; }
-        
-        .main-content { margin-left: 240px; width: calc(100% - 240px); }
-        .top-navbar { background-color: #0b132b; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .top-navbar h4 { margin: 0; font-size: 20px; font-weight: 600; }
-        .top-navbar .week-info { font-size: 13px; color: #cbd5e1; }
-        
-        .content-body { padding: 30px; }
-        .task-sheet-card { background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 24px; }
-        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; }
-        .sheet-header h5 { margin: 0; color: #1e293b; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-        
-        .table th { background-color: #0f172a !important; color: white !important; font-size: 12px; font-weight: 600; text-transform: uppercase; text-align: center; vertical-align: middle; }
-        .table td { vertical-align: middle; padding: 8px; }
-        .form-control, .form-select { font-size: 13px; padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd5e1; }
-        .btn-action-container { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
-        .btn-success { background-color: #10b981; border: none; font-weight: 500; font-size: 14px; padding: 8px 16px; }
-        .btn-success:hover { background-color: #059669; }
-        .btn-primary { background-color: #1e293b; border: none; font-weight: 500; font-size: 14px; padding: 8px 16px; }
-        .btn-primary:hover { background-color: #0f172a; }
-        .btn-delete { background-color: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; padding: 4px 8px; border-radius: 4px; }
-        .btn-delete:hover { background-color: #fca5a5; }
+        :root { --sidebar-width: 260px; --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text: #1e293b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+        .sidebar { width: var(--sidebar-width); background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.1); overflow-y:auto; scrollbar-width: thin;}
+        .sidebar-header { padding: 2.5rem 1.5rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .brand-container{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .logo-main{
+            width: 100px;
+            height: auto;
+            object-fit: contain;
+        }
+        .logo-secondary{
+            width: 220px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+      
+        .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; overflow-y: auto; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.9rem; }
+        .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
+
+        .logout-sect { padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .logout-btn { color: #f87171; text-decoration: none; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; }
+        .logout-btn:hover { color: #ef4444; }
+
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; flex-shrink: 0; }
+        .content-area { padding: 2rem; overflow-y: auto; flex-grow: 1; }
+
+        .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--bg); }
+
+        .table-container { overflow-x: auto; overflow-y: auto; max-height: 65vh; }
+        .report-table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        .report-table th { background: #0f172a; color: white; text-align: left; padding: 12px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #334155; }
+        .report-table td { padding: 8px; border: 1px solid var(--border); }
+
+        .form-input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; font-family: inherit; }
+        .form-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.1); }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 2rem; justify-content: flex-end; }
+        .btn { padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; border: none; transition: 0.2s; font-size: 0.9rem; }
+        .btn-add { background: var(--accent); color: white; padding: 8px 15px; font-size: 0.8rem; }
+        .btn-save { background: var(--primary); color: white; }
+        .btn-excel { background: #16a34a; color: white; }
+        .btn-delete { background: #fee2e2; color: #ef4444; padding: 8px; border-radius: 6px; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
+<aside class="sidebar">
+    <div class="sidebar-header">
         <div class="brand-container">
-            <h5 class="text-dark m-0 font-weight-bold">✨ blueeye | BLUEDIGITAL</h5>
+            <img src="blueeye.png" class="logo-main">
+            <img src="bluedigital.png" class="logo-secondary">
         </div>
-        <div class="brand-title">BlueVibes</div>
-        <div class="sidebar-menu">
-            <a href="#">🏠 Dashboard</a>
-            <a href="#">👤 My Profile</a>
-            <a href="#">📅 Attendance & Calender</a>
-            <a href="#" class="active">📝 Weekly Status Report</a>
-            <a href="#">🔔 Notifications</a>
-            <a href="#">💵 Payslips</a>
-        </div>
-        <a href="index.html" class="logout-btn">⏰ Logout Account</a>
+        <div class="brand-name">BlueVibes</div>
     </div>
+    <nav class="nav-links">
+        <a href="homepage.jsp" class="nav-item"><i class="ph ph-house"></i> Dashboard</a>
+        <a href="LoadProfileServlet" class="nav-item"><i class="ph ph-user"></i> My Profile</a>
+        <a href="attendance.html" class="nav-item"><i class="ph ph-calendar-check"></i> Attendance & Calender</a>
+        <a href="weeklyreport.html" class="nav-item active"><i class="ph ph-clipboard-text"></i> Weekly Status Report</a>
+        <a href="user_notifications.html" class="nav-item"><i class="ph ph-broadcast"></i> Notifications</a>
+        <a href="payslips.jsp" class="nav-item"><i class="ph ph-receipt"></i> Payslips</a>
+        <a href="appraisals.html" class="nav-item"><i class="ph ph-chart-line-up"></i> KRA Appraisals</a>
+        <a href="policyview.jsp" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
+        <a href="leavereq.html" class="nav-item"><i class="ph ph-calendar-x"></i> Leave Request</a>
+    </nav>
+    <div class="logout-sect">
+        <a href="index.html" class="logout-btn"><i class="ph ph-power"></i> Logout Account</a>
+    </div>
+</aside>
 
-    <div class="main-content">
-        <div class="top-navbar">
-            <h4>Weekly Status Report</h4>
-            <div class="week-info">Current Week: 6/15/2026 to 6/20/2026</div>
-        </div>
+<main class="main-wrapper">
+    <header class="top-header">
+        <h2 style="font-weight: 700;">Weekly Status Report</h2>
+        <div id="weekRange" style="font-size: 0.9rem; opacity: 0.8;"></div>
+    </header>
 
-        <div class="content-body">
-            <div class="task-sheet-card">
-                <div class="sheet-header">
-                    <h5>📋 Task Entry Sheet</h5>
-                    <div class="d-flex gap-2">
-                        <select class="form-select" style="width: 180px;"><option>All Customers</option></select>
-                        <select class="form-select" style="width: 150px;"><option>All Status</option></select>
-                    </div>
+    <div class="content-area">
+        <div class="card">
+            <div class="card-header">
+                <h3 style="color: var(--primary);">
+                    <i class="ph ph-list-bullets"></i> Task Entry Sheet
+                </h3>
+
+                <div style="display:flex; gap:10px;">
+                    <select id="customerFilter" class="form-input" style="width:220px;">
+                        <option value="">All Customers</option>
+                    </select>
+
+                    <select id="statusFilter" class="form-input" style="width:180px;">
+                        <option value="">All Status</option>
+                        <option value="Open">Open</option>
+                        <option value="InProgress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                    </select>
                 </div>
+            </div>
 
-                <form id="reportForm" action="WeeklyReportServlet" method="POST">
-                    <table class="table table-bordered align-middle" id="taskTable">
+            <form id="reportForm" action="WeeklyReportServlet" method="POST">
+                <div class="table-container">
+                    <table class="report-table" id="reportTable">
                         <thead>
-                            <tr>
-                                <th style="width: 80px;">Task ID</th>
-                                <th>Task Description</th>
-                                <th style="width: 150px;">Customer</th>
-                                <th style="width: 130px;">Status</th>
-                                <th style="width: 100px;">% Completed</th>
-                                <th style="width: 140px;">Start Date</th>
-                                <th style="width: 140px;">End Date</th>
-                                <th>Comments</th>
-                                <th style="width: 60px;">Action</th>
-                            </tr>
+                        <tr>
+                            <th style="width: 80px;">Task ID</th>
+                            <th>Task Description</th>
+                            <th style="width: 180px;">Customer</th>
+                            <th style="width: 150px;">Status</th>
+                            <th style="width: 100px;">% Completed</th>
+                            <th style="width: 130px;">Start Date</th>
+                            <th style="width: 130px;">End Date</th>
+                            <th>Comments</th>
+                            <th style="width: 50px;">Action</th>
+                        </tr>
                         </thead>
-                        <tbody id="taskTableBody">
-                            <tr>
-                                <td><input type="text" name="taskId" class="form-control text-center" value="2"></td>
-                                <td>
-                                    <select name="taskDesc" class="form-select">
-                                        <option selected>AD Approvals</option>
-                                        <option>Development</option>
-                                        <option>Testing</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <select name="customer" class="form-select">
-                                        <option selected>Abaran</option>
-                                        <option>Internal Project</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <select name="status" class="form-select">
-                                        <option selected>Open</option>
-                                        <option>In Progress</option>
-                                        <option>Completed</option>
-                                    </select>
-                                </td>
-                                <td><input type="number" name="percent" class="form-control text-center" value="78"></td>
-                                <td><input type="text" name="startDate" class="form-control" value="13-06-2026"></td>
-                                <td><input type="text" name="endDate" class="form-control" value="14-06-2026"></td>
-                                <td><input type="text" name="comments" class="form-control" placeholder="Notes..."></td>
-                                <td class="text-center"><button type="button" class="btn-delete" onclick="this.closest('tr').remove()">🗑️</button></td>
-                            </tr>
-                            <tr>
-                                <td><input type="text" name="taskId" class="form-control text-center" value="1"></td>
-                                <td>
-                                    <select name="taskDesc" class="form-select">
-                                        <option selected>AD Approvals</option>
-                                        <option>Development</option>
-                                        <option>Testing</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <select name="customer" class="form-select">
-                                        <option selected>Abaran</option>
-                                        <option>Internal Project</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <select name="status" class="form-select">
-                                        <option selected>Open</option>
-                                        <option>In Progress</option>
-                                        <option>Completed</option>
-                                    </select>
-                                </td>
-                                <td><input type="number" name="percent" class="form-control text-center" value="66"></td>
-                                <td><input type="text" name="startDate" class="form-control" value="10-06-2026"></td>
-                                <td><input type="text" name="endDate" class="form-control" value="14-06-2026"></td>
-                                <td><input type="text" name="comments" class="form-control" placeholder="Notes..."></td>
-                                <td class="text-center"><button type="button" class="btn-delete" onclick="this.closest('tr').remove()">🗑️</button></td>
-                            </tr>
+                        <tbody id="reportTbody">
                         </tbody>
                     </table>
+                </div>
 
-                    <button type="button" class="btn btn-sm btn-outline-primary mb-3" id="addBtn">➕ Add Task Row</button>
+                <button type="button" class="btn btn-add" style="margin-top:15px;" onclick="addRow()">
+                    <i class="ph ph-plus-circle"></i> Add Task Row
+                </button>
 
-                    <div class="btn-action-container">
-                        <button type="button" class="btn btn-success">📤 Export to Excel</button>
-                        <button type="submit" class="btn btn-primary">💾 Save Weekly Report</button>
-                    </div>
-                </form>
-            </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-excel" onclick="exportToExcel()"><i class="ph ph-file-xls"></i> Export to Excel</button>
+                    <button type="submit" class="btn btn-save"><i class="ph ph-floppy-disk"></i> Save Weekly Report</button>
+                </div>
+            </form>
         </div>
     </div>
+</main>
 
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        
-        // Dynamic row spawning handler
-        document.getElementById('addBtn').addEventListener('click', function() {
-            const tbody = document.getElementById('taskTableBody');
-            const newRow = tbody.rows[0].cloneNode(true);
-            newRow.querySelectorAll('input').forEach(i => i.value = '');
-            tbody.appendChild(newRow);
+<template id="rowTemplate">
+    <tr>
+        <input type="hidden" name="reportId" value="0">
+        <td><input type="text" name="taskId" class="form-input" readonly/td>
+        <td><select name="taskDesc" class="form-input task-master-select"><option value="">Select Type</option></select></td>
+        <td><select name="customer" class="form-input customer-master-select"><option value="">Select Customer</option></select></td>
+        <td>
+            <select name="status" class="form-input">
+                <option value="InProgress">In Progress</option>
+                <option value="Open">Open</option>
+                <option value="Completed">Completed</option>
+            </select>
+        </td>
+        <td><input type="number" name="percent" class="form-input" min="0" max="100" value="0"></td>
+        <td><input type="date" name="startDate" class="form-input start-date"></td>
+        <td><input type="date" name="endDate" class="form-input end-date"></td>
+        <td><input type="text" name="comments" class="form-input" placeholder="Notes..."></td>
+        <td style="text-align:center;"><button type="button" class="btn-delete" onclick="removeRow(this)"><i class="ph ph-trash"></i></button></td>
+    </tr>
+</template>
+
+<script>
+    let masterData = { tasks: [], customers: [] };
+
+    function loadMastersAndReports() {
+        Promise.all([
+            fetch('TaskMasterServlet?action=list').then(res => res.json()),
+            fetch('CustomerMasterServlet?action=list').then(res => res.json())
+        ]).then(results => {
+            masterData.tasks = results[0];
+            masterData.customers = results[1];
+            const customerFilter = document.getElementById("customerFilter");
+
+            customerFilter.innerHTML = '<option value="">All Customers</option>';
+
+            masterData.customers.forEach(customer => {
+                let option = new Option(customer.name, customer.name);
+
+            customerFilter.add(option);
         });
 
-        // Target your "Export to Excel" action button
-        const exportBtn = document.querySelector('.btn-success');
-        
-        if (exportBtn) {
-            exportBtn.addEventListener('click', function(e) {
-                e.preventDefault(); 
-                
-                const originalTable = document.getElementById("taskTable");
-                if (!originalTable) return;
-                
-                // Clone the active DOM state matrix to scrape form elements values
-                const clonedTable = originalTable.cloneNode(true);
-                
-                originalTable.querySelectorAll('tr').forEach((sourceRow, rowIndex) => {
-                    const targetRow = clonedTable.querySelectorAll('tr')[rowIndex];
-                    if (!targetRow) return;
-                    
-                    sourceRow.querySelectorAll('input').forEach((input, cellIndex) => {
-                        const targetCell = targetRow.querySelectorAll('td')[cellIndex] || targetRow.querySelectorAll('th')[cellIndex];
-                        if (targetCell) targetCell.innerText = input.value;
-                    });
-                    
-                    sourceRow.querySelectorAll('select').forEach((select, cellIndex) => {
-                        const targetCell = targetRow.querySelectorAll('td')[cellIndex] || targetRow.querySelectorAll('th')[cellIndex];
-                        if (targetCell) {
-                            const selectedOption = select.options[select.selectedIndex];
-                            targetCell.innerText = selectedOption ? selectedOption.text : '';
-                        }
-                    });
-                });
-                
-                // Build output spreadsheet parameters
-                const wb = XLSX.utils.table_to_book(clonedTable, {sheet: "Weekly Status"});
-                const wbout = XLSX.write(wb, {bookType: 'xlsx', type: 'binary'});
-                
-                function s2ab(s) {
-                    const buf = new ArrayBuffer(s.length);
-                    const view = new Uint8Array(buf);
-                    for (let i = 0; i < s.length; i++) {
-                        view[i] = s.charCodeAt(i) & 0xFF;
-                    }
-                    return buf;
-                }
-                
-                const blob = new Blob([s2ab(wbout)], {type: "application/octet-stream"});
-                const formData = new FormData();
-                formData.append("file", blob, "Weekly_Status_Report.xlsx");
-                
-                // Fire async transfer stream to backend servlet endpoint
-                fetch('WeeklyReportServlet?action=exportEmail', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert("✨ Excel Report generated and emailed successfully to you and the Auditor!");
+            customerFilter.onchange = filterByCustomer;
+            document.getElementById("statusFilter").onchange = filterByCustomer;
+
+            fetch('WeeklyReportServlet?action=fetchMyReports')
+                .then(res => res.json())
+                .then(reports => {
+                    const tbody = document.getElementById('reportTbody');
+                    tbody.innerHTML = "";
+                    if (reports.length > 0) {
+                        //reports.forEach(report => addRow(report));
+                        reports.forEach((report, index)=>{report.taskId=reports.length-index;
+                                                         addRow(report);
+                                                        });
                     } else {
-                        alert("⚠️ Server caught file payload but Brevo failed to deliver: " + (data.message || "Unknown Error"));
+                        addRow();
                     }
-                })
-                .catch(error => {
-                    console.error("Pipeline failure:", error);
-                    alert("❌ Error communicating with the live backend environment.");
                 });
+        });
+    }
+
+    function addRow(data = null) {
+        const tbody = document.getElementById('reportTbody');
+        const template = document.getElementById('rowTemplate');
+        const clone = template.content.cloneNode(true);
+        const newRow = clone.querySelector('tr');
+        if(!data){
+            const today = new Date().toISOString().split('T')[0];
+            newRow.querySelector('.start-date').value=today;
+            newRow.querySelector('.end-date').value=today;
+        }
+
+        const taskSelect = newRow.querySelector('.task-master-select');
+        masterData.tasks.forEach(t => {
+            let opt = new Option(t.name, t.name);
+            if (data && data.taskDesc === t.name) opt.selected = true;
+            taskSelect.add(opt);
+        });
+
+        const custSelect = newRow.querySelector('.customer-master-select');
+        masterData.customers.forEach(c => {
+            let opt = new Option(c.name, c.name);
+            if (data && data.customer === c.name) opt.selected = true;
+            custSelect.add(opt);
+        });
+
+        if (data) {
+            newRow.querySelector('[name="reportId"]').value = data.reportId;
+            newRow.querySelector('[name="taskId"]').value = data.taskId;
+            newRow.querySelector('[name="status"]').value = data.status;
+            newRow.querySelector('[name="percent"]').value = data.percent;
+            newRow.querySelector('[name="startDate"]').value = data.startDate;
+            newRow.querySelector('[name="endDate"]').value = data.endDate;
+            newRow.querySelector('[name="comments"]').value = data.comments;
+        }
+
+        //tbody.appendChild(newRow);
+        if(data){
+            tbody.appendChild(newRow);
+        }
+        else{
+            tbody.prepend(newRow);
+        }
+        //let count= document.querySelectorAll("#reportTbody tr").length;
+        //if(!data){
+            //let count= document.querySelectorAll("#reportTbody tr").length;
+            //newRow.querySelector('[name="taskId"]').value=count;
+        //}
+        if(!data){
+            let firstRow = document.querySelector("#reportTbody tr:nth-child(2) [name='taskId']");
+            if(firstRow){
+                newRow.querySelector('[name="taskId"]').value=
+                    parseInt(firstRow.value)+1;
+            }
+            else{
+                newRow.querySelector('[name="taskId"]').value=1;
+            }
+        }
+    }
+
+    function removeRow(btn) {
+        const row = btn.closest('tr');
+        const id = row.querySelector('[name="reportId"]').value;
+
+        if (id !== "0") {
+            if (confirm("This task is saved in the database. Delete permanently?")) {
+                fetch(`WeeklyReportServlet?action=delete&id=${id}`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(result => {
+                        if (result.success) row.remove();
+                    });
+            }
+        } else {
+            row.remove();
+        }
+    }
+
+    function exportToExcel() {
+        fetch('WeeklyReportServlet?action=fetchMyReports')
+            .then(res => res.json())
+            .then(data => {
+                if (!data || data.length === 0) {
+                    alert("No data to export");
+                    return;
+                }
+
+                const rows = [
+                    ["Task ID", "Task Description", "Customer", "Status", "% Completed", "Start Date", "End Date", "Comments"]
+                ];
+
+                data.forEach(r => {
+                    rows.push([
+                        r.taskId,
+                        r.taskDesc,
+                        r.customer,
+                        r.status,
+                        r.percent,
+                        r.startDate,
+                        r.endDate,
+                        r.comments
+                    ]);
+                });
+
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
+                XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
             });
+    }
+    /*function filterByCustomer() {
+            const selectedCustomer = document.getElementById("customerFilter").value.toLowerCase();
+            const rows = document.querySelectorAll("#reportTbody tr");
+            rows.forEach(row => {
+                const customer = row.querySelector('[name="customer"]').value.toLowerCase();
+                if (
+                    selectedCustomer === "" ||
+                    customer === selectedCustomer
+                ) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+    }*/
+    function filterByCustomer() {
+
+    const selectedCustomer =
+        document.getElementById("customerFilter")
+        .value
+        .toLowerCase();
+
+    const selectedStatus =
+        document.getElementById("statusFilter")
+        .value
+        .toLowerCase();
+
+    const rows =
+        document.querySelectorAll("#reportTbody tr");
+
+    rows.forEach(row => {
+
+        const customer =
+            row.querySelector('[name="customer"]')
+            .value
+            .toLowerCase();
+
+        const status =
+            row.querySelector('[name="status"]')
+            .value
+            .toLowerCase();
+
+        const customerMatch =
+            selectedCustomer === "" ||
+            customer === selectedCustomer;
+
+        const statusMatch =
+            selectedStatus === "" ||
+            status === selectedStatus;
+
+        if (customerMatch && statusMatch) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
         }
     });
-    </script>
+}
+    window.onload = function() {
+        const now = new Date();
+        const first = now.getDate() - now.getDay() + 1;
+        const last = first + 5;
+        const start = new Date(new Date().setDate(first)).toLocaleDateString();
+        const end = new Date(new Date().setDate(last)).toLocaleDateString();
+        document.getElementById('weekRange').innerText = `Current Week: ${start} to ${end}`;
+
+        loadMastersAndReports();
+
+        const params = new URLSearchParams(window.location.search);
+        if(params.get('status') === 'success') alert('Weekly report saved successfully!');
+    };
+</script>
+
 </body>
 </html>
