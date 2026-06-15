@@ -10,13 +10,13 @@ import java.util.Base64;
 
 public class ExcelEmailSender {
 
-    // Updated with your active Brevo API Key string
+    // Your working, verified Brevo API Key
     private static final String BREVO_API_KEY = "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"; 
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@11437826.brevosend.com";
 
     public static boolean sendExcelEmail(String employeeEmail) {
         try {
-            // 1. Fetch live database data rows and structure a clean CSV string
+            // 1. Fetch live database records and build the CSV content string
             StringBuilder csvBuilder = new StringBuilder();
             csvBuilder.append("Task ID,Task Description,Customer,Status,% Completed,Start Date,End Date,Comments\n");
 
@@ -38,7 +38,7 @@ public class ExcelEmailSender {
                         String endDate = rs.getString("end_date") != null ? rs.getString("end_date") : "";
                         String comments = rs.getString("comments") != null ? rs.getString("comments") : "";
 
-                        // Strip internal formatting characters that break manual JSON strings
+                        // Clean data inputs to prevent parsing breaks inside the JSON payload string
                         taskDesc = sanitizeForJson(taskDesc);
                         customer = sanitizeForJson(customer);
                         comments = sanitizeForJson(comments);
@@ -55,10 +55,10 @@ public class ExcelEmailSender {
                 }
             }
 
-            // 2. Convert cleanly structured CSV records to a safe Base64 string array
+            // 2. Convert CSV data string to standard Base64 encoding
             String base64Content = Base64.getEncoder().encodeToString(csvBuilder.toString().getBytes(StandardCharsets.UTF_8));
 
-            // 3. Configure connection parameters matching Brevo REST specifications
+            // 3. Configure HTTP properties for Brevo REST API Endpoint connection
             URL url = new URL("https://api.brevo.com/v3/smtp/email");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             
@@ -68,15 +68,15 @@ public class ExcelEmailSender {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // 4. Generate the exact JSON Payload schema
+            // 4. Construct JSON Payload — explicitly delivering to both the Auditor AND the exporting Employee
             String jsonPayload = "{"
                 + "\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"" + VERIFIED_SENDER_EMAIL + "\"},"
                 + "\"to\":["
                     + "{\"email\":\"bharadwaj@bluedigital.co.in\",\"name\":\"Auditor\"},"
-                    + "{\"email\":\"" + employeeEmail + "\",\"name\":\"Employee\"}"
+                    + "{\"email\":\"" + employeeEmail.trim() + "\",\"name\":\"Employee\"}"
                 + "],"
                 + "\"subject\":\"✨ Weekly Status Report Submission\","
-                + "\"htmlContent\":\"<html><body><h3>Hello,</h3><p>Please find attached the weekly status report spreadsheet file submitted by <b>" + employeeEmail + "</b>.</p></body></html>\","
+                + "\"htmlContent\":\"<html><body><h3>Hello,</h3><p>Please find attached the copy of your weekly status report spreadsheet file submitted via the BlueVibes Employee Portal.</p></body></html>\","
                 + "\"attachment\":["
                     + "{"
                         + "\"content\":\"" + base64Content + "\","
@@ -85,14 +85,14 @@ public class ExcelEmailSender {
                 + "]"
                 + "}";
 
-            // 5. Send data payload packet downstream
+            // 5. Pipe payload downstream to Brevo servers
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
                 os.flush();
             }
 
-            // 6. Evaluate remote connection code results
+            // 6. Read HTTP response code
             int responseCode = conn.getResponseCode();
             System.out.println("Brevo Engine Connection Response Code: " + responseCode);
 
@@ -114,7 +114,7 @@ public class ExcelEmailSender {
         }
     }
 
-    // Helper method to completely strip quotes and newlines from user input
+    // Helper method to keep JSON format structured correctly
     private static String sanitizeForJson(String input) {
         if (input == null) return "";
         return input.replace("\\", "\\\\")
