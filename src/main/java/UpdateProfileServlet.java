@@ -33,6 +33,7 @@ public class UpdateProfileServlet extends HttpServlet {
         String pAddr = request.getParameter("perm_address");
         String cAddr = request.getParameter("comm_address");
         String pfNum = request.getParameter("pf_number");
+        String communicationEmail = request.getParameter("communication_email");
 
         Connection con = null;
         try {
@@ -40,7 +41,7 @@ public class UpdateProfileServlet extends HttpServlet {
             con.setAutoCommit(false);
 
             // 1. Update Main Users Table (With PostgreSQL Date Casting)
-            String sqlUser = "UPDATE users SET date_of_birth=CAST(? AS DATE), aadhar=?, pan=?, phone=?, " +
+            String sqlUser = "UPDATE users SET date_of_birth=CAST(? AS DATE), aadhar=?, pan=?, communication_email=?, phone=?, " +
                              "mobile_father=?, mobile_mother=?, mobile_guardian=?, perm_address=?, " +
                              "comm_address=?, pf_number=? WHERE email=?";
             
@@ -48,6 +49,7 @@ public class UpdateProfileServlet extends HttpServlet {
                 psUser.setString(1, (dob == null || dob.isEmpty()) ? null : dob);
                 psUser.setString(2, aadhar);
                 psUser.setString(3, pan);
+                psUser.setString(4, communicationEmail);
                 psUser.setString(4, phone);
                 psUser.setString(5, mFather);
                 psUser.setString(6, mMother);
