@@ -17,9 +17,8 @@ import javax.servlet.http.HttpSession;
 public class ExportReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // Dynamically captures Brevo variables from environment configuration maps
     private static final String BREVO_API_KEY = System.getenv("BREVO_API_KEY") != null ? 
-            System.getenv("BREVO_API_KEY") : "your_fallback_api_key_here";
+            System.getenv("BREVO_API_KEY") : "your_real_brevo_api_key_here";
     private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
     private static final String SYSTEM_NOTIFICATION_EMAIL = "admin@bluevibes-employeeportal.onrender.com";
 
@@ -29,7 +28,7 @@ public class ExportReportServlet extends HttpServlet {
             response.setHeader("Access-Control-Allow-Origin", origin);
             response.setHeader("Access-Control-Allow-Credentials", "true");
             response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-            response.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization");
+            response.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
         }
     }
 
@@ -46,7 +45,6 @@ public class ExportReportServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
 
-        // Enforces sticky session validation checking across cloud service instances
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("username") == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -57,28 +55,37 @@ public class ExportReportServlet extends HttpServlet {
         String loggedInUser = (String) session.getAttribute("username");
         String userEmail = (String) session.getAttribute("email");
         if (userEmail == null || userEmail.trim().isEmpty()) {
-            userEmail = "audit-logs@bluevibes.com"; // Fallback destination routing target
+            userEmail = "audit-logs@bluevibes.com"; 
+        }
+
+        String excelDataBase64 = request.getParameter("excelData");
+        if (excelDataBase64 == null || excelDataBase64.trim().isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.print("{\"success\":false,\"error\":\"Excel spreadsheet input stream parameter payload is empty.\"}");
+            return;
         }
 
         try {
-            // Build raw JSON payload string natively to guarantee compiler compatibility
-            StringBuilder jsonPayload = new StringBuilder();
-            jsonPayload.append("{");
-            jsonPayload.append("\"sender\":{\"name\":\"BlueVibes Portal Engine\",\"email\":\"").append(SYSTEM_NOTIFICATION_EMAIL).append("\"},");
-            jsonPayload.append("\"to\":[{\"name\":\"").append(loggedInUser).append("\",\"email\":\"").append(userEmail).append("\"}],");
-            jsonPayload.append("\"subject\":\"Automated Sync: Weekly Status Report Audit Log\",");
-            
             String htmlContent = "<html><body>"
-                    + "<h3>Weekly Status Report Submitted</h3>"
-                    + "<p><strong>Employee Username:</strong> " + loggedInUser + "</p>"
-                    + "<p>This confirming log states that an audit sheet file was compiled local to the browser and successfully submitted back to the system backend dashboard.</p>"
-                    + "<br><p><em>This is an automated operational confirmation notification message.</em></p>"
+                    + "<h2>Weekly Status Report Submitted Successfully</h2>"
+                    + "<p><strong>Employee Profile:</strong> " + loggedInUser + "</p>"
+                    + "<p>Please view your compiled worksheet attachment below sent securely from the server backend dashboard terminal entry log.</p>"
+                    + "<br><p><em>This is an automated operational notification email confirmation message.</em></p>"
                     + "</body></html>";
-            
-            jsonPayload.append("\"htmlContent\":\"").append(htmlContent.replace("\"", "\\\"")).append("\"");
-            jsonPayload.append("}");
 
-            // Establish secure connection pipeline directly to Brevo Endpoint
+            String jsonPayload = "{"
+                    + "\"sender\":{\"name\":\"BlueVibes Portal Engine\",\"email\":\"" + SYSTEM_NOTIFICATION_EMAIL + "\"},"
+                    + "\"to\":[{\"name\":\"" + loggedInUser + "\",\"email\":\"" + userEmail + "\"}],"
+                    + "\"subject\":\"Weekly Status Report Audit Attachment: " + loggedInUser + "\","
+                    + "\"htmlContent\":\"" + htmlContent.replace("\"", "\\\"") + "\","
+                    + "\"attachment\":["
+                    + "{"
+                    + "\"content\":\"" + excelDataBase64 + "\","
+                    + "\"name\":\"Weekly_Status_Report.xlsx\""
+                    + "}"
+                    + "]"
+                    + "}";
+
             URL url = new URL(BREVO_API_URL);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
@@ -87,18 +94,15 @@ public class ExportReportServlet extends HttpServlet {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // Forward the payload down the stream pipeline channel
             try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = jsonPayload.toString().getBytes(StandardCharsets.UTF_8);
+                byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
             }
 
             int responseCode = conn.getResponseCode();
-            
             if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_CREATED) {
                 out.print("{\"success\":true}");
             } else {
-                // Collect detailed logs if Brevo rejects the parameters
                 StringBuilder errorResponse = new StringBuilder();
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8))) {
                     String line;
@@ -107,12 +111,12 @@ public class ExportReportServlet extends HttpServlet {
                     }
                 }
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.print("{\"success\":false,\"error\":\"Brevo Engine Delivery Failure\",\"code\":" + responseCode + "}");
+                out.print("{\"success\":false,\"error\":\"Brevo API Delivery Pipeline Rejection\",\"code\":" + responseCode + "}");
             }
         } catch (Exception e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.print("{\"success\":false,\"error\":\"Internal Mailing Engine Exception: " + e.getMessage() + "\"}");
+            out.print("{\"success\":false,\"error\":\"Internal System Mailing Engine Exception Error: " + e.getMessage() + "\"}");
         }
     }
 }
