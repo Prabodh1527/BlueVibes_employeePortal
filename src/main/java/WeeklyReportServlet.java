@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -22,16 +23,19 @@ public class ExportReportServlet extends HttpServlet {
     private static final String AUDITOR_EMAIL = "prasanthram@bluegitalllp.com";
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        PrintWriter out = response.getWriter();
         
-        // Session Guard
+        HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("email") == null) {
-            response.sendRedirect("index.html?status=session_expired");
+            out.print("{\"success\":false,\"message\":\"Session expired. Please log in again.\"}");
+            out.flush();
             return;
         }
 
         String primaryEmail = (String) session.getAttribute("email");
-        String targetDeliveryEmail = primaryEmail; // Default fallback
+        String targetDeliveryEmail = primaryEmail;
         String exporterName = "Employee"; 
 
         Connection con = null;
@@ -40,8 +44,6 @@ public class ExportReportServlet extends HttpServlet {
 
         try {
             con = DBConnection.getConnection();
-            
-            // Query both the fallback email and the preferred communication_email column
             String sql = "SELECT fullname, email, communication_email FROM users WHERE email = ?";
             ps = con.prepareStatement(sql);
             ps.setString(1, primaryEmail);
@@ -50,8 +52,6 @@ public class ExportReportServlet extends HttpServlet {
             if (rs.next()) {
                 exporterName = rs.getString("fullname");
                 String commsEmail = rs.getString("communication_email");
-                
-                // If communication_email is present and not empty, route the mail there
                 if (commsEmail != null && !commsEmail.trim().isEmpty()) {
                     targetDeliveryEmail = commsEmail.trim();
                 }
@@ -60,20 +60,20 @@ public class ExportReportServlet extends HttpServlet {
             rs.close();
             ps.close();
 
-            // Dispatch the report notice to the computed target address and the auditor
             boolean mailSent = sendDualExportEmail(targetDeliveryEmail, exporterName);
 
             if (mailSent) {
-                response.sendRedirect("weekly_status.html?export=success");
+                out.print("{\"success\":true}");
             } else {
-                response.sendRedirect("weekly_status.html?export=mail_error");
+                out.print("{\"success\":false,\"message\":\"Mail server connection issue.\"}");
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            response.sendRedirect("weekly_status.html?export=error");
+            out.print("{\"success\":false,\"message\":\"" + e.getMessage() + "\"}");
         } finally {
             try { if (con != null) con.close(); } catch (Exception e) {}
+            out.flush();
         }
     }
 
@@ -88,14 +88,11 @@ public class ExportReportServlet extends HttpServlet {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // Constructing JSON routing block containing the dual destinations
             StringBuilder jsonBuilder = new StringBuilder();
             jsonBuilder.append("{")
                        .append("\"sender\":{\"name\":\"BlueVibes Audit Engine\",\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\"},")
                        .append("\"to\":[")
-                       // Destination 1: The Auditor
                        .append("{\"email\":\"").append(AUDITOR_EMAIL).append("\",\"name\":\"Prasanth Ram\"},")
-                       // Destination 2: The User's checked Communication Email
                        .append("{\"email\":\"").append(targetEmail.trim()).append("\",\"name\":\"").append(exporterName).append("\"}")
                        .append("],")
                        .append("\"subject\":\"📊 Weekly Status Report: Data Export Activity Log\",")
@@ -106,7 +103,7 @@ public class ExportReportServlet extends HttpServlet {
                        .append("<strong>Action Initiator:</strong> ").append(exporterName).append("<br>")
                        .append("<strong>Delivery Destination:</strong> ").append(targetEmail).append("<br>")
                        .append("<strong>Activity Status:</strong> Export Log Dispatched Successfully")
-                       .append division("</div>")
+                       .append("</div>")
                        .append("<p style='font-size: 12px; color: #64748b; margin-top: 20px;'>This message is a compliance tracking carbon copy delivered simultaneously to management and the destination inbox.</p>")
                        .append("</body></html>\"")
                        .append("}");
