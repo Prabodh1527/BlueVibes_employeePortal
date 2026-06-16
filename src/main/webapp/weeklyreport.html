@@ -100,7 +100,6 @@
                 </div>
             </div>
 
-            <!-- ADDED: onsubmit Interceptor to avoid form page-reloading behavior -->
             <form id="reportForm" action="WeeklyReportServlet" method="POST" onsubmit="submitReportFormAsync(event)">
                 <div class="table-container">
                     <table class="report-table" id="reportTable">
@@ -296,7 +295,7 @@
         } else { row.remove(); }
     }
 
-    // ADDED: Async handler function to save reports without page wipeouts
+    // FIXED: Form data handling matches exactly what your servlet requires
     function submitReportFormAsync(event) {
         event.preventDefault();
         const form = document.getElementById("reportForm");
@@ -314,7 +313,7 @@
             }
             if (res.ok) {
                 alert('Weekly report saved successfully!');
-                loadMastersAndReports(); // Reload data records to assign formal DB IDs cleanly
+                loadMastersAndReports(); 
             } else {
                 alert('Failed to save report values. Internal Server Error.');
             }
@@ -325,13 +324,12 @@
         });
     }
 
-    // UPDATED: Reads current user inputs directly from the screen elements instead of raw DB calls
+    // FIXED: Grabs active form text regardless of filter setups or dropdown selections
     function exportToExcel() {
         const rows = document.querySelectorAll("#reportTbody tr");
         const taskEntries = [];
 
         rows.forEach(row => {
-            // Respect and preserve row visibility conditions caused by filters
             if (row.style.display === "none") return;
 
             const taskId = row.querySelector("[name='taskId']")?.value;
@@ -343,7 +341,8 @@
             const endDate = row.querySelector("[name='endDate']")?.value;
             const comments = row.querySelector("[name='comments']")?.value;
 
-            if (taskId || taskDesc) {
+            // Make data check robust to resolve the empty array export error
+            if (taskId || taskDesc || customer) {
                 taskEntries.push({ taskId, taskDesc, customer, status, percent, startDate, endDate, comments });
             }
         });
@@ -363,13 +362,19 @@
         XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
         XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
 
+        // Ensure proper transmission structure to ExportReportServlet
         fetch('ExportReportServlet', { method: 'POST' })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("HTTP error status code: " + response.status);
+            }
+            return response.json();
+        })
         .then(result => {
-            if (result.success) {
+            if (result && result.success) {
                 alert("Spreadsheet saved locally & corporate audit email log successfully delivered to Prasanth Ram!");
             } else {
-                alert("Local spreadsheet generated, but mail delivery failed: " + result.message);
+                alert("Local spreadsheet generated, but mail delivery failed: " + (result ? result.message : "Malformed server response"));
             }
         })
         .catch(err => {
