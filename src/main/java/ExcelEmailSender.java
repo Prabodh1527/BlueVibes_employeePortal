@@ -12,7 +12,6 @@ public class ExcelEmailSender {
 
     private static final String BREVO_API_KEY = "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"; 
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@gmail.com"; 
-    // Updated to the requested management destination address
     private static final String AUDITOR_EMAIL = "prasanthram@bluegitalllp.com";
 
     public static boolean sendExcelEmail(String employeeEmail) {
@@ -89,7 +88,7 @@ public class ExcelEmailSender {
 
             jsonBuilder.append("],")
                        .append("\"subject\":\"Weekly Status Report Submission\",")
-                       .append("\"htmlContent\":\"<html><body style='font-family:Arial,sans-serif;'><p>Hello,</p><p>Please find attached the copy of the weekly status report spreadsheet file format export log generated on the platform layout tracking utility.</p></body></html>\",")
+                       .append("\"htmlContent\":\"<html><body style='font-family:Arial,sans-serif;'><p>Hello,</p><p>Please find attached the copy of the weekly status report file format export logs.</p></body></html>\",")
                        .append("\"attachment\":[")
                        .append("{")
                        .append("\"content\":\"").append(base64Content).append("\",")
