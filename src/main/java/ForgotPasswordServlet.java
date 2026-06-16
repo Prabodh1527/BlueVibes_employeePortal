@@ -42,6 +42,8 @@ public class ForgotPasswordServlet extends HttpServlet {
         
         boolean accountFound = false;
         String fullName = "User";
+        String primaryEmail = null;
+        String commsEmail = null;
         String targetDeliveryEmail = null;
         int userId = -1;
 
@@ -60,20 +62,19 @@ public class ForgotPasswordServlet extends HttpServlet {
                 accountFound = true;
                 userId = rs.getInt("id");
                 fullName = rs.getString("fullname");
-                
-                String primaryEmail = rs.getString("email");
-                String commsEmail = rs.getString("communication_email");
+                primaryEmail = rs.getString("email");
+                commsEmail = rs.getString("communication_email");
                 
                 System.out.println("[BLUEVIBES LOG] Record matched! User ID: " + userId + ", Name: " + fullName);
                 System.out.println("[BLUEVIBES LOG] Database values -> Primary: " + primaryEmail + " | Communication: " + commsEmail);
 
-                // 🌟 EXCLUSIVE ROUTING CRITERIA
+                // 🌟 CHOOSE PRIMARY ROUTING TARGET
                 if (commsEmail != null && !commsEmail.trim().isEmpty()) {
                     targetDeliveryEmail = commsEmail.trim();
-                    System.out.println("[BLUEVIBES LOG] Routing chosen: Exclusive Communication Email -> " + targetDeliveryEmail);
+                    System.out.println("[BLUEVIBES LOG] Routing target set to Communication Email -> " + targetDeliveryEmail);
                 } else {
                     targetDeliveryEmail = (primaryEmail != null) ? primaryEmail.trim() : null;
-                    System.out.println("[BLUEVIBES LOG] Routing chosen: Fallback Primary Email -> " + targetDeliveryEmail);
+                    System.out.println("[BLUEVIBES LOG] Routing target set to Fallback Primary Email -> " + targetDeliveryEmail);
                 }
 
                 if (fullName == null || fullName.trim().isEmpty()) {
@@ -86,7 +87,7 @@ public class ForgotPasswordServlet extends HttpServlet {
             if (ps != null) ps.close();
 
             if (accountFound && targetDeliveryEmail != null) {
-                // Generate tracking token identifier
+                // Generate secure tracking token identifier
                 String token = UUID.randomUUID().toString();
                 
                 // Update user account token
@@ -100,29 +101,38 @@ public class ForgotPasswordServlet extends HttpServlet {
 
                 String resetLink = "https://bluevibes-portal.onrender.com/resetpassword.html?token=" + token;
                 
-                // Dispatch exactly one message to the target email address
-                System.out.println("[BLUEVIBES LOG] Triggering API email dispatch to: " + targetDeliveryEmail);
+                // 🚀 ROUTE ACTION 1: Send to the determined target email
+                System.out.println("[BLUEVIBES LOG] Triggering primary email dispatch to: " + targetDeliveryEmail);
                 boolean emailSent = sendResetEmail(targetDeliveryEmail, fullName, resetLink);
 
+                // 🌟 ROUTE ACTION 2: DYNAMIC SMART FALLBACK 🌟
+                // If Brevo blocks the custom domain and target email wasn't already the primary Gmail account
+                if (!emailSent && commsEmail != null && !commsEmail.trim().isEmpty() && primaryEmail != null) {
+                    System.out.println("[BLUEVIBES WARNING] Custom domain delivery failed! Likely unverified domain on Brevo. Falling back to primary Gmail: " + primaryEmail);
+                    
+                    // Attempt delivery to the standard backup Gmail account
+                    emailSent = sendResetEmail(primaryEmail.trim(), fullName, resetLink);
+                }
+
                 if (emailSent) {
-                    System.out.println("[BLUEVIBES LOG] Email successfully accepted by Brevo Gateway!");
+                    System.out.println("[BLUEVIBES LOG] Reset email successfully delivered by Brevo.");
                     response.sendRedirect("forgotpassword.html?status=success");
                 } else {
-                    System.out.println("[BLUEVIBES LOG] Brevo server returned an error code.");
+                    System.out.println("[BLUEVIBES LOG] Both communication and primary mail dispatch attempts failed.");
                     response.sendRedirect("forgotpassword.html?status=mail_error");
                 }
             } else {
-                System.out.println("[BLUEVIBES LOG] Email address typed could not be matched to an active user record.");
+                System.out.println("[BLUEVIBES LOG] Input string could not be matched to any registered active user account profile.");
                 response.sendRedirect("forgotpassword.html?status=not_found");
             }
 
         } catch (Exception e) {
-            System.err.println("[BLUEVIBES CRITICAL ERROR] Exception occurred in doPost processing:");
+            System.err.println("[BLUEVIBES CRITICAL ERROR] Exception occurred in doPost processing loop:");
             e.printStackTrace();
             response.sendRedirect("forgotpassword.html?status=error");
         } finally {
             try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
-            System.out.println("[BLUEVIBES LOG] Database connection safely recycled to pool.");
+            System.out.println("[BLUEVIBES LOG] Database connection returned safely to pool.");
         }
     }
 
@@ -137,14 +147,14 @@ public class ForgotPasswordServlet extends HttpServlet {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // Construct transactional json packet payload string
+            // Construct transactional JSON packet payload
             StringBuilder jsonBuilder = new StringBuilder();
             jsonBuilder.append("{")
                        .append("\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\"},")
                        .append("\"to\":[")
                        .append("{\"email\":\"").append(targetEmail).append("\",\"name\":\"").append(userName).append("\"}")
                        .append("],")
-                       .append("\"subject\":\"🔒 BlueVibes Access Recovery Request\",") // 🌟 NEW DISTINCT SUBJECT LINE
+                       .append("\"subject\":\"🔒 BlueVibes Access Recovery Request\",")
                        .append("\"htmlContent\":\"<html><body>")
                        .append("<h3>Hello ").append(userName).append(",</h3>")
                        .append("<p>We received a request to recover your portal credentials. Click the button below to secure your identity:</p>")
@@ -163,7 +173,7 @@ public class ForgotPasswordServlet extends HttpServlet {
             }
 
             int responseCode = conn.getResponseCode();
-            System.out.println("[BLUEVIBES LOG] Brevo Server HTTP API Code: " + responseCode);
+            System.out.println("[BLUEVIBES LOG] Brevo HTTP API Gateway response code for [" + targetEmail + "]: " + responseCode);
 
             if (responseCode == 201 || responseCode == 200) {
                 return true;
@@ -178,7 +188,8 @@ public class ForgotPasswordServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-            System.err.println("[BLUEVIBES LOG] Exception caught within Brevo transmission function: " + e.getMessage());
+            // Catches any connection timeouts or domain firewall exceptions safely without letting the servlet crash
+            System.err.println("[BLUEVIBES LOG] Non-fatal transmission exception caught for address [" + targetEmail + "]: " + e.getMessage());
             return false;
         }
     }
