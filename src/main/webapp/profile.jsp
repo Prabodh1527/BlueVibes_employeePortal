@@ -134,12 +134,12 @@
                         <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" required>
                     </div>
                     <div id="passwordRules" style="margin-top:15px;font-size:13px;">
-                    <div id="ruleLengthMin" style="color:#dc2626;">✖ Minimum 7 characters</div>
-                    <div id="ruleLengthMax" style="color:#dc2626;">✖ Maximum 15 characters</div>
-                    <div id="ruleUpper" style="color:#dc2626;">✖ One uppercase letter</div>
-                    <div id="ruleNumber" style="color:#dc2626;">✖ One number</div>
-                    <div id="ruleSpecial" style="color:#dc2626;">✖ One special character</div>
-                    <div id="ruleMatch" style="color:#dc2626;">✖ Passwords match</div>
+                    <div id="ruleLengthMin" style="color:#dc2626;">Minimum 7 characters</div>
+                    <div id="ruleLengthMax" style="color:#dc2626;">Maximum 15 characters</div>
+                    <div id="ruleUpper" style="color:#dc2626;">One uppercase letter</div>
+                    <div id="ruleNumber" style="color:#dc2626;">One number</div>
+                    <div id="ruleSpecial" style="color:#dc2626;">One special character</div>
+                    <div id="ruleMatch" style="color:#dc2626;">Passwords match</div>
                     </div>
 
                 </div>
@@ -405,10 +405,8 @@
     
         if (passed) {
             el.style.color = "#16a34a";
-            el.innerHTML = el.innerHTML.replace("✖","✔");
         } else {
             el.style.color = "#dc2626";
-            el.innerHTML = el.innerHTML.replace("✔","✖");
         }
     }
     
