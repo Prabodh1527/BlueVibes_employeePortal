@@ -72,6 +72,14 @@
             <div class="input-wrapper">
                 <i class="ph ph-shield-check"></i>
                 <input type="password" id="confirmPassword" class="pass-input" placeholder="••••••••" required>
+                <div id="passwordRules" style="margin-top:15px;text-align:left;font-size:13px;">
+                <div id="ruleLengthMin" style="color:#dc2626;">✖ Minimum 7 characters</div>
+                <div id="ruleLengthMax" style="color:#dc2626;">✖ Maximum 15 characters</div>
+                <div id="ruleUpper" style="color:#dc2626;">✖ One uppercase letter</div>
+                <div id="ruleNumber" style="color:#dc2626;">✖ One number</div>
+                <div id="ruleSpecial" style="color:#dc2626;">✖ One special character</div>
+                <div id="ruleMatch" style="color:#dc2626;">✖ Passwords match</div>
+                </div>
             </div>
         </div>
 
@@ -99,8 +107,47 @@
         msgBox.className = "msg msg-error";
     }
 
+    const newPasswordField = document.getElementById("newPassword");
+    const confirmPasswordField = document.getElementById("confirmPassword");
+    
+    function checkPasswordRules() {
+    
+        const password = newPasswordField.value;
+        const confirmPassword = confirmPasswordField.value;
+    
+        const minLength = password.length >= 7;
+        const maxLength = password.length <= 15;
+        const upperCase = /[A-Z]/.test(password);
+        const number = /\d/.test(password);
+        const special = /[^A-Za-z0-9]/.test(password);
+        const match = password !== "" && password === confirmPassword;
+    
+        updateRule("ruleLengthMin", minLength);
+        updateRule("ruleLengthMax", maxLength);
+        updateRule("ruleUpper", upperCase);
+        updateRule("ruleNumber", number);
+        updateRule("ruleSpecial", special);
+        updateRule("ruleMatch", match);
+    }
+    
+    function updateRule(id, passed) {
+    
+        const element = document.getElementById(id);
+    
+        if (passed) {
+            element.style.color = "#16a34a";
+            element.innerHTML = element.innerHTML.replace("✖", "✔");
+        } else {
+            element.style.color = "#dc2626";
+            element.innerHTML = element.innerHTML.replace("✔", "✖");
+        }
+    }
+    
+    newPasswordField.addEventListener("input", checkPasswordRules);
+    confirmPasswordField.addEventListener("input", checkPasswordRules);
+
     // Client-side confirmation guard validation
-    function validatePasswords() {
+    /*function validatePasswords() {
         const p1 = document.getElementById('newPassword').value;
         const p2 = document.getElementById('confirmPassword').value;
         
@@ -109,6 +156,31 @@
             msgBox.className = "msg msg-error";
             return false;
         }
+        return true;
+    }*/
+    function validatePasswords() {
+
+        const p1 = document.getElementById('newPassword').value;
+        const p2 = document.getElementById('confirmPassword').value;
+    
+        const valid =
+            p1.length >= 7 &&
+            p1.length <= 15 &&
+            /[A-Z]/.test(p1) &&
+            /\d/.test(p1) &&
+            /[^A-Za-z0-9]/.test(p1) &&
+            p1 === p2;
+    
+        if (!valid) {
+    
+            msgBox.innerText =
+                "Password must be 7-15 characters long and contain at least 1 uppercase letter, 1 number, 1 special character and both passwords must match.";
+    
+            msgBox.className = "msg msg-error";
+    
+            return false;
+        }
+    
         return true;
     }
 </script>
