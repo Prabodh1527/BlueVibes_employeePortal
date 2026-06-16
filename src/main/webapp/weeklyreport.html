@@ -181,7 +181,6 @@
 </template>
 
 <script>
-    // Updated local fallback configuration array matching production database matrices
     let masterData = { 
         tasks: [
             {name: "AD Approvals"}, {name: "AD Planning & Strategy"}, {name: "Bank Activities"},
@@ -197,8 +196,8 @@
 
     function loadMastersAndReports() {
         Promise.all([
-            fetch('TaskMasterServlet?action=list').then(res => res.json()).catch(() => masterData.tasks),
-            fetch('CustomerMasterServlet?action=list').then(res => res.json()).catch(() => masterData.customers)
+            fetch('TaskMasterServlet?action=list', { credentials: 'include' }).then(res => res.json()).catch(() => masterData.tasks),
+            fetch('CustomerMasterServlet?action=list', { credentials: 'include' }).then(res => res.json()).catch(() => masterData.customers)
         ]).then(results => {
             if(results[0] && results[0].length > 0) masterData.tasks = results[0];
             if(results[1] && results[1].length > 0) masterData.customers = results[1];
@@ -214,16 +213,16 @@
             customerFilter.onchange = filterByCustomer;
             document.getElementById("statusFilter").onchange = filterByCustomer;
 
-            fetch('WeeklyReportServlet?action=fetchMyReports')
+            fetch('WeeklyReportServlet?action=fetchMyReports', { credentials: 'include' })
                 .then(res => {
-                    if(res.redirected || res.status === 401) { 
+                    if (res.status === 401 || res.redirected) { 
                         window.location.href = "index.html?status=session_expired"; 
                         return; 
                     }
                     return res.json();
                 })
                 .then(reports => {
-                    if(!reports) return;
+                    if(!reports || reports.error) return;
                     const tbody = document.getElementById('reportTbody');
                     tbody.innerHTML = "";
                     if (reports.length > 0) {
@@ -294,7 +293,7 @@
         const id = row.querySelector('[name="reportId"]').value;
         if (id !== "0") {
             if (confirm("This task is saved in the database. Delete permanently?")) {
-                fetch(`WeeklyReportServlet?action=delete&id=${id}`, { method: 'POST' })
+                fetch(`WeeklyReportServlet?action=delete&id=${id}`, { method: 'POST', credentials: 'include' })
                     .then(res => res.json())
                     .then(result => { if (result.success) row.remove(); });
             }
@@ -303,9 +302,6 @@
 
     function submitReportFormAsync(event) {
         event.preventDefault();
-        const form = document.getElementById("reportForm");
-        
-        // Use standard URLSearchParams formatting for Java Servlet request.getParameterValues compatibility
         const formData = new URLSearchParams();
         const rows = document.querySelectorAll("#reportTbody tr");
         
@@ -324,10 +320,11 @@
         fetch('WeeklyReportServlet', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            credentials: 'include',
             body: formData.toString()
         })
         .then(res => {
-            if (res.redirected || res.url.includes("index.html")) {
+            if (res.status === 401 || res.redirected) {
                 window.location.href = "index.html?status=session_expired";
                 return;
             }
@@ -339,7 +336,7 @@
             }
         })
         .catch(err => {
-            console.error("Transmission Exception:", err);
+            console.error(err);
             alert('Connection pipeline failure during saving.');
         });
     }
@@ -352,8 +349,6 @@
             if (row.style.display === "none") return;
 
             const taskId = row.querySelector("[name='taskId']")?.value;
-            
-            // Fix: Fallback directly to option text if value extraction fails
             const taskDescSelect = row.querySelector("[name='taskDesc']");
             const taskDesc = taskDescSelect?.value || taskDescSelect?.options[taskDescSelect.selectedIndex]?.text;
             
@@ -386,13 +381,13 @@
         XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
         XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
 
-        // Send parameters clearly to the Export servlet to avoid structural dropped connections
         fetch('ExportReportServlet', { 
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            credentials: 'include'
         })
         .then(response => {
-            if (response.redirected || response.url.includes("index.html")) {
+            if (response.status === 401 || response.redirected) {
                 window.location.href = "index.html?status=session_expired";
                 return;
             }
@@ -406,7 +401,7 @@
             }
         })
         .catch(err => {
-            console.error("Mail execution trace:", err);
+            console.error(err);
             alert("⚠️ Local file saved, but connection to corporate mail engine dropped.");
         });
     }
@@ -434,7 +429,6 @@
         const start = new Date(new Date().setDate(first)).toLocaleDateString();
         const end = new Date(new Date().setDate(last)).toLocaleDateString();
         document.getElementById('weekRange').innerText = `Current Week: ${start} to ${end}`;
-
         loadMastersAndReports();
     };
 </script>
