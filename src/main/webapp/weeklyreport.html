@@ -16,7 +16,6 @@
         .brand-container{ display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 15px; }
         .logo-main{ width: 100px; height: auto; object-fit: contain; }
         .logo-secondary{ width: 220px; height: auto; object-fit: contain; }
-
         .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
       
         .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; overflow-y: auto; }
@@ -44,10 +43,11 @@
 
         .btn-group { display: flex; gap: 10px; margin-top: 2rem; justify-content: flex-end; }
         .btn { padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; border: none; transition: 0.2s; font-size: 0.9rem; }
-        .btn-add { background: var(--accent); color: white; padding: 8px 15px; font-size: 0.8rem; }
+        .btn-add { background: var(--accent); color: white; padding: 8px 15px; font-size: 0.8rem; border-radius: 6px; }
         .btn-save { background: var(--primary); color: white; }
         .btn-excel { background: #16a34a; color: white; }
-        .btn-delete { background: #fee2e2; color: #ef4444; padding: 8px; border-radius: 6px; }
+        .btn-delete { background: #fee2e2; color: #ef4444; padding: 8px; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-delete:hover { background: #fca5a5; }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
     </style>
 </head>
@@ -137,12 +137,24 @@
     <tr>
         <input type="hidden" name="reportId" value="0">
         <td><input type="text" name="taskId" class="form-input" readonly></td>
-        <td><select name="taskDesc" class="form-input task-master-select"><option value="">Select Type</option></select></td>
-        <td><select name="customer" class="form-input customer-master-select"><option value="">Select Customer</option></select></td>
+        <td>
+            <select name="taskDesc" class="form-input task-master-select">
+                <option value="AD Approvals">AD Approvals</option>
+                <option value="Development">Development</option>
+                <option value="Bug Fixing">Bug Fixing</option>
+                <option value="Code Review">Code Review</option>
+            </select>
+        </td>
+        <td>
+            <select name="customer" class="form-input customer-master-select">
+                <option value="Abaran">Abaran</option>
+                <option value="Internal">Internal</option>
+            </select>
+        </td>
         <td>
             <select name="status" class="form-input">
-                <option value="InProgress">In Progress</option>
                 <option value="Open">Open</option>
+                <option value="InProgress">In Progress</option>
                 <option value="Completed">Completed</option>
             </select>
         </td>
@@ -155,41 +167,39 @@
 </template>
 
 <script>
-    let masterData = { tasks: [], customers: [] };
+    let masterData = { 
+        tasks: [{name: "AD Approvals"}, {name: "Development"}, {name: "Bug Fixing"}, {name: "Code Review"}], 
+        customers: [{name: "Abaran"}, {name: "Internal"}] 
+    };
 
     function loadMastersAndReports() {
-        Promise.all([
-            fetch('TaskMasterServlet?action=list').then(res => res.json()),
-            fetch('CustomerMasterServlet?action=list').then(res => res.json())
-        ]).then(results => {
-            masterData.tasks = results[0];
-            masterData.customers = results[1];
-            const customerFilter = document.getElementById("customerFilter");
-            customerFilter.innerHTML = '<option value="">All Customers</option>';
-
-            masterData.customers.forEach(customer => {
-                let option = new Option(customer.name, customer.name);
-                customerFilter.add(option);
-            });
-
-            customerFilter.onchange = filterByCustomer;
-            document.getElementById("statusFilter").onchange = filterByCustomer;
-
-            fetch('WeeklyReportServlet?action=fetchMyReports')
-                .then(res => res.json())
-                .then(reports => {
-                    const tbody = document.getElementById('reportTbody');
-                    tbody.innerHTML = "";
-                    if (reports.length > 0) {
-                        reports.forEach((report, index)=>{
-                            report.taskId = reports.length - index;
-                            addRow(report);
-                        });
-                    } else {
-                        addRow();
-                    }
-                });
+        const customerFilter = document.getElementById("customerFilter");
+        customerFilter.innerHTML = '<option value="">All Customers</option>';
+        masterData.customers.forEach(c => {
+            customerFilter.add(new Option(c.name, c.name));
         });
+
+        customerFilter.onchange = filterByCustomer;
+        document.getElementById("statusFilter").onchange = filterByCustomer;
+
+        fetch('WeeklyReportServlet?action=fetchMyReports')
+            .then(res => {
+                if(res.redirected) { window.location.href = res.url; return; }
+                return res.json();
+            })
+            .then(reports => {
+                if(!reports) return;
+                const tbody = document.getElementById('reportTbody');
+                tbody.innerHTML = "";
+                if (reports.length > 0) {
+                    reports.forEach((report, index) => {
+                        report.taskId = reports.length - index;
+                        addRow(report);
+                    });
+                } else {
+                    addRow();
+                }
+            }).catch(e => { console.error("Session missing or API offline", e); addRow(); });
     }
 
     function addRow(data = null) {
@@ -202,21 +212,10 @@
             const today = new Date().toISOString().split('T')[0];
             newRow.querySelector('.start-date').value = today;
             newRow.querySelector('.end-date').value = today;
+        } else {
+            newRow.querySelector('.task-master-select').value = data.taskDesc;
+            newRow.querySelector('.customer-master-select').value = data.customer;
         }
-
-        const taskSelect = newRow.querySelector('.task-master-select');
-        masterData.tasks.forEach(t => {
-            let opt = new Option(t.name, t.name);
-            if (data && data.taskDesc === t.name) opt.selected = true;
-            taskSelect.add(opt);
-        });
-
-        const custSelect = newRow.querySelector('.customer-master-select');
-        masterData.customers.forEach(c => {
-            let opt = new Option(c.name, c.name);
-            if (data && data.customer === c.name) opt.selected = true;
-            custSelect.add(opt);
-        });
 
         if (data) {
             newRow.querySelector('[name="reportId"]').value = data.reportId;
@@ -228,29 +227,27 @@
             newRow.querySelector('[name="comments"]').value = data.comments;
         }
 
-        if(data){ tbody.appendChild(newRow); }
-        else { tbody.prepend(newRow); }
+        tbody.appendChild(newRow);
+        recalculateTaskIDs();
+    }
 
-        if(!data){
-            let firstRow = document.querySelector("#reportTbody tr:nth-child(2) [name='taskId']");
-            if(firstRow){
-                newRow.querySelector('[name="taskId"]').value = parseInt(firstRow.value) + 1;
-            } else {
-                newRow.querySelector('[name="taskId"]').value = 1;
-            }
-        }
+    function recalculateTaskIDs() {
+        const rows = Array.from(document.querySelectorAll("#reportTbody tr"));
+        rows.forEach((row, idx) => {
+            row.querySelector('[name="taskId"]').value = rows.length - idx;
+        });
     }
 
     function removeRow(btn) {
         const row = btn.closest('tr');
         const id = row.querySelector('[name="reportId"]').value;
         if (id !== "0") {
-            if (confirm("This task is saved in the database. Delete permanently?")) {
+            if (confirm("This entry is saved. Delete permanently from Database?")) {
                 fetch(`WeeklyReportServlet?action=delete&id=${id}`, { method: 'POST' })
                     .then(res => res.json())
-                    .then(result => { if (result.success) row.remove(); });
+                    .then(result => { if (result.success) { row.remove(); recalculateTaskIDs(); } });
             }
-        } else { row.remove(); }
+        } else { row.remove(); recalculateTaskIDs(); }
     }
 
     function exportToExcel() {
@@ -258,11 +255,10 @@
             .then(res => res.json())
             .then(data => {
                 if (!data || data.length === 0) {
-                    alert("No task entries found to export!");
+                    alert("No data available to process!");
                     return;
                 }
 
-                // 1. Generate local browser spreadsheet download link
                 const rows = [["Task ID", "Task Description", "Customer", "Status", "% Completed", "Start Date", "End Date", "Comments"]];
                 data.forEach(r => {
                     rows.push([r.taskId, r.taskDesc, r.customer, r.status, r.percent, r.startDate, r.endDate, r.comments]);
@@ -270,39 +266,28 @@
 
                 const ws = XLSX.utils.aoa_to_sheet(rows);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
+                XLSX.utils.book_append_sheet(wb, ws, "Weekly Report Log");
                 XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
 
-                // 2. Dispatch secure JSON request parameters to corporate API mailing utility
                 fetch('ExportReportServlet', { method: 'POST' })
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        alert("Spreadsheet saved locally & corporate audit email log successfully delivered to Prasanth Ram!");
+                        alert("Excel generated locally & copy cleanly delivered to Prasanth Ram via Brevo Engine!");
                     } else {
-                        alert("Local spreadsheet generated, but mail delivery failed: " + result.message);
+                        alert("File exported locally, but email failed: " + result.message);
                     }
-                })
-                .catch(err => {
-                    console.error("Mail engine execution dropped:", err);
-                    alert("⚠️ Local file saved, but connection to corporate mail engine dropped.");
-                });
+                }).catch(() => alert("Could not reach background mailing service. File exported locally."));
             });
     }
 
     function filterByCustomer() {
-        const selectedCustomer = document.getElementById("customerFilter").value.toLowerCase();
-        const selectedStatus = document.getElementById("statusFilter").value.toLowerCase();
-        const rows = document.querySelectorAll("#reportTbody tr");
-
-        rows.forEach(row => {
-            const customer = row.querySelector('[name="customer"]').value.toLowerCase();
-            const status = row.querySelector('[name="status"]').value.toLowerCase();
-            const customerMatch = selectedCustomer === "" || customer === selectedCustomer;
-            const statusMatch = selectedStatus === "" || status === selectedStatus;
-
-            if (customerMatch && statusMatch) { row.style.display = ""; } 
-            else { row.style.display = "none"; }
+        const selCust = document.getElementById("customerFilter").value.toLowerCase();
+        const selStat = document.getElementById("statusFilter").value.toLowerCase();
+        document.querySelectorAll("#reportTbody tr").forEach(row => {
+            const c = row.querySelector('[name="customer"]').value.toLowerCase();
+            const s = row.querySelector('[name="status"]').value.toLowerCase();
+            row.style.display = ((selCust === "" || c === selCust) && (selStat === "" || s === selStat)) ? "" : "none";
         });
     }
 
@@ -315,9 +300,8 @@
         document.getElementById('weekRange').innerText = `Current Week: ${start} to ${end}`;
 
         loadMastersAndReports();
-
         const params = new URLSearchParams(window.location.search);
-        if(params.get('status') === 'success') alert('Weekly report saved successfully!');
+        if(params.get('status') === 'success') alert('Weekly Report catalog updated successfully!');
     };
 </script>
 </body>
