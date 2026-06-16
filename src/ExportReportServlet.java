@@ -52,8 +52,8 @@ public class ExportReportServlet extends HttpServlet {
             return;
         }
 
-        String loggedInUser = (String) session.getAttribute("username");
-        String userEmail = (String) session.getAttribute("email");
+        String loggedInUser = (String) session.getAttribute("userName");
+        String userEmail = (String) session.getAttribute("userEmail");
         if (userEmail == null || userEmail.trim().isEmpty()) {
             userEmail = "audit-logs@bluevibes.com"; 
         }
