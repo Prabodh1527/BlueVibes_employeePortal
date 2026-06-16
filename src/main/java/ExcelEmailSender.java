@@ -15,24 +15,29 @@ public class ExcelEmailSender {
     private static final String AUDITOR_EMAIL = "prasanthram@bluegitalllp.com";
 
     public static boolean sendExcelEmail(String employeeEmail) {
-        // Set fallback to the corporate Auditor email if the string parameter arrives empty
+        // Enforce fallback boundaries
         if (employeeEmail == null || employeeEmail.trim().isEmpty()) {
             employeeEmail = AUDITOR_EMAIL;
         }
         employeeEmail = employeeEmail.trim();
 
         try {
-            // 1. Fetch live database records and build a clean CSV layout string
+            // 1. Query database using user identifier to extract active report data rows
             StringBuilder csvBuilder = new StringBuilder();
             csvBuilder.append("Task ID,Task Description,Customer,Status,% Completed,Start Date,End Date,Comments\n");
 
-            // Query targets standard weekly_reports setup matching production schemas
-            String sql = "SELECT task_id, task_desc, customer, status, percent_completed, start_date, end_date, comments FROM weekly_reports WHERE user_email=? ORDER BY id DESC";
+            // Safe match against both standard registration email and communication email configurations
+            String sql = "SELECT r.task_id, r.task_desc, r.customer, r.status, r.percent_completed, r.start_date, r.end_date, r.comments " +
+                         "FROM weekly_reports r " +
+                         "JOIN users u ON r.user_email = u.email OR r.user_email = u.communication_mail " +
+                         "WHERE u.email = ? OR u.communication_mail = ? " +
+                         "ORDER BY r.id DESC";
             
             try (Connection con = DBConnection.getConnection();
                  PreparedStatement ps = con.prepareStatement(sql)) {
                 
                 ps.setString(1, employeeEmail);
+                ps.setString(2, employeeEmail);
                 
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -61,10 +66,10 @@ public class ExcelEmailSender {
                 }
             }
 
-            // 2. Convert CSV data string to standard Base64 encoding
+            // 2. Base64 encode the string payload for attachment integration
             String base64Content = Base64.getEncoder().encodeToString(csvBuilder.toString().getBytes(StandardCharsets.UTF_8));
 
-            // 3. Configure HTTP properties for Brevo REST API Endpoint connection
+            // 3. Connect to Brevo external mail service endpoint
             URL url = new URL("https://api.brevo.com/v3/smtp/email");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             
@@ -74,21 +79,21 @@ public class ExcelEmailSender {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // 4. Construct JSON Payload delivering to both Prasanth Ram and the logged-in Employee user
+            // 4. Construct dual-delivery recipient layout list
             StringBuilder jsonBuilder = new StringBuilder();
             jsonBuilder.append("{")
                        .append("\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\"},")
                        .append("\"to\":[")
                        .append("{\"email\":\"").append(AUDITOR_EMAIL).append("\",\"name\":\"Prasanth Ram\"}");
 
-            // Only add the employee recipient if it is distinct from corporate destination address
+            // Only add employee routing profile if it is distinct from corporate destination address
             if (!employeeEmail.equalsIgnoreCase(AUDITOR_EMAIL)) {
-                jsonBuilder.append(",{\"email\":\"").append(employeeEmail).append("\",\"name\":\"Employee\"}");
+                jsonBuilder.append(",{\"email\":\"").append(employeeEmail).append("\",\"name\":\"Portal User\"}");
             }
 
             jsonBuilder.append("],")
-                       .append("\"subject\":\"Weekly Status Report Submission\",")
-                       .append("\"htmlContent\":\"<html><body style='font-family:Arial,sans-serif;'><p>Hello,</p><p>Please find attached the copy of the weekly status report file format export logs.</p></body></html>\",")
+                       .append("\"subject\":\"Weekly Status Report Submission Summary\",")
+                       .append("\"htmlContent\":\"<html><body style='font-family:Arial,sans-serif;'><p>Hello,</p><p>Please find attached your compiled Weekly Status Report Excel export logs.</p></body></html>\",")
                        .append("\"attachment\":[")
                        .append("{")
                        .append("\"content\":\"").append(base64Content).append("\",")
@@ -99,24 +104,22 @@ public class ExcelEmailSender {
 
             String jsonPayload = jsonBuilder.toString();
 
-            // 5. Pipe payload downstream to Brevo servers
+            // 5. Transfer JSON properties downstream
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
                 os.flush();
             }
 
-            // 6. Read HTTP response code
+            // 6. Evaluate execution status
             int responseCode = conn.getResponseCode();
-            System.out.println("Brevo Engine Connection Response Code: " + responseCode);
-
             if (responseCode == 201 || responseCode == 200) {
                 return true;
             } else {
                 try (InputStream errorStream = conn.getErrorStream()) {
                     if (errorStream != null) {
                         String errorResponse = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
-                        System.err.println("Brevo Engine Rejection Message: " + errorResponse);
+                        System.err.println("Brevo Engine Rejection Logs: " + errorResponse);
                     }
                 }
                 return false;
