@@ -18,7 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 public class ForgotPasswordServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     
-    // Your verified Brevo configuration parameters
+    // Core Configuration Variables
     private static final String BREVO_API_KEY = "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";
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@gmail.com";
 
@@ -45,7 +45,7 @@ public class ForgotPasswordServlet extends HttpServlet {
         try {
             con = DBConnection.getConnection();
             
-            // 🔍 Search the database matching either the standard login email or the communication email
+            // 🔍 Lookup Account matching either original registration email OR communication email
             String sql = "SELECT id, fullname, email, communication_email FROM users WHERE email = ? OR communication_email = ?";
             ps = con.prepareStatement(sql);
             ps.setString(1, inputEmail);
@@ -60,8 +60,8 @@ public class ForgotPasswordServlet extends HttpServlet {
                 String primaryEmail = rs.getString("email");
                 String commsEmail = rs.getString("communication_email");
 
-                // 🌟 STRICT EXCLUSIVE ROUTING LOGIC 🌟
-                // If communication_email is filled out, send ONLY to it. Otherwise, use primary email.
+                // 🌟 EXCLUSIVE CONDITIONAL ROUTING LOGIC 🌟
+                // If communication_email is filled, route ONLY to it. If empty/null, use primary email.
                 if (commsEmail != null && !commsEmail.trim().isEmpty()) {
                     targetDeliveryEmail = commsEmail.trim();
                 } else {
@@ -73,15 +73,15 @@ public class ForgotPasswordServlet extends HttpServlet {
                 }
             }
 
-            // Close lookup resources early
+            // Close DB lookup streams early
             if (rs != null) rs.close();
             if (ps != null) ps.close();
 
             if (accountFound && targetDeliveryEmail != null) {
-                // Generate secure temporary tracking token
+                // Generate tracking identifier token
                 String token = UUID.randomUUID().toString();
                 
-                // Update tracking identifier relative to the unique primary account key record
+                // Save unique reset key sequence down to the target user record id
                 String tokenSql = "UPDATE users SET reset_token = ? WHERE id = ?";
                 try (PreparedStatement tokenPs = con.prepareStatement(tokenSql)) {
                     tokenPs.setString(1, token);
@@ -89,10 +89,9 @@ public class ForgotPasswordServlet extends HttpServlet {
                     tokenPs.executeUpdate();
                 }
 
-                // Construct password recovery application link
                 String resetLink = "https://bluevibes-portal.onrender.com/resetpassword.html?token=" + token;
                 
-                // Dispatch exactly ONE email to the determined exclusive target destination address
+                // Transmit EXACTLY ONE delivery copy to the filtered recipient inbox location
                 boolean emailSent = sendResetEmail(targetDeliveryEmail, fullName, resetLink);
 
                 if (emailSent) {
@@ -101,7 +100,6 @@ public class ForgotPasswordServlet extends HttpServlet {
                     response.sendRedirect("forgotpassword.html?status=mail_error");
                 }
             } else {
-                // Input string did not match any active database profile mapping
                 response.sendRedirect("forgotpassword.html?status=not_found");
             }
 
@@ -124,7 +122,7 @@ public class ForgotPasswordServlet extends HttpServlet {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
-            // Construct structural email request payload payload
+            // Construct structural JSON object body
             StringBuilder jsonBuilder = new StringBuilder();
             jsonBuilder.append("{")
                        .append("\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\"},")
@@ -136,7 +134,7 @@ public class ForgotPasswordServlet extends HttpServlet {
                        .append("<h3>Hello ").append(userName).append(",</h3>")
                        .append("<p>We received a request to recover your portal credentials. Click the button below to secure your identity:</p>")
                        .append("<p><a href='").append(resetLink).append("' style='background:#0284c7;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;font-weight:bold;'>Reset Password</a></p>")
-                       .append("<p>This secure link was dispatched directly to your designated inbox: <strong>").append(targetEmail).append("</strong></p>")
+                       .append("<p>This secure link was dispatched directly to your designated workspace inbox: <strong>").append(targetEmail).append("</strong></p>")
                        .append("<p>If you didn't request this, you can safely ignore this automated message.</p>")
                        .append("</body></html>\"")
                        .append("}");
@@ -150,7 +148,7 @@ public class ForgotPasswordServlet extends HttpServlet {
             }
 
             int responseCode = conn.getResponseCode();
-            System.out.println("Brevo Dispatch System Routing Code for [" + targetEmail + "]: " + responseCode);
+            System.out.println("Brevo Engine Routing Code for [" + targetEmail + "]: " + responseCode);
 
             if (responseCode == 201 || responseCode == 200) {
                 return true;
@@ -158,7 +156,7 @@ public class ForgotPasswordServlet extends HttpServlet {
                 try (InputStream errorStream = conn.getErrorStream()) {
                     if (errorStream != null) {
                         String errorResponse = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
-                        System.err.println("Brevo Engine Error: " + errorResponse);
+                        System.err.println("Brevo Response Block details: " + errorResponse);
                     }
                 }
                 return false;
