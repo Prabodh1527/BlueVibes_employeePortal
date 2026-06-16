@@ -253,7 +253,6 @@
         } else { row.remove(); }
     }
 
-    // --- UPDATED EXPORT & EMAIL TRIGGER LINKING DIRECTLY TO COMMUNICATION SERVICE ---
     function exportToExcel() {
         fetch('WeeklyReportServlet?action=fetchMyReports')
             .then(res => res.json())
@@ -263,7 +262,6 @@
                     return;
                 }
 
-                // 1. Generate Local Spreadsheet File Download (.xlsx)
                 const rows = [["Task ID", "Task Description", "Customer", "Status", "% Completed", "Start Date", "End Date", "Comments"]];
                 data.forEach(r => {
                     rows.push([r.taskId, r.taskDesc, r.customer, r.status, r.percent, r.startDate, r.endDate, r.comments]);
@@ -271,22 +269,21 @@
 
                 const ws = XLSX.utils.aoa_to_sheet(rows);
                 const wb = XLSX.utils.book_new();
-                XXLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
-                XXLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
+                XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
+                XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
 
-                // 2. Fire Async Request directly to your dedicated communication lookup backend routing endpoint
                 fetch('ExportReportServlet', { method: 'POST' })
-                .then(response => {
-                    // Check if servlet responded with an expected redirect or json object
-                    if (response.ok) {
-                        alert("Spreadsheet saved locally & audit log delivered successfully to Prasanth Ram and your checked communication email address!");
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert("Spreadsheet saved locally & audit log delivered successfully to Prasanth Ram and your communication email address!");
                     } else {
-                        alert("Local spreadsheet generated, but verification endpoints rejected mail delivery context.");
+                        alert("Local spreadsheet generated, but mail delivery failed: " + result.message);
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert("⚠️ Local file saved, but connection to communication mail service dropped.");
+                    alert("⚠️ Local file saved, but connection to mail utility dropped.");
                 });
             });
     }
