@@ -52,7 +52,7 @@ public class LoginServlet extends HttpServlet {
                             session.setAttribute("userName", (fullName != null) ? fullName : "User");
                             boolean passwordChanged = rs.getBoolean("password_changed");
                             session.setAttribute("passwordChanged", passwordChanged);
-                            if (!passwordChanged) {
+                            if (!"Admin".equalsIgnoreCase(dbRole) && !passwordChanged) {
                                 response.sendRedirect("LoadProfileServlet?forcePasswordChange=true");
                                 return;
                             }
