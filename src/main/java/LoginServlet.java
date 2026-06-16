@@ -25,7 +25,7 @@ public class LoginServlet extends HttpServlet {
             }
 
             // FIXED SQL: Select the password hash alongside other fields using just the email
-            String sql = "SELECT password, fullname, role FROM users WHERE email=?";
+            String sql = "SELECT password, fullname, role, password_changed FROM users WHERE email=?";
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, email);
 
@@ -50,6 +50,11 @@ public class LoginServlet extends HttpServlet {
                             // Store the real name for the dashboard
                             String fullName = rs.getString("fullname");
                             session.setAttribute("userName", (fullName != null) ? fullName : "User");
+                            boolean passwordChanged = rs.getBoolean("password_changed");
+                            if (!passwordChanged) {
+                                response.sendRedirect("LoadProfileServlet?forcePasswordChange=true");
+                                return;
+                            }
 
                             // Redirect based on the DB role
                             if ("Admin".equalsIgnoreCase(dbRole)) {
