@@ -86,6 +86,7 @@ public class WeeklyReportServlet extends HttpServlet {
             String tableName = resolveTableName(conn);
             if ("fetchMyReports".equals(action)) {
                 String userEmail = (String) session.getAttribute("userEmail");
+                StringBuilder json = new StringBuilder("[");
 
                 String sql = "SELECT * FROM " + tableName +
                              " WHERE user_email = ? " +
