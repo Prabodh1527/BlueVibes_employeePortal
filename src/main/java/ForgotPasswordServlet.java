@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.UUID;
+import java.util.Random;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -18,7 +18,6 @@ import javax.servlet.http.HttpServletResponse;
 public class ForgotPasswordServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     
-    // Brevo Gateway Connection Constants
     private static final String BREVO_API_KEY = "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";
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@gmail.com";
 
@@ -34,13 +33,12 @@ public class ForgotPasswordServlet extends HttpServlet {
             return;
         }
 
-        // 🛡️ DOMAIN FILTER: Only allow approved workspace extensions or standard Gmail
+        // Strict whitelist filtering: Blocks unapproved domains
         boolean isAllowedDomain = inputEmail.endsWith("@bluevibes.com") || 
                                   inputEmail.endsWith("@bluegitalllp.com") || 
                                   inputEmail.endsWith("@gmail.com");
 
         if (!isAllowedDomain) {
-            System.out.println("[FILTER BLOCKED] Prevented dispatch to prohibited domain: " + inputEmail);
             response.sendRedirect("forgotpassword.html?status=domain_blocked");
             return;
         }
@@ -61,7 +59,6 @@ public class ForgotPasswordServlet extends HttpServlet {
         try {
             con = DBConnection.getConnection();
             
-            // Defensively evaluate if 'communication_email' table column exists
             try {
                 String testSql = "SELECT communication_email FROM users LIMIT 1";
                 try (PreparedStatement testPs = con.prepareStatement(testSql)) {
@@ -94,7 +91,6 @@ public class ForgotPasswordServlet extends HttpServlet {
                     commsEmail = rs.getString("communication_email");
                 }
                 
-                // Determine destination address based on whitelist rules
                 if (commsEmail != null && !commsEmail.trim().isEmpty()) {
                     String commsLower = commsEmail.toLowerCase().trim();
                     if (commsLower.endsWith("@bluevibes.com") || commsLower.endsWith("@bluegitalllp.com") || commsLower.endsWith("@gmail.com")) {
@@ -105,37 +101,32 @@ public class ForgotPasswordServlet extends HttpServlet {
                 } else {
                     targetDeliveryEmail = (primaryEmail != null) ? primaryEmail.trim() : null;
                 }
-
-                if (fullName == null || fullName.trim().isEmpty()) {
-                    fullName = "User";
-                }
             }
 
             if (rs != null) rs.close();
             if (ps != null) ps.close();
 
             if (accountFound && targetDeliveryEmail != null) {
-                String token = UUID.randomUUID().toString();
+                // Generate a 6-digit pure numbers access token string
+                Random rand = new Random();
+                String numericCode = String.format("%06d", rand.nextInt(1000000));
                 
-                // Secure transaction persistence block
                 try {
                     String tokenSql = "UPDATE users SET reset_token = ? WHERE id = ?";
                     try (PreparedStatement tokenPs = con.prepareStatement(tokenSql)) {
-                        tokenPs.setString(1, token);
+                        tokenPs.setString(1, numericCode);
                         tokenPs.setInt(2, userId);
                         tokenPs.executeUpdate();
                     }
                 } catch (Exception sqlEx) {
-                    System.err.println("[DB WARNING] Problem saving token. Ensure 'reset_token' is live: " + sqlEx.getMessage());
+                    System.err.println("[DB FIELD WARNING] " + sqlEx.getMessage());
                 }
 
-                String resetLink = "https://bluevibes-portal.onrender.com/resetpassword.html?token=" + token;
-                
-                // Fire Outbound API Payload via Brevo Engine
-                boolean emailSent = sendResetEmail(targetDeliveryEmail, fullName, resetLink);
+                boolean emailSent = sendResetEmail(targetDeliveryEmail, fullName, numericCode);
 
                 if (emailSent) {
-                    response.sendRedirect("forgotpassword.html?status=success");
+                    // Redirect directly to manual entry view file instead of URL linking
+                    response.sendRedirect("enter_code.html?status=code_sent");
                 } else {
                     response.sendRedirect("forgotpassword.html?status=mail_error");
                 }
@@ -151,7 +142,7 @@ public class ForgotPasswordServlet extends HttpServlet {
         }
     }
 
-    private boolean sendResetEmail(String targetEmail, String userName, String resetLink) {
+    private boolean sendResetEmail(String targetEmail, String userName, String accessCode) {
         try {
             URL url = new URL("https://api.brevo.com/v3/smtp/email");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -168,12 +159,13 @@ public class ForgotPasswordServlet extends HttpServlet {
                        .append("\"to\":[")
                        .append("{\"email\":\"").append(targetEmail).append("\",\"name\":\"").append(userName).append("\"}")
                        .append("],")
-                       .append("\"subject\":\"🔒 BlueVibes Access Recovery Request\",")
+                       .append("\"subject\":\"🔑 BlueVibes Security Access Code\",")
                        .append("\"htmlContent\":\"<html><body>")
                        .append("<h3>Hello ").append(userName).append(",</h3>")
-                       .append("<p>We received a request to recover your portal credentials. Click the button below to secure your identity:</p>")
-                       .append("<p><a href='").append(resetLink).append("' style='background:#0284c7;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;font-weight:bold;'>Reset Password</a></p>")
-                       .append("<p>This automated security copy was sent directly to your workspace inbox: <strong>").append(targetEmail).append("</strong></p>")
+                       .append("<p>Your request to generate verification keys was authorized. Use the entry code block below to continue authentication:</p>")
+                       .append("<h1 style='font-size:32px;letter-spacing:5px;color:#0284c7;background:#f1f5f9;padding:15px;display:inline-block;border-radius:6px;font-family:monospace;'>")
+                       .append(accessCode).append("</h1>")
+                       .append("<p>Copy this key and paste it directly into the manual verification portal page layout.</p>")
                        .append("</body></html>\"")
                        .append("}");
 
@@ -185,21 +177,8 @@ public class ForgotPasswordServlet extends HttpServlet {
                 os.flush();
             }
 
-            int responseCode = conn.getResponseCode();
-            if (responseCode == 201 || responseCode == 200) {
-                return true;
-            } else {
-                try (InputStream errorStream = conn.getErrorStream()) {
-                    if (errorStream != null) {
-                        String errorResponse = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
-                        System.err.println("[BREVO ERROR CODE " + responseCode + "] System Context: " + errorResponse);
-                    }
-                }
-                return false;
-            }
-
+            return (conn.getResponseCode() == 201 || conn.getResponseCode() == 200);
         } catch (Exception e) {
-            System.err.println("[SMTP PIPE ERROR] " + e.getMessage());
             return false;
         }
     }
