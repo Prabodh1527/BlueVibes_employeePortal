@@ -46,7 +46,7 @@ public class ExportReportServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
 
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("username") == null) {
+        if (session == null || session.getAttribute("userName") == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.print("{\"error\":\"session_expired\"}");
             return;
