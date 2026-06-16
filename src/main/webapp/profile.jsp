@@ -122,10 +122,26 @@
     <div class="content-area">
         <div class="card">
             <h3><i class="ph ph-lock-key"></i> Security & Password</h3>
-            <form action="UpdatePasswordServlet" method="POST">
+            <form action="UpdatePasswordServlet" method="POST" onsubmit="return validatePasswords()">
                 <div class="form-grid">
-                    <div class="form-group"><label>New Password</label><input type="password" name="newPassword" class="form-input" required></div>
-                    <div class="form-group"><label>Confirm Password</label><input type="password" name="confirmPassword" class="form-input" required></div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" id="newPassword" name="newPassword" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" required>
+                    </div>
+                    <div id="passwordRules" style="margin-top:15px;font-size:13px;">
+                    <div id="ruleLengthMin" style="color:#dc2626;">✖ Minimum 7 characters</div>
+                    <div id="ruleLengthMax" style="color:#dc2626;">✖ Maximum 15 characters</div>
+                    <div id="ruleUpper" style="color:#dc2626;">✖ One uppercase letter</div>
+                    <div id="ruleNumber" style="color:#dc2626;">✖ One number</div>
+                    <div id="ruleSpecial" style="color:#dc2626;">✖ One special character</div>
+                    <div id="ruleMatch" style="color:#dc2626;">✖ Passwords match</div>
+                    </div>
+
                 </div>
                 <button type="submit" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:6px; margin-top:10px; cursor:pointer;">Update Password</button>
             </form>
@@ -363,6 +379,62 @@
 
         tbody.appendChild(newRow);
     }
+
+    const newPasswordField = document.getElementById("newPassword");
+    const confirmPasswordField = document.getElementById("confirmPassword");
+    
+    function checkPasswordRules() {
+    
+        const password = newPasswordField.value;
+        const confirmPassword = confirmPasswordField.value;
+    
+        updateRule("ruleLengthMin", password.length >= 7);
+        updateRule("ruleLengthMax", password.length <= 15);
+        updateRule("ruleUpper", /[A-Z]/.test(password));
+        updateRule("ruleNumber", /\d/.test(password));
+        updateRule("ruleSpecial", /[^A-Za-z0-9]/.test(password));
+        updateRule("ruleMatch",
+            password !== "" &&
+            password === confirmPassword
+        );
+    }
+    
+    function updateRule(id, passed) {
+    
+        const el = document.getElementById(id);
+    
+        if (passed) {
+            el.style.color = "#16a34a";
+            el.innerHTML = el.innerHTML.replace("✖","✔");
+        } else {
+            el.style.color = "#dc2626";
+            el.innerHTML = el.innerHTML.replace("✔","✖");
+        }
+    }
+    
+    function validatePasswords() {
+    
+        const password = newPasswordField.value;
+    
+        const valid =
+            password.length >= 7 &&
+            password.length <= 15 &&
+            /[A-Z]/.test(password) &&
+            /\d/.test(password) &&
+            /[^A-Za-z0-9]/.test(password) &&
+            password === confirmPasswordField.value;
+    
+        if (!valid) {
+            alert("Password must be 7-15 characters long and contain at least 1 uppercase letter, 1 number, 1 special character and both passwords must match.");
+            return false;
+        }
+    
+        return true;
+    }
+    
+    newPasswordField.addEventListener("input", checkPasswordRules);
+    confirmPasswordField.addEventListener("input", checkPasswordRules);
+
 </script>
 </body>
 </html>
