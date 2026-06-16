@@ -29,7 +29,7 @@ public class WeeklyReportServlet extends HttpServlet {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             PrintWriter out = response.getWriter();
-            String userEmail = (String) session.getAttribute("email");
+            String sessionEmail = (String) session.getAttribute("email");
             StringBuilder json = new StringBuilder("[");
             
             Connection con = null;
@@ -38,9 +38,17 @@ public class WeeklyReportServlet extends HttpServlet {
 
             try {
                 con = DBConnection.getConnection();
-                String sql = "SELECT id, task_id, task_desc, customer, status, percent_completed, start_date, end_date, comments FROM weekly_reports WHERE user_email = ? ORDER BY id DESC";
+                
+                // Query using an absolute fallback join to handle cases where session key matches communication_mail
+                String sql = "SELECT r.id, r.task_id, r.task_desc, r.customer, r.status, r.percent_completed, r.start_date, r.end_date, r.comments " +
+                             "FROM weekly_reports r " +
+                             "JOIN users u ON r.user_email = u.email OR r.user_email = u.communication_mail " +
+                             "WHERE u.email = ? OR u.communication_mail = ? " +
+                             "ORDER BY r.id DESC";
+                             
                 ps = con.prepareStatement(sql);
-                ps.setString(1, userEmail);
+                ps.setString(1, sessionEmail);
+                ps.setString(2, sessionEmail);
                 rs = ps.executeQuery();
 
                 boolean first = true;
@@ -103,7 +111,35 @@ public class WeeklyReportServlet extends HttpServlet {
             return;
         }
 
-        String userEmail = (String) session.getAttribute("email");
+        String sessionEmail = (String) session.getAttribute("email");
+        String finalPersistedEmail = sessionEmail; // Fallback default
+        
+        Connection con = null;
+        PreparedStatement psUser = null;
+        ResultSet rsUser = null;
+        
+        try {
+            con = DBConnection.getConnection();
+            
+            // 1. Resolve exact primary corporate registration email from database to keep schema unified
+            String userSql = "SELECT email FROM users WHERE email = ? OR communication_mail = ?";
+            psUser = con.prepareStatement(userSql);
+            psUser.setString(1, sessionEmail);
+            psUser.setString(2, sessionEmail);
+            rsUser = psUser.executeQuery();
+            if (rsUser.next()) {
+                String primaryEmail = rsUser.getString("email");
+                if (primaryEmail != null && !primaryEmail.trim().isEmpty()) {
+                    finalPersistedEmail = primaryEmail.trim();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try { if (rsUser != null) rsUser.close(); } catch(Exception e){}
+            try { if (psUser != null) psUser.close(); } catch(Exception e){}
+        }
+
         String[] reportIds = request.getParameterValues("reportId");
         String[] taskIds = request.getParameterValues("taskId");
         String[] taskDescs = request.getParameterValues("taskDesc");
@@ -114,7 +150,6 @@ public class WeeklyReportServlet extends HttpServlet {
         String[] endDates = request.getParameterValues("endDate");
         String[] commentsArray = request.getParameterValues("comments");
 
-        Connection con = null;
         try {
             con = DBConnection.getConnection();
             con.setAutoCommit(false);
@@ -125,7 +160,7 @@ public class WeeklyReportServlet extends HttpServlet {
                     if ("0".equals(rid)) {
                         String ins = "INSERT INTO weekly_reports (user_email, task_id, task_desc, customer, status, percent_completed, start_date, end_date, comments) VALUES (?,?,?,?,?,?,?,?,?)";
                         try (PreparedStatement ps = con.prepareStatement(ins)) {
-                            ps.setString(1, userEmail);
+                            ps.setString(1, finalPersistedEmail);
                             ps.setString(2, taskIds[i]);
                             ps.setString(3, taskDescs[i]);
                             ps.setString(4, customers[i]);
@@ -157,6 +192,7 @@ public class WeeklyReportServlet extends HttpServlet {
             response.sendRedirect("weeklyreport.html?status=success");
         } catch (Exception e) {
             if (con != null) { try { con.rollback(); } catch (Exception ex) {} }
+            e.printStackTrace();
             response.sendRedirect("weeklyreport.html?status=error");
         } finally {
             try { if (con != null) con.close(); } catch (Exception e) {}
