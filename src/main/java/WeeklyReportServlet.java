@@ -44,7 +44,7 @@ public class WeeklyReportServlet extends HttpServlet {
 
     private synchronized String resolveTableName(Connection conn) throws SQLException {
         if (targetTableName != null) return targetTableName;
-        String[] prospectiveNames = {"weekly_report", "weeklyreport", "weekly_reports", "reports"};
+        String[] prospectiveNames = {"user_weekly_reports", "weekly_report", "weeklyreport", "weekly_reports", "reports"};
         for (String name : prospectiveNames) {
             try (PreparedStatement ps = conn.prepareStatement("SELECT 1 FROM " + name + " LIMIT 1")) {
                 ps.executeQuery();
@@ -60,7 +60,7 @@ public class WeeklyReportServlet extends HttpServlet {
     }
 
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        return DBConnection.getConnection();
     }
 
     protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -75,7 +75,7 @@ public class WeeklyReportServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
 
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("username") == null) {
+        if (session == null || session.getAttribute("userEmail") == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.print("{\"error\":\"session_expired\"}");
             return;
@@ -121,7 +121,7 @@ public class WeeklyReportServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
 
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("username") == null) {
+        if (session == null || session.getAttribute("userEmail") == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             out.print("{\"error\":\"session_expired\"}");
             return;
