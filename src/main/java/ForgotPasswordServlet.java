@@ -1,117 +1,199 @@
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.sql.*;
-import java.util.Random;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.UUID;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.*;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @WebServlet("/ForgotPasswordServlet")
 public class ForgotPasswordServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = Logger.getLogger(ForgotPasswordServlet.class.getName());
+    
+    private static final String BREVO_API_KEY = "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";
+    private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@gmail.com";
 
-    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String email = request.getParameter("userEmail");
+        String inputEmail = request.getParameter("email");
         
-        LOGGER.info("=== FORGOT PASSWORD SERVLET CRITICAL ENTRY POINT TRIGGERED ===");
-        LOGGER.info("User Email Received from HTML Form: " + email);
-        
-        String tempPassword = generateRandomPassword(8);
+        if (inputEmail != null) {
+            inputEmail = inputEmail.trim().toLowerCase();
+        }
+
+        if (inputEmail == null || inputEmail.isEmpty()) {
+            response.sendRedirect("forgotpassword.html?status=invalid");
+            return;
+        }
+
+        // 🛡️ STRICT DOMAIN FILTER: Reject VIT, SRM, and any unapproved external extensions
+        boolean isAllowedDomain = inputEmail.endsWith("@bluevibes.com") || 
+                                  inputEmail.endsWith("@bluegitalllp.com") || 
+                                  inputEmail.endsWith("@gmail.com");
+
+        if (!isAllowedDomain) {
+            System.out.println("[SECURITY BLOCK] Rejected prohibited institutional/external domain path: " + inputEmail);
+            response.sendRedirect("forgotpassword.html?status=domain_blocked");
+            return;
+        }
+
         Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        
+        boolean accountFound = false;
+        boolean commsColumnExists = true;
+        
+        String fullName = "User";
+        String primaryEmail = null;
+        String commsEmail = null;
+        String targetDeliveryEmail = null;
+        int userId = -1;
 
         try {
-            LOGGER.info("Attempting to handshake with the database layer...");
             con = DBConnection.getConnection();
             
-            if (con == null) {
-                LOGGER.severe("DATABASE ERROR: DBConnection.getConnection() returned NULL!");
-                throw new SQLException("Could not establish a database connection handle.");
+            // Check table metadata structure dynamically
+            try {
+                String testSql = "SELECT communication_email FROM users LIMIT 1";
+                try (PreparedStatement testPs = con.prepareStatement(testSql)) {
+                    testPs.executeQuery();
+                }
+            } catch (Exception e) {
+                commsColumnExists = false;
             }
-
-            String hashedPassword = PasswordUtil.hashPassword(tempPassword);
-            PreparedStatement pst = con.prepareStatement("UPDATE users SET password = ? WHERE email = ?");
-            pst.setString(1, hashedPassword);
-            pst.setString(2, email);
             
-            int rowsAffected = pst.executeUpdate();
-            LOGGER.info("Database query completed. Rows affected: " + rowsAffected);
-            
-            if (rowsAffected > 0) {
-                LOGGER.info("User verified in DB. Opening Brevo HTTP API tunnel...");
-                sendEmailViaAPI(email, tempPassword, "Your Temporary Password");
-                response.sendRedirect("forgotpassword.html?status=sent");
+            if (commsColumnExists) {
+                String sql = "SELECT id, fullname, email, communication_email FROM users WHERE email = ? OR communication_email = ?";
+                ps = con.prepareStatement(sql);
+                ps.setString(1, inputEmail);
+                ps.setString(2, inputEmail);
             } else {
-                LOGGER.warning("Warning: Email '" + email + "' does not exist in the database records.");
-                response.sendRedirect("forgotpassword.html?status=notfound");
+                String sql = "SELECT id, fullname, email FROM users WHERE email = ?";
+                ps = con.prepareStatement(sql);
+                ps.setString(1, inputEmail);
             }
             
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "!! CODESYSTEM CRASH ROUTINE DETECTED !! Error Message: " + e.getMessage(), e);
-            response.sendRedirect("forgotpassword.html?status=error");
-        } finally {
-            if (con != null) {
-                try { 
-                    con.close(); 
-                } catch (SQLException e) { 
-                    LOGGER.log(Level.SEVERE, "Error closing connection", e); 
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                accountFound = true;
+                userId = rs.getInt("id");
+                fullName = rs.getString("fullname");
+                primaryEmail = rs.getString("email");
+                
+                if (commsColumnExists) {
+                    commsEmail = rs.getString("communication_email");
+                }
+                
+                // Route target destination safely based on clean corporate entries
+                if (commsEmail != null && !commsEmail.trim().isEmpty()) {
+                    String commsLower = commsEmail.toLowerCase().trim();
+                    if (commsLower.endsWith("@bluevibes.com") || commsLower.endsWith("@bluegitalllp.com") || commsLower.endsWith("@gmail.com")) {
+                        targetDeliveryEmail = commsEmail.trim();
+                    } else {
+                        targetDeliveryEmail = (primaryEmail != null) ? primaryEmail.trim() : null;
+                    }
+                } else {
+                    targetDeliveryEmail = (primaryEmail != null) ? primaryEmail.trim() : null;
+                }
+
+                if (fullName == null || fullName.trim().isEmpty()) {
+                    fullName = "User";
                 }
             }
+
+            if (rs != null) rs.close();
+            if (ps != null) ps.close();
+
+            if (accountFound && targetDeliveryEmail != null) {
+                String token = UUID.randomUUID().toString();
+                
+                String tokenSql = "UPDATE users SET reset_token = ? WHERE id = ?";
+                try (PreparedStatement tokenPs = con.prepareStatement(tokenSql)) {
+                    tokenPs.setString(1, token);
+                    tokenPs.setInt(2, userId);
+                    tokenPs.executeUpdate();
+                }
+
+                String resetLink = "https://bluevibes-portal.onrender.com/resetpassword.html?token=" + token;
+                
+                boolean emailSent = sendResetEmail(targetDeliveryEmail, fullName, resetLink);
+
+                if (emailSent) {
+                    response.sendRedirect("forgotpassword.html?status=success");
+                } else {
+                    response.sendRedirect("forgotpassword.html?status=mail_error");
+                }
+            } else {
+                response.sendRedirect("forgotpassword.html?status=not_found");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect("forgotpassword.html?status=error");
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) { e.printStackTrace(); }
         }
     }
 
-    private void sendEmailViaAPI(String toEmail, String tempPassword, String subject) throws Exception {
-        // Tied exactly to your Render Dashboard Environment Config mapping keys!
-        String apiKey = System.getenv("SUPPORT_EMAIL_PASSWORD"); 
-        String senderEmail = System.getenv("SUPPORT_EMAIL");
+    private boolean sendResetEmail(String targetEmail, String userName, String resetLink) {
+        try {
+            URL url = new URL("https://api.brevo.com/v3/smtp/email");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("api-key", BREVO_API_KEY.trim());
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
 
-        if (apiKey == null || senderEmail == null) {
-            LOGGER.severe("CONFIGURATION ERROR: SUPPORT_EMAIL_PASSWORD or SUPPORT_EMAIL environment variable is missing from Render!");
-            throw new RuntimeException("Missing environment credentials keys.");
+            StringBuilder jsonBuilder = new StringBuilder();
+            jsonBuilder.append("{")
+                       .append("\"sender\":{\"name\":\"BlueVibes Portal\",\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\"},")
+                       .append("\"to\":[")
+                       .append("{\"email\":\"").append(targetEmail).append("\",\"name\":\"").append(userName).append("\"}")
+                       .append("],")
+                       .append("\"subject\":\"🔒 BlueVibes Access Recovery Request\",")
+                       .append("\"htmlContent\":\"<html><body>")
+                       .append("<h3>Hello ").append(userName).append(",</h3>")
+                       .append("<p>We received a request to recover your portal credentials. Click the button below to secure your identity:</p>")
+                       .append("<p><a href='").append(resetLink).append("' style='background:#0284c7;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;display:inline-block;font-weight:bold;'>Reset Password</a></p>")
+                       .append("<p>This automated security copy was sent directly to your workspace inbox: <strong>").append(targetEmail).append("</strong></p>")
+                       .append("</body></html>\"")
+                       .append("}");
+
+            String jsonPayload = jsonBuilder.toString();
+
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+                os.flush();
+            }
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 201 || responseCode == 200) {
+                return true;
+            } else {
+                try (InputStream errorStream = conn.getErrorStream()) {
+                    if (errorStream != null) {
+                        String errorResponse = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
+                        System.err.println("[BREVO API REJECTION] " + errorResponse);
+                    }
+                }
+                return false;
+            }
+
+        } catch (Exception e) {
+            System.err.println("[SMTP SYSTEM EXCEPTION] " + e.getMessage());
+            return false;
         }
-
-        URL url = new URL("https://api.brevo.com/v3/smtp/email");
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("api-key", apiKey.trim());
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setDoOutput(true);
-
-        String jsonPayload = "{"
-                + "\"sender\":{\"email\":\"" + senderEmail.trim() + "\",\"name\":\"Support Team\"},"
-                + "\"to\":[{\"email\":\"" + toEmail.trim() + "\"}],"
-                + "\"subject\":\"" + subject + "\","
-                + "\"textContent\":\"Hello,\\n\\nYour temporary login credentials are:\\nPassword: " + tempPassword + "\\n\\nPlease login and update your credentials immediately.\""
-                + "}";
-
-        try (OutputStream os = conn.getOutputStream()) {
-            byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
-        }
-
-        int responseCode = conn.getResponseCode();
-        if (responseCode == 201 || responseCode == 200) {
-            LOGGER.info("API SUCCESS: Brevo accepted the email payload. Code: " + responseCode);
-        } else {
-            LOGGER.severe("API ERROR: Brevo rejected the email payload. Code: " + responseCode);
-            throw new RuntimeException("Brevo API rejection code: " + responseCode);
-        }
-        conn.disconnect();
-    }
-
-    private String generateRandomPassword(int length) {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        Random rnd = new Random();
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(chars.charAt(rnd.nextInt(chars.length())));
-        }
-        return sb.toString();
     }
 }
