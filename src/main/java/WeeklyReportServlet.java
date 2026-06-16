@@ -16,18 +16,19 @@ public class WeeklyReportServlet extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
+        HttpSession session = request.getSession(false);
+        
+        if (session == null || session.getAttribute("email") == null) {
+            response.setContentType("application/json");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().print("[]");
+            return;
+        }
+
         if ("fetchMyReports".equals(action)) {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             PrintWriter out = response.getWriter();
-            
-            HttpSession session = request.getSession(false);
-            if (session == null || session.getAttribute("email") == null) {
-                out.print("[]");
-                out.flush();
-                return;
-            }
-
             String userEmail = (String) session.getAttribute("email");
             StringBuilder json = new StringBuilder("[");
             
@@ -54,7 +55,7 @@ public class WeeklyReportServlet extends HttpServlet {
                         .append("\"percent\":\"").append(rs.getInt("percent_completed")).append("\",")
                         .append("\"startDate\":\"").append(rs.getDate("start_date")).append("\",")
                         .append("\"endDate\":\"").append(rs.getDate("end_date")).append("\",")
-                        .append("\"comments\":\"").append(rs.getString("comments") != null ? rs.getString("comments") : "").append("\"")
+                        .append("\"comments\":\"").append(rs.getString("comments") != null ? rs.getString("comments").replace("\"", "\\\"") : "").append("\"")
                         .append("}");
                     first = false;
                 }
@@ -65,7 +66,6 @@ public class WeeklyReportServlet extends HttpServlet {
                 try { if (ps != null) ps.close(); } catch(Exception e){}
                 try { if (con != null) con.close(); } catch(Exception e){}
             }
-
             json.append("]");
             out.print(json.toString());
             out.flush();
@@ -74,8 +74,13 @@ public class WeeklyReportServlet extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
+        HttpSession session = request.getSession(false);
         
-        // Handle deletion of rows safely
+        if (session == null || session.getAttribute("email") == null) {
+            response.sendRedirect("index.html?status=session_expired");
+            return;
+        }
+
         if ("delete".equals(action)) {
             response.setContentType("application/json");
             PrintWriter out = response.getWriter();
@@ -88,23 +93,13 @@ public class WeeklyReportServlet extends HttpServlet {
                 ps = con.prepareStatement("DELETE FROM weekly_reports WHERE id = ?");
                 ps.setInt(1, Integer.parseInt(id));
                 int rows = ps.executeUpdate();
-                if (rows > 0) out.print("{\"success\":true}");
-                else out.print("{\"success\":false}");
+                out.print(rows > 0 ? "{\"success\":true}" : "{\"success\":false}");
             } catch (Exception e) {
-                e.printStackTrace();
                 out.print("{\"success\":false}");
             } finally {
                 try { if (ps != null) ps.close(); } catch(Exception e){}
                 try { if (con != null) con.close(); } catch(Exception e){}
             }
-            out.flush();
-            return;
-        }
-
-        // Standard save batch logic
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("email") == null) {
-            response.sendRedirect("index.html?status=session_expired");
             return;
         }
 
@@ -162,7 +157,6 @@ public class WeeklyReportServlet extends HttpServlet {
             response.sendRedirect("weeklyreport.html?status=success");
         } catch (Exception e) {
             if (con != null) { try { con.rollback(); } catch (Exception ex) {} }
-            e.printStackTrace();
             response.sendRedirect("weeklyreport.html?status=error");
         } finally {
             try { if (con != null) con.close(); } catch (Exception e) {}
