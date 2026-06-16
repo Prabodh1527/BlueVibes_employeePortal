@@ -253,7 +253,7 @@
         } else { row.remove(); }
     }
 
-    // --- CRITICAL UPDATE: EXPORT & EMAIL TRIGGER ---
+    // --- UPDATED EXPORT & EMAIL TRIGGER LINKING DIRECTLY TO COMMUNICATION SERVICE ---
     function exportToExcel() {
         fetch('WeeklyReportServlet?action=fetchMyReports')
             .then(res => res.json())
@@ -271,22 +271,22 @@
 
                 const ws = XLSX.utils.aoa_to_sheet(rows);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
-                XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
+                XXLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
+                XXLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
 
-                // 2. Fire Async Request to Backend Servlet to Email Attachment via Brevo
-                fetch('WeeklyReportServlet?action=exportEmail', { method: 'POST' })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        alert("Spreadsheet saved locally & copy delivered successfully to both the Auditor and your email address!");
+                // 2. Fire Async Request directly to your dedicated communication lookup backend routing endpoint
+                fetch('ExportReportServlet', { method: 'POST' })
+                .then(response => {
+                    // Check if servlet responded with an expected redirect or json object
+                    if (response.ok) {
+                        alert("Spreadsheet saved locally & audit log delivered successfully to Prasanth Ram and your checked communication email address!");
                     } else {
-                        alert("Local copy generated, but email delivery failed: " + result.message);
+                        alert("Local spreadsheet generated, but verification endpoints rejected mail delivery context.");
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert("⚠️ Local file saved, but connection to mail utility dropped.");
+                    alert("⚠️ Local file saved, but connection to communication mail service dropped.");
                 });
             });
     }
