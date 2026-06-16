@@ -51,6 +51,7 @@ public class LoginServlet extends HttpServlet {
                             String fullName = rs.getString("fullname");
                             session.setAttribute("userName", (fullName != null) ? fullName : "User");
                             boolean passwordChanged = rs.getBoolean("password_changed");
+                            session.setAttribute("passwordChanged", passwordChanged);
                             if (!passwordChanged) {
                                 response.sendRedirect("LoadProfileServlet?forcePasswordChange=true");
                                 return;
