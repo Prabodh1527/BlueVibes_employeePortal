@@ -38,13 +38,14 @@ public class ProfilePasswordServlet extends HttpServlet {
 
             String hashedPassword = PasswordUtil.hashPassword(newPassword);
 
-            String sql = "UPDATE users SET password=? WHERE email=?";
+            String sql = "UPDATE users SET password=?, password_changed=true WHERE email=?";
 
             PreparedStatement ps = con.prepareStatement(sql);
             ps.setString(1, hashedPassword);
             ps.setString(2, email);
 
             ps.executeUpdate();
+            session.setAttribute("passwordChanged", true);
 
             response.sendRedirect("LoadProfileServlet?status=password_updated");
 
