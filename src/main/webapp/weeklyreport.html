@@ -141,6 +141,8 @@
             <select name="taskDesc" class="form-input task-master-select">
                 <option value="">Select Type</option>
                 <option value="AD Approvals">AD Approvals</option>
+                <option value="AD Planning & Strategy">AD Planning & Strategy</option>
+                <option value="Bank Activities">Bank Activities</option>
                 <option value="Development">Development</option>
                 <option value="Bug Fixing">Bug Fixing</option>
                 <option value="Code Review">Code Review</option>
@@ -158,7 +160,9 @@
                 <option value="BlueDigital">BlueDigital</option>
                 <option value="Vibes Retail">Vibes Retail</option>
                 <option value="Global Tech">Global Tech</option>
-                <option value="Abaran Timeless">Abaran Timeless</option>
+                <option value="Ashok Leyland">Ashok Leyland</option>
+                <option value="Bethliving">Bethliving</option>
+                <option value="Ather">Ather</option>
             </select>
         </td>
         <td>
@@ -177,15 +181,17 @@
 </template>
 
 <script>
+    // Updated local fallback configuration array matching production database matrices
     let masterData = { 
         tasks: [
-            {name: "AD Approvals"}, {name: "Development"}, {name: "Bug Fixing"}, 
-            {name: "Code Review"}, {name: "Testing / QA"}, {name: "Documentation"},
-            {name: "Client Meeting"}, {name: "Deployment"}
+            {name: "AD Approvals"}, {name: "AD Planning & Strategy"}, {name: "Bank Activities"},
+            {name: "Development"}, {name: "Bug Fixing"}, {name: "Code Review"}, 
+            {name: "Testing / QA"}, {name: "Documentation"}, {name: "Client Meeting"}, {name: "Deployment"}
         ], 
         customers: [
             {name: "Abaran"}, {name: "Internal"}, {name: "BlueDigital"}, 
-            {name: "Vibes Retail"}, {name: "Global Tech"}, {name: "Abaran Timeless"}
+            {name: "Vibes Retail"}, {name: "Global Tech"}, {name: "Ashok Leyland"}, 
+            {name: "Bethliving"}, {name: "Ather"}
         ] 
     };
 
@@ -295,11 +301,25 @@
         } else { row.remove(); }
     }
 
-    // FIXED: Form data handling matches exactly what your servlet requires
     function submitReportFormAsync(event) {
         event.preventDefault();
         const form = document.getElementById("reportForm");
-        const formData = new URLSearchParams(new FormData(form));
+        
+        // Use standard URLSearchParams formatting for Java Servlet request.getParameterValues compatibility
+        const formData = new URLSearchParams();
+        const rows = document.querySelectorAll("#reportTbody tr");
+        
+        rows.forEach(row => {
+            formData.append("reportId", row.querySelector('[name="reportId"]').value);
+            formData.append("taskId", row.querySelector('[name="taskId"]').value);
+            formData.append("taskDesc", row.querySelector('[name="taskDesc"]').value);
+            formData.append("customer", row.querySelector('[name="customer"]').value);
+            formData.append("status", row.querySelector('[name="status"]').value);
+            formData.append("percent", row.querySelector('[name="percent"]').value);
+            formData.append("startDate", row.querySelector('[name="startDate"]').value);
+            formData.append("endDate", row.querySelector('[name="endDate"]').value);
+            formData.append("comments", row.querySelector('[name="comments"]').value);
+        });
 
         fetch('WeeklyReportServlet', {
             method: 'POST',
@@ -307,7 +327,7 @@
             body: formData.toString()
         })
         .then(res => {
-            if (res.redirected || res.status === 401) {
+            if (res.redirected || res.url.includes("index.html")) {
                 window.location.href = "index.html?status=session_expired";
                 return;
             }
@@ -319,12 +339,11 @@
             }
         })
         .catch(err => {
-            console.error("Save background transaction dropped:", err);
+            console.error("Transmission Exception:", err);
             alert('Connection pipeline failure during saving.');
         });
     }
 
-    // FIXED: Grabs active form text regardless of filter setups or dropdown selections
     function exportToExcel() {
         const rows = document.querySelectorAll("#reportTbody tr");
         const taskEntries = [];
@@ -333,16 +352,21 @@
             if (row.style.display === "none") return;
 
             const taskId = row.querySelector("[name='taskId']")?.value;
-            const taskDesc = row.querySelector("[name='taskDesc']")?.value;
-            const customer = row.querySelector("[name='customer']")?.value;
+            
+            // Fix: Fallback directly to option text if value extraction fails
+            const taskDescSelect = row.querySelector("[name='taskDesc']");
+            const taskDesc = taskDescSelect?.value || taskDescSelect?.options[taskDescSelect.selectedIndex]?.text;
+            
+            const custSelect = row.querySelector("[name='customer']");
+            const customer = custSelect?.value || custSelect?.options[custSelect.selectedIndex]?.text;
+            
             const status = row.querySelector("[name='status']")?.value;
             const percent = row.querySelector("[name='percent']")?.value;
             const startDate = row.querySelector("[name='startDate']")?.value;
             const endDate = row.querySelector("[name='endDate']")?.value;
             const comments = row.querySelector("[name='comments']")?.value;
 
-            // Make data check robust to resolve the empty array export error
-            if (taskId || taskDesc || customer) {
+            if (taskId && taskDesc && taskDesc !== "Select Type") {
                 taskEntries.push({ taskId, taskDesc, customer, status, percent, startDate, endDate, comments });
             }
         });
@@ -362,23 +386,27 @@
         XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
         XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
 
-        // Ensure proper transmission structure to ExportReportServlet
-        fetch('ExportReportServlet', { method: 'POST' })
+        // Send parameters clearly to the Export servlet to avoid structural dropped connections
+        fetch('ExportReportServlet', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        })
         .then(response => {
-            if (!response.ok) {
-                throw new Error("HTTP error status code: " + response.status);
+            if (response.redirected || response.url.includes("index.html")) {
+                window.location.href = "index.html?status=session_expired";
+                return;
             }
             return response.json();
         })
         .then(result => {
             if (result && result.success) {
-                alert("Spreadsheet saved locally & corporate audit email log successfully delivered to Prasanth Ram!");
+                alert("Spreadsheet saved locally & corporate audit email log successfully delivered!");
             } else {
-                alert("Local spreadsheet generated, but mail delivery failed: " + (result ? result.message : "Malformed server response"));
+                alert("Local spreadsheet generated, but mail delivery failed.");
             }
         })
         .catch(err => {
-            console.error("Mail engine execution dropped:", err);
+            console.error("Mail execution trace:", err);
             alert("⚠️ Local file saved, but connection to corporate mail engine dropped.");
         });
     }
@@ -408,9 +436,6 @@
         document.getElementById('weekRange').innerText = `Current Week: ${start} to ${end}`;
 
         loadMastersAndReports();
-
-        const params = new URLSearchParams(window.location.search);
-        if(params.get('status') === 'success') alert('Weekly report saved successfully!');
     };
 </script>
 </body>
