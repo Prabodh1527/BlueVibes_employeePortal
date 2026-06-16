@@ -18,7 +18,6 @@ public class WeeklyReportServlet extends HttpServlet {
         String action = request.getParameter("action");
         HttpSession session = request.getSession(false);
         
-        // FIXED: Checked against "userEmail" to match login authentication properties
         if (session == null || session.getAttribute("userEmail") == null) {
             response.setContentType("application/json");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -30,7 +29,7 @@ public class WeeklyReportServlet extends HttpServlet {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             PrintWriter out = response.getWriter();
-            String sessionEmail = (String) session.getAttribute("userEmail"); // FIXED
+            String sessionEmail = (String) session.getAttribute("userEmail");
             StringBuilder json = new StringBuilder("[");
             
             Connection con = null;
@@ -84,9 +83,8 @@ public class WeeklyReportServlet extends HttpServlet {
         String action = request.getParameter("action");
         HttpSession session = request.getSession(false);
         
-        // FIXED: Checked against "userEmail" to stop unexpected route ejections
         if (session == null || session.getAttribute("userEmail") == null) {
-            response.sendRedirect("index.html?status=session_expired");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
@@ -112,7 +110,7 @@ public class WeeklyReportServlet extends HttpServlet {
             return;
         }
 
-        String sessionEmail = (String) session.getAttribute("userEmail"); // FIXED
+        String sessionEmail = (String) session.getAttribute("userEmail");
         String finalPersistedEmail = sessionEmail; 
         
         Connection con = null;
@@ -189,11 +187,13 @@ public class WeeklyReportServlet extends HttpServlet {
                 }
             }
             con.commit();
-            response.sendRedirect("weeklyreport.html?status=success");
+            
+            // FIXED: Send status OK back instead of reloading page
+            response.setStatus(HttpServletResponse.SC_OK);
         } catch (Exception e) {
             if (con != null) { try { con.rollback(); } catch (Exception ex) {} }
             e.printStackTrace();
-            response.sendRedirect("weeklyreport.html?status=error");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         } finally {
             try { if (con != null) con.close(); } catch (Exception e) {}
         }
