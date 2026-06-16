@@ -163,22 +163,51 @@ public class WeeklyReportServlet extends HttpServlet {
             String[] commentsArray = request.getParameterValues("comments");
 
             if (reportIds != null) {
-                String insertSql = "INSERT INTO " + tableName + " (task_id, task_description, customer, status, percentage_completed, start_date, end_date, comments) VALUES (?, ?, ?, ?, ?, CAST(? AS DATE), CAST(? AS DATE), ?)";
-                String updateSql = "UPDATE " + tableName + " SET task_id=?, task_description=?, customer=?, status=?, percentage_completed=?, start_date=CAST(? AS DATE), end_date=CAST(? AS DATE), comments=? WHERE report_id=?";
 
+                String insertSql =
+                    "INSERT INTO " + tableName +
+                    " (user_email, task_id, task_description, customer, status, percentage_completed, start_date, end_date, comments) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, CAST(? AS DATE), CAST(? AS DATE), ?)";
+            
+                String updateSql =
+                    "UPDATE " + tableName +
+                    " SET task_id=?, task_description=?, customer=?, status=?, percentage_completed=?, start_date=CAST(? AS DATE), end_date=CAST(? AS DATE), comments=? " +
+                    "WHERE report_id=?";
+            
+                String userEmail = (String) session.getAttribute("userEmail");
+            
                 for (int i = 0; i < reportIds.length; i++) {
+            
                     int rId = Integer.parseInt(reportIds[i]);
                     String sql = (rId == 0) ? insertSql : updateSql;
+            
                     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                        ps.setInt(1, (taskIds != null && i < taskIds.length) ? Integer.parseInt(taskIds[i]) : 0);
-                        ps.setString(2, (taskDescs != null && i < taskDescs.length) ? taskDescs[i] : "");
-                        ps.setString(3, (customers != null && i < customers.length) ? customers[i] : "");
-                        ps.setString(4, (statuses != null && i < statuses.length) ? statuses[i] : "Open");
-                        ps.setInt(5, (percents != null && i < percents.length) ? Integer.parseInt(percents[i]) : 0);
-                        ps.setString(6, (startDates != null && i < startDates.length && !startDates[i].isEmpty()) ? startDates[i] : null);
-                        ps.setString(7, (endDates != null && i < endDates.length && !endDates[i].isEmpty()) ? endDates[i] : null);
-                        ps.setString(8, (commentsArray != null && i < commentsArray.length) ? commentsArray[i] : "");
-                        if (rId != 0) ps.setInt(9, rId);
+            
+                        if (rId == 0) {
+            
+                            ps.setString(1, userEmail);
+                            ps.setInt(2, (taskIds != null && i < taskIds.length) ? Integer.parseInt(taskIds[i]) : 0);
+                            ps.setString(3, (taskDescs != null && i < taskDescs.length) ? taskDescs[i] : "");
+                            ps.setString(4, (customers != null && i < customers.length) ? customers[i] : "");
+                            ps.setString(5, (statuses != null && i < statuses.length) ? statuses[i] : "Open");
+                            ps.setInt(6, (percents != null && i < percents.length) ? Integer.parseInt(percents[i]) : 0);
+                            ps.setString(7, (startDates != null && i < startDates.length && !startDates[i].isEmpty()) ? startDates[i] : null);
+                            ps.setString(8, (endDates != null && i < endDates.length && !endDates[i].isEmpty()) ? endDates[i] : null);
+                            ps.setString(9, (commentsArray != null && i < commentsArray.length) ? commentsArray[i] : "");
+            
+                        } else {
+            
+                            ps.setInt(1, (taskIds != null && i < taskIds.length) ? Integer.parseInt(taskIds[i]) : 0);
+                            ps.setString(2, (taskDescs != null && i < taskDescs.length) ? taskDescs[i] : "");
+                            ps.setString(3, (customers != null && i < customers.length) ? customers[i] : "");
+                            ps.setString(4, (statuses != null && i < statuses.length) ? statuses[i] : "Open");
+                            ps.setInt(5, (percents != null && i < percents.length) ? Integer.parseInt(percents[i]) : 0);
+                            ps.setString(6, (startDates != null && i < startDates.length && !startDates[i].isEmpty()) ? startDates[i] : null);
+                            ps.setString(7, (endDates != null && i < endDates.length && !endDates[i].isEmpty()) ? endDates[i] : null);
+                            ps.setString(8, (commentsArray != null && i < commentsArray.length) ? commentsArray[i] : "");
+                            ps.setInt(9, rId);
+                        }
+            
                         ps.executeUpdate();
                     }
                 }
