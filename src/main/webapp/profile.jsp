@@ -120,6 +120,26 @@
     </header>
 
     <div class="content-area">
+        <%
+        String forcePasswordChange = request.getParameter("forcePasswordChange");
+        if ("true".equals(forcePasswordChange)) {
+        %>
+        
+        <div style="
+        background:#fff3cd;
+        color:#856404;
+        padding:15px;
+        border-radius:10px;
+        margin-bottom:20px;
+        font-weight:600;
+        border-left:5px solid #ffc107;
+        ">
+        ⚠ You must change your password before using the portal.
+        </div>
+        
+        <%
+        }
+        %>
         <div class="card">
             <h3><i class="ph ph-lock-key"></i> Security & Password</h3>
             <form action="ProfilePasswordServlet" method="POST" onsubmit="return validatePasswords()">
