@@ -18,7 +18,8 @@ public class WeeklyReportServlet extends HttpServlet {
         String action = request.getParameter("action");
         HttpSession session = request.getSession(false);
         
-        if (session == null || session.getAttribute("email") == null) {
+        // FIXED: Checked against "userEmail" to match login authentication properties
+        if (session == null || session.getAttribute("userEmail") == null) {
             response.setContentType("application/json");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().print("[]");
@@ -29,7 +30,7 @@ public class WeeklyReportServlet extends HttpServlet {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             PrintWriter out = response.getWriter();
-            String sessionEmail = (String) session.getAttribute("email");
+            String sessionEmail = (String) session.getAttribute("userEmail"); // FIXED
             StringBuilder json = new StringBuilder("[");
             
             Connection con = null;
@@ -39,7 +40,6 @@ public class WeeklyReportServlet extends HttpServlet {
             try {
                 con = DBConnection.getConnection();
                 
-                // Query using an absolute fallback join to handle cases where session key matches communication_mail
                 String sql = "SELECT r.id, r.task_id, r.task_desc, r.customer, r.status, r.percent_completed, r.start_date, r.end_date, r.comments " +
                              "FROM weekly_reports r " +
                              "JOIN users u ON r.user_email = u.email OR r.user_email = u.communication_mail " +
@@ -84,7 +84,8 @@ public class WeeklyReportServlet extends HttpServlet {
         String action = request.getParameter("action");
         HttpSession session = request.getSession(false);
         
-        if (session == null || session.getAttribute("email") == null) {
+        // FIXED: Checked against "userEmail" to stop unexpected route ejections
+        if (session == null || session.getAttribute("userEmail") == null) {
             response.sendRedirect("index.html?status=session_expired");
             return;
         }
@@ -111,8 +112,8 @@ public class WeeklyReportServlet extends HttpServlet {
             return;
         }
 
-        String sessionEmail = (String) session.getAttribute("email");
-        String finalPersistedEmail = sessionEmail; // Fallback default
+        String sessionEmail = (String) session.getAttribute("userEmail"); // FIXED
+        String finalPersistedEmail = sessionEmail; 
         
         Connection con = null;
         PreparedStatement psUser = null;
@@ -121,7 +122,6 @@ public class WeeklyReportServlet extends HttpServlet {
         try {
             con = DBConnection.getConnection();
             
-            // 1. Resolve exact primary corporate registration email from database to keep schema unified
             String userSql = "SELECT email FROM users WHERE email = ? OR communication_mail = ?";
             psUser = con.prepareStatement(userSql);
             psUser.setString(1, sessionEmail);
