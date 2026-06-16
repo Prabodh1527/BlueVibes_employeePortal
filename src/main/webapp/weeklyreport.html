@@ -350,10 +350,10 @@
 
             const taskId = row.querySelector("[name='taskId']")?.value;
             const taskDescSelect = row.querySelector("[name='taskDesc']");
-            const taskDesc = taskDescSelect?.value || taskDescSelect?.options[taskDescSelect.selectedIndex]?.text;
+            const taskDesc = taskDescSelect?.value;
             
             const custSelect = row.querySelector("[name='customer']");
-            const customer = custSelect?.value || custSelect?.options[custSelect.selectedIndex]?.text;
+            const customer = custSelect?.value;
             
             const status = row.querySelector("[name='status']")?.value;
             const percent = row.querySelector("[name='percent']")?.value;
@@ -361,7 +361,7 @@
             const endDate = row.querySelector("[name='endDate']")?.value;
             const comments = row.querySelector("[name='comments']")?.value;
 
-            if (taskId && taskDesc && taskDesc !== "Select Type") {
+            if (taskId && taskDesc) {
                 taskEntries.push({ taskId, taskDesc, customer, status, percent, startDate, endDate, comments });
             }
         });
@@ -381,6 +381,11 @@
         XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
         XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
 
+        const base64ExcelStream = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+
+        const params = new URLSearchParams();
+        params.append("excelData", base64ExcelStream);
+
         fetch('ExportReportServlet', { 
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -397,7 +402,7 @@
             if (result && result.success) {
                 alert("Spreadsheet saved locally & corporate audit email log successfully delivered!");
             } else {
-                alert("Local spreadsheet generated, but mail delivery failed.");
+                alert("Local spreadsheet generated, but mail delivery failed: " + result.error);
             }
         })
         .catch(err => {
