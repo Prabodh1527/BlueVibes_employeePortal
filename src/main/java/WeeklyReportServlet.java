@@ -12,8 +12,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 @WebServlet("/WeeklyReportServlet")
 public class WeeklyReportServlet extends HttpServlet {
@@ -52,7 +50,7 @@ public class WeeklyReportServlet extends HttpServlet {
                 ps.executeQuery();
                 targetTableName = name;
                 return targetTableName;
-            } catch (SQLException e) { /* continue checking */ }
+            } catch (SQLException e) { /* keep looking */ }
         }
         try (Statement stmt = conn.createStatement()) {
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS weekly_report (report_id SERIAL PRIMARY KEY, task_id INT, task_desc VARCHAR(255), customer VARCHAR(255), status VARCHAR(50), percent INT, start_date DATE, end_date DATE, comments TEXT)");
@@ -87,24 +85,28 @@ public class WeeklyReportServlet extends HttpServlet {
         try (Connection conn = getConnection()) {
             String tableName = resolveTableName(conn);
             if ("fetchMyReports".equals(action)) {
-                JSONArray jsonArray = new JSONArray();
+                StringBuilder json = new StringBuilder("[");
                 String sql = "SELECT * FROM " + tableName + " ORDER BY start_date DESC, report_id DESC";
                 try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+                    boolean first = true;
                     while (rs.next()) {
-                        JSONObject obj = new JSONObject();
-                        obj.put("reportId", rs.getInt("report_id"));
-                        obj.put("taskId", rs.getInt("task_id"));
-                        obj.put("taskDesc", rs.getString("task_desc"));
-                        obj.put("customer", rs.getString("customer"));
-                        obj.put("status", rs.getString("status"));
-                        obj.put("percent", rs.getInt("percent"));
-                        obj.put("startDate", rs.getDate("start_date") != null ? rs.getDate("start_date").toString() : "");
-                        obj.put("endDate", rs.getDate("end_date") != null ? rs.getDate("end_date").toString() : "");
-                        obj.put("comments", rs.getString("comments"));
-                        jsonArray.put(obj);
+                        if (!first) json.append(",");
+                        first = false;
+                        json.append("{")
+                            .append("\"reportId\":").append(rs.getInt("report_id")).append(",")
+                            .append("\"taskId\":").append(rs.getInt("task_id")).append(",")
+                            .append("\"taskDesc\":\"").append(rs.getString("task_desc") != null ? rs.getString("task_desc").replace("\"", "\\\"") : "").append("\",")
+                            .append("\"customer\":\"").append(rs.getString("customer") != null ? rs.getString("customer").replace("\"", "\\\"") : "").append("\",")
+                            .append("\"status\":\"").append(rs.getString("status") != null ? rs.getString("status").replace("\"", "\\\"") : "").append("\",")
+                            .append("\"percent\":").append(rs.getInt("percent")).append(",")
+                            .append("\"startDate\":\"").append(rs.getDate("start_date") != null ? rs.getDate("start_date").toString() : "").append("\",")
+                            .append("\"endDate\":\"").append(rs.getDate("end_date") != null ? rs.getDate("end_date").toString() : "").append("\",")
+                            .append("\"comments\":\"").append(rs.getString("comments") != null ? rs.getString("comments").replace("\"", "\\\"") : "").append("\"")
+                            .append("}");
                     }
                 }
-                out.print(jsonArray.toString());
+                json.append("]");
+                out.print(json.toString());
             }
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
