@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 public class ForgotPasswordServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     
+    // Brevo Gateway Connection Constants
     private static final String BREVO_API_KEY = "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";
     private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@gmail.com";
 
@@ -33,13 +34,13 @@ public class ForgotPasswordServlet extends HttpServlet {
             return;
         }
 
-        // 🛡️ STRICT DOMAIN FILTER: Reject VIT, SRM, and any unapproved external extensions
+        // 🛡️ DOMAIN FILTER: Only allow approved workspace extensions or standard Gmail
         boolean isAllowedDomain = inputEmail.endsWith("@bluevibes.com") || 
                                   inputEmail.endsWith("@bluegitalllp.com") || 
                                   inputEmail.endsWith("@gmail.com");
 
         if (!isAllowedDomain) {
-            System.out.println("[SECURITY BLOCK] Rejected prohibited institutional/external domain path: " + inputEmail);
+            System.out.println("[FILTER BLOCKED] Prevented dispatch to prohibited domain: " + inputEmail);
             response.sendRedirect("forgotpassword.html?status=domain_blocked");
             return;
         }
@@ -60,7 +61,7 @@ public class ForgotPasswordServlet extends HttpServlet {
         try {
             con = DBConnection.getConnection();
             
-            // Check table metadata structure dynamically
+            // Defensively evaluate if 'communication_email' table column exists
             try {
                 String testSql = "SELECT communication_email FROM users LIMIT 1";
                 try (PreparedStatement testPs = con.prepareStatement(testSql)) {
@@ -93,7 +94,7 @@ public class ForgotPasswordServlet extends HttpServlet {
                     commsEmail = rs.getString("communication_email");
                 }
                 
-                // Route target destination safely based on clean corporate entries
+                // Determine destination address based on whitelist rules
                 if (commsEmail != null && !commsEmail.trim().isEmpty()) {
                     String commsLower = commsEmail.toLowerCase().trim();
                     if (commsLower.endsWith("@bluevibes.com") || commsLower.endsWith("@bluegitalllp.com") || commsLower.endsWith("@gmail.com")) {
@@ -116,15 +117,21 @@ public class ForgotPasswordServlet extends HttpServlet {
             if (accountFound && targetDeliveryEmail != null) {
                 String token = UUID.randomUUID().toString();
                 
-                String tokenSql = "UPDATE users SET reset_token = ? WHERE id = ?";
-                try (PreparedStatement tokenPs = con.prepareStatement(tokenSql)) {
-                    tokenPs.setString(1, token);
-                    tokenPs.setInt(2, userId);
-                    tokenPs.executeUpdate();
+                // Secure transaction persistence block
+                try {
+                    String tokenSql = "UPDATE users SET reset_token = ? WHERE id = ?";
+                    try (PreparedStatement tokenPs = con.prepareStatement(tokenSql)) {
+                        tokenPs.setString(1, token);
+                        tokenPs.setInt(2, userId);
+                        tokenPs.executeUpdate();
+                    }
+                } catch (Exception sqlEx) {
+                    System.err.println("[DB WARNING] Problem saving token. Ensure 'reset_token' is live: " + sqlEx.getMessage());
                 }
 
                 String resetLink = "https://bluevibes-portal.onrender.com/resetpassword.html?token=" + token;
                 
+                // Fire Outbound API Payload via Brevo Engine
                 boolean emailSent = sendResetEmail(targetDeliveryEmail, fullName, resetLink);
 
                 if (emailSent) {
@@ -185,14 +192,14 @@ public class ForgotPasswordServlet extends HttpServlet {
                 try (InputStream errorStream = conn.getErrorStream()) {
                     if (errorStream != null) {
                         String errorResponse = new String(errorStream.readAllBytes(), StandardCharsets.UTF_8);
-                        System.err.println("[BREVO API REJECTION] " + errorResponse);
+                        System.err.println("[BREVO ERROR CODE " + responseCode + "] System Context: " + errorResponse);
                     }
                 }
                 return false;
             }
 
         } catch (Exception e) {
-            System.err.println("[SMTP SYSTEM EXCEPTION] " + e.getMessage());
+            System.err.println("[SMTP PIPE ERROR] " + e.getMessage());
             return false;
         }
     }
