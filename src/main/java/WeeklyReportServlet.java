@@ -1,9 +1,5 @@
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -14,113 +10,162 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-@WebServlet("/ExportReportServlet")
-public class ExportReportServlet extends HttpServlet {
+@WebServlet("/WeeklyReportServlet")
+public class WeeklyReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    private static final String BREVO_API_KEY = "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";
-    private static final String VERIFIED_SENDER_EMAIL = "gprabodhchandra@gmail.com";
-    private static final String AUDITOR_EMAIL = "prasanthram@bluegitalllp.com";
-
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        PrintWriter out = response.getWriter();
-        
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("email") == null) {
-            out.print("{\"success\":false,\"message\":\"Session expired. Please log in again.\"}");
-            out.flush();
-            return;
-        }
-
-        String primaryEmail = (String) session.getAttribute("email");
-        String targetDeliveryEmail = primaryEmail;
-        String exporterName = "Employee"; 
-
-        Connection con = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-
-        try {
-            con = DBConnection.getConnection();
-            String sql = "SELECT fullname, email, communication_email FROM users WHERE email = ?";
-            ps = con.prepareStatement(sql);
-            ps.setString(1, primaryEmail);
-            rs = ps.executeQuery();
-
-            if (rs.next()) {
-                exporterName = rs.getString("fullname");
-                String commsEmail = rs.getString("communication_email");
-                if (commsEmail != null && !commsEmail.trim().isEmpty()) {
-                    targetDeliveryEmail = commsEmail.trim();
-                }
-            }
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String action = request.getParameter("action");
+        if ("fetchMyReports".equals(action)) {
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            PrintWriter out = response.getWriter();
             
-            rs.close();
-            ps.close();
-
-            boolean mailSent = sendDualExportEmail(targetDeliveryEmail, exporterName);
-
-            if (mailSent) {
-                out.print("{\"success\":true}");
-            } else {
-                out.print("{\"success\":false,\"message\":\"Mail server connection issue.\"}");
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("email") == null) {
+                out.print("[]");
+                out.flush();
+                return;
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            out.print("{\"success\":false,\"message\":\"" + e.getMessage() + "\"}");
-        } finally {
-            try { if (con != null) con.close(); } catch (Exception e) {}
+            String userEmail = (String) session.getAttribute("email");
+            StringBuilder json = new StringBuilder("[");
+            
+            Connection con = null;
+            PreparedStatement ps = null;
+            ResultSet rs = null;
+
+            try {
+                con = DBConnection.getConnection();
+                String sql = "SELECT id, task_id, task_desc, customer, status, percent_completed, start_date, end_date, comments FROM weekly_reports WHERE user_email = ? ORDER BY id DESC";
+                ps = con.prepareStatement(sql);
+                ps.setString(1, userEmail);
+                rs = ps.executeQuery();
+
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first) json.append(",");
+                    json.append("{")
+                        .append("\"reportId\":\"").append(rs.getInt("id")).append("\",")
+                        .append("\"taskId\":\"").append(rs.getString("task_id")).append("\",")
+                        .append("\"taskDesc\":\"").append(rs.getString("task_desc")).append("\",")
+                        .append("\"customer\":\"").append(rs.getString("customer")).append("\",")
+                        .append("\"status\":\"").append(rs.getString("status")).append("\",")
+                        .append("\"percent\":\"").append(rs.getInt("percent_completed")).append("\",")
+                        .append("\"startDate\":\"").append(rs.getDate("start_date")).append("\",")
+                        .append("\"endDate\":\"").append(rs.getDate("end_date")).append("\",")
+                        .append("\"comments\":\"").append(rs.getString("comments") != null ? rs.getString("comments") : "").append("\"")
+                        .append("}");
+                    first = false;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try { if (rs != null) rs.close(); } catch(Exception e){}
+                try { if (ps != null) ps.close(); } catch(Exception e){}
+                try { if (con != null) con.close(); } catch(Exception e){}
+            }
+
+            json.append("]");
+            out.print(json.toString());
             out.flush();
         }
     }
 
-    private boolean sendDualExportEmail(String targetEmail, String exporterName) {
-        try {
-            URL url = new URL("https://api.brevo.com/v3/smtp/email");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String action = request.getParameter("action");
+        
+        // Handle deletion of rows safely
+        if ("delete".equals(action)) {
+            response.setContentType("application/json");
+            PrintWriter out = response.getWriter();
+            String id = request.getParameter("id");
             
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("api-key", BREVO_API_KEY.trim());
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setDoOutput(true);
-
-            StringBuilder jsonBuilder = new StringBuilder();
-            jsonBuilder.append("{")
-                       .append("\"sender\":{\"name\":\"BlueVibes Audit Engine\",\"email\":\"").append(VERIFIED_SENDER_EMAIL).append("\"},")
-                       .append("\"to\":[")
-                       .append("{\"email\":\"").append(AUDITOR_EMAIL).append("\",\"name\":\"Prasanth Ram\"},")
-                       .append("{\"email\":\"").append(targetEmail.trim()).append("\",\"name\":\"").append(exporterName).append("\"}")
-                       .append("],")
-                       .append("\"subject\":\"📊 Weekly Status Report: Data Export Activity Log\",")
-                       .append("\"htmlContent\":\"<html><body style='font-family: Arial, sans-serif; line-height: 1.6;'>")
-                       .append("<h2 style='color: #0284c7;'>Data Export Activity Notification</h2>")
-                       .append("<p>An authorized export action was executed inside the weekly status sheet reporting layout tracking block.</p>")
-                       .append("<div style='background: #f1f5f9; padding: 15px; border-radius: 8px; border-left: 4px solid #0284c7;'>")
-                       .append("<strong>Action Initiator:</strong> ").append(exporterName).append("<br>")
-                       .append("<strong>Delivery Destination:</strong> ").append(targetEmail).append("<br>")
-                       .append("<strong>Activity Status:</strong> Export Log Dispatched Successfully")
-                       .append("</div>")
-                       .append("<p style='font-size: 12px; color: #64748b; margin-top: 20px;'>This message is a compliance tracking carbon copy delivered simultaneously to management and the destination inbox.</p>")
-                       .append("</body></html>\"")
-                       .append("}");
-
-            String jsonPayload = jsonBuilder.toString();
-
-            try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-                os.flush();
+            Connection con = null;
+            PreparedStatement ps = null;
+            try {
+                con = DBConnection.getConnection();
+                ps = con.prepareStatement("DELETE FROM weekly_reports WHERE id = ?");
+                ps.setInt(1, Integer.parseInt(id));
+                int rows = ps.executeUpdate();
+                if (rows > 0) out.print("{\"success\":true}");
+                else out.print("{\"success\":false}");
+            } catch (Exception e) {
+                e.printStackTrace();
+                out.print("{\"success\":false}");
+            } finally {
+                try { if (ps != null) ps.close(); } catch(Exception e){}
+                try { if (con != null) con.close(); } catch(Exception e){}
             }
+            out.flush();
+            return;
+        }
 
-            return (conn.getResponseCode() == 201 || conn.getResponseCode() == 200);
+        // Standard save batch logic
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("email") == null) {
+            response.sendRedirect("index.html?status=session_expired");
+            return;
+        }
 
+        String userEmail = (String) session.getAttribute("email");
+        String[] reportIds = request.getParameterValues("reportId");
+        String[] taskIds = request.getParameterValues("taskId");
+        String[] taskDescs = request.getParameterValues("taskDesc");
+        String[] customers = request.getParameterValues("customer");
+        String[] statuses = request.getParameterValues("status");
+        String[] percents = request.getParameterValues("percent");
+        String[] startDates = request.getParameterValues("startDate");
+        String[] endDates = request.getParameterValues("endDate");
+        String[] commentsArray = request.getParameterValues("comments");
+
+        Connection con = null;
+        try {
+            con = DBConnection.getConnection();
+            con.setAutoCommit(false);
+
+            if (taskIds != null) {
+                for (int i = 0; i < taskIds.length; i++) {
+                    String rid = reportIds[i];
+                    if ("0".equals(rid)) {
+                        String ins = "INSERT INTO weekly_reports (user_email, task_id, task_desc, customer, status, percent_completed, start_date, end_date, comments) VALUES (?,?,?,?,?,?,?,?,?)";
+                        try (PreparedStatement ps = con.prepareStatement(ins)) {
+                            ps.setString(1, userEmail);
+                            ps.setString(2, taskIds[i]);
+                            ps.setString(3, taskDescs[i]);
+                            ps.setString(4, customers[i]);
+                            ps.setString(5, statuses[i]);
+                            ps.setInt(6, Integer.parseInt(percents[i]));
+                            ps.setDate(7, java.sql.Date.valueOf(startDates[i]));
+                            ps.setDate(8, java.sql.Date.valueOf(endDates[i]));
+                            ps.setString(9, commentsArray != null && commentsArray.length > i ? commentsArray[i] : "");
+                            ps.executeUpdate();
+                        }
+                    } else {
+                        String upd = "UPDATE weekly_reports SET task_id=?, task_desc=?, customer=?, status=?, percent_completed=?, start_date=?, end_date=?, comments=? WHERE id=?";
+                        try (PreparedStatement ps = con.prepareStatement(upd)) {
+                            ps.setString(1, taskIds[i]);
+                            ps.setString(2, taskDescs[i]);
+                            ps.setString(3, customers[i]);
+                            ps.setString(4, statuses[i]);
+                            ps.setInt(5, Integer.parseInt(percents[i]));
+                            ps.setDate(6, java.sql.Date.valueOf(startDates[i]));
+                            ps.setDate(7, java.sql.Date.valueOf(endDates[i]));
+                            ps.setString(8, commentsArray != null && commentsArray.length > i ? commentsArray[i] : "");
+                            ps.setInt(9, Integer.parseInt(rid));
+                            ps.executeUpdate();
+                        }
+                    }
+                }
+            }
+            con.commit();
+            response.sendRedirect("weeklyreport.html?status=success");
         } catch (Exception e) {
+            if (con != null) { try { con.rollback(); } catch (Exception ex) {} }
             e.printStackTrace();
-            return false;
+            response.sendRedirect("weeklyreport.html?status=error");
+        } finally {
+            try { if (con != null) con.close(); } catch (Exception e) {}
         }
     }
 }
