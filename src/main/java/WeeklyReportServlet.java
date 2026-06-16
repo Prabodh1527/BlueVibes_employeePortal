@@ -95,10 +95,10 @@ public class WeeklyReportServlet extends HttpServlet {
                         json.append("{")
                             .append("\"reportId\":").append(rs.getInt("report_id")).append(",")
                             .append("\"taskId\":").append(rs.getInt("task_id")).append(",")
-                            .append("\"taskDesc\":\"").append(rs.getString("task_desc") != null ? rs.getString("task_desc").replace("\"", "\\\"") : "").append("\",")
+                            .append("\"taskDesc\":\"").append(rs.getString("task_description") != null ? rs.getString("task_description").replace("\"", "\\\"") : "").append("\",")
                             .append("\"customer\":\"").append(rs.getString("customer") != null ? rs.getString("customer").replace("\"", "\\\"") : "").append("\",")
                             .append("\"status\":\"").append(rs.getString("status") != null ? rs.getString("status").replace("\"", "\\\"") : "").append("\",")
-                            .append("\"percent\":").append(rs.getInt("percent")).append(",")
+                            .append("\"percent\":").append(rs.getInt("percentage_completed")).append(",")
                             .append("\"startDate\":\"").append(rs.getDate("start_date") != null ? rs.getDate("start_date").toString() : "").append("\",")
                             .append("\"endDate\":\"").append(rs.getDate("end_date") != null ? rs.getDate("end_date").toString() : "").append("\",")
                             .append("\"comments\":\"").append(rs.getString("comments") != null ? rs.getString("comments").replace("\"", "\\\"") : "").append("\"")
@@ -155,8 +155,8 @@ public class WeeklyReportServlet extends HttpServlet {
             String[] commentsArray = request.getParameterValues("comments");
 
             if (reportIds != null) {
-                String insertSql = "INSERT INTO " + tableName + " (task_id, task_desc, customer, status, percent, start_date, end_date, comments) VALUES (?, ?, ?, ?, ?, CAST(? AS DATE), CAST(? AS DATE), ?)";
-                String updateSql = "UPDATE " + tableName + " SET task_id=?, task_desc=?, customer=?, status=?, percent=?, start_date=CAST(? AS DATE), end_date=CAST(? AS DATE), comments=? WHERE report_id=?";
+                String insertSql = "INSERT INTO " + tableName + " (task_id, task_description, customer, status, percentage_completed, start_date, end_date, comments) VALUES (?, ?, ?, ?, ?, CAST(? AS DATE), CAST(? AS DATE), ?)";
+                String updateSql = "UPDATE " + tableName + " SET task_id=?, task_description=?, customer=?, status=?, percentage_completed=?, start_date=CAST(? AS DATE), end_date=CAST(? AS DATE), comments=? WHERE report_id=?";
 
                 for (int i = 0; i < reportIds.length; i++) {
                     int rId = Integer.parseInt(reportIds[i]);
