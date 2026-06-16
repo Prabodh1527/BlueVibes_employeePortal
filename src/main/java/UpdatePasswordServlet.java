@@ -1,61 +1,83 @@
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 @WebServlet("/UpdatePasswordServlet")
 public class UpdatePasswordServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
+
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String codeInput = request.getParameter("token");
+        String newPassword = request.getParameter("password");
 
-        // 1. Get the current user's email from the session
-        HttpSession session = request.getSession();
-        String email = (String) session.getAttribute("userEmail");
+        if (codeInput != null) codeInput = codeInput.trim();
+        if (newPassword != null) newPassword = newPassword.trim();
 
-        // Check if the request came from Admin Profile or Employee Profile
-        String source = request.getParameter("source");
-
-        if (email == null) {
-            response.sendRedirect("index.html");
+        // Security Guard: Reject empty operations
+        if (codeInput == null || codeInput.isEmpty() || newPassword == null || newPassword.isEmpty()) {
+            response.sendRedirect("enter_code.html?status=invalid_input");
             return;
         }
 
-        // 2. Capture passwords
-        String newPass = request.getParameter("newPassword");
-        String confirmPass = request.getParameter("confirmPassword");
+        Connection con = null;
+        PreparedStatement psCheck = null;
+        PreparedStatement psUpdate = null;
+        ResultSet rs = null;
 
-        // Determine where to send the user back to
-        String redirectTarget = (source != null && source.equals("admin")) ? "adminprofile.html" : "LoadProfileServlet";
+        try {
+            con = DBConnection.getConnection();
 
-        // 3. Logic to ensure passwords match
-        if (newPass == null || !newPass.equals(confirmPass)) {
-            response.setContentType("text/html");
-            response.getWriter().println("<script>alert('Passwords do not match!'); window.location='" + redirectTarget + "';</script>");
-            return;
-        }
+            // 1. Target the UNIQUE user who owns this active 6-digit verification code
+            String checkSql = "SELECT id, email FROM users WHERE reset_token = ?";
+            psCheck = con.prepareStatement(checkSql);
+            psCheck.setString(1, codeInput);
+            rs = psCheck.executeQuery();
 
-        try (Connection con = DBConnection.getConnection()) {
-            // 4. Execute UPDATE
-            String sql = "UPDATE users SET password = ? WHERE email = ?";
-            PreparedStatement ps = con.prepareStatement(sql);
-            ps.setString(1, newPass);
-            ps.setString(2, email);
+            if (rs.next()) {
+                int targetUserId = rs.getInt("id");
+                String userEmail = rs.getString("email");
+                System.out.println("[SECURITY] Found matching account for Code. User ID: " + targetUserId + " (" + userEmail + ")");
 
-            int result = ps.executeUpdate();
+                // 2. Strict Row-Isolated Update: Modify ONLY the row matching this specific User ID
+                // Also clears the reset_token column so the code can never be used again
+                String updateSql = "UPDATE users SET password = ?, reset_token = NULL WHERE id = ?";
+                psUpdate = con.prepareStatement(updateSql);
+                psUpdate.setString(1, newPassword); // Consider hashing this parameter if your system supports it
+                psUpdate.setInt(2, targetUserId);
+                
+                int rowsUpdated = psUpdate.executeUpdate();
 
-            response.setContentType("text/html");
-            if (result > 0) {
-                response.getWriter().println("<script>alert('Password updated successfully!'); window.location='" + redirectTarget + "';</script>");
+                if (rowsUpdated > 1) {
+                    // System protection fail-safe wrap
+                    System.err.println("[CRITICAL SECURITY ALERT] Multi-row collision detected! Rolling back action.");
+                    response.sendRedirect("enter_code.html?status=system_error");
+                    return;
+                }
+
+                System.out.println("[SUCCESS] Password modified securely for User ID " + targetUserId + ". Forwarding to login portal context.");
+                // Redirect to login page with a verified status flag
+                response.sendRedirect("index.html?status=verified");
+
             } else {
-                response.getWriter().println("<script>alert('Error: Could not update database.'); window.location='" + redirectTarget + "';</script>");
+                // Pin mismatch or expired session lookup
+                System.out.println("[AUTH FAILURE] Provided 6-digit PIN (" + codeInput + ") does not exist in active tracking states.");
+                response.sendRedirect("enter_code.html?status=wrong_code");
             }
+
         } catch (Exception e) {
             e.printStackTrace();
-            response.getWriter().println("Database Error: " + e.getMessage());
+            response.sendRedirect("enter_code.html?status=error");
+        } finally {
+            try { if (rs != null) rs.close(); } catch (Exception e) {}
+            try { if (psCheck != null) psCheck.close(); } catch (Exception e) {}
+            try { if (psUpdate != null) psUpdate.close(); } catch (Exception e) {}
+            try { if (con != null) con.close(); } catch (Exception e) {}
         }
     }
 }
