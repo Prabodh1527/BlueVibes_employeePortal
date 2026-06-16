@@ -131,7 +131,7 @@ public class ForgotPasswordServlet extends HttpServlet {
                        .append("\"to\":[")
                        .append("{\"email\":\"").append(targetEmail).append("\",\"name\":\"").append(userName).append("\"}")
                        .append("],")
-                       .append("\"subject\":\"Reset Your BlueVibes Password\",")
+                       .append("\"subject\":\"🔒 Reset Your BlueVibes Password\",")
                        .append("\"htmlContent\":\"<html><body>")
                        .append("<h3>Hello ").append(userName).append(",</h3>")
                        .append("<p>We received a request to recover your portal credentials. Click the button below to secure your identity:</p>")
