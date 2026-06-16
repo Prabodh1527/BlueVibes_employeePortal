@@ -85,9 +85,16 @@ public class WeeklyReportServlet extends HttpServlet {
         try (Connection conn = getConnection()) {
             String tableName = resolveTableName(conn);
             if ("fetchMyReports".equals(action)) {
-                StringBuilder json = new StringBuilder("[");
-                String sql = "SELECT * FROM " + tableName + " ORDER BY start_date DESC, report_id DESC";
-                try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+                String userEmail = (String) session.getAttribute("userEmail");
+
+                String sql = "SELECT * FROM " + tableName +
+                             " WHERE user_email = ? " +
+                             " ORDER BY start_date DESC, report_id DESC";
+                
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, userEmail);
+                
+                ResultSet rs = ps.executeQuery(); {
                     boolean first = true;
                     while (rs.next()) {
                         if (!first) json.append(",");
