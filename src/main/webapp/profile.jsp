@@ -122,7 +122,7 @@
     <div class="content-area">
         <div class="card">
             <h3><i class="ph ph-lock-key"></i> Security & Password</h3>
-            <form action="UpdatePasswordServlet" method="POST" onsubmit="return validatePasswords()">
+            <form action="ProfilePasswordServlet" method="POST" onsubmit="return validatePasswords()">
                 <div class="form-grid">
                     <div class="form-group">
                         <label>New Password</label>
