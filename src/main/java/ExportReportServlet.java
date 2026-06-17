@@ -28,18 +28,21 @@ import javax.servlet.http.HttpSession;
 public class ExportReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // Mail Settings
+    // Mail server global settings
     private final String SMTP_HOST = "smtp.gmail.com"; 
     private final String SMTP_PORT = "587";
 
-    // Database Configuration Parameters (Update these to match your actual DB environment)
-    private final String DB_URL = "jdbc:mysql://localhost:3306/your_database_name";
+    // =========================================================================
+    // UPDATE THESE STRINGS WITH YOUR RENDER LIVE DATABASE ACCESS CREDENTIALS
+    // =========================================================================
+    private final String DB_URL = "jdbc:mysql://localhost:3306/your_live_db_name";
     private final String DB_USER = "root";
-    private final String DB_PASSWORD = "your_db_password";
+    private final String DB_PASSWORD = "your_live_db_password";
+    // =========================================================================
 
-    // Helper method to establish connection without relying on com.bluevibes.util
+    // Self-contained connection provider method bypasses external project utilities
     private Connection getConnection() throws Exception {
-        Class.forName("com.mysql.cj.jdbc.Driver"); // Force load driver for web container environment
+        Class.forName("com.mysql.cj.jdbc.Driver");
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 
@@ -50,10 +53,13 @@ public class ExportReportServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
         
+        // 1. Session check - sends explicit 419/401 token mapping on login dropping
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("username") == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            out.print("{\"success\": false, \"error\": \"Session expired or invalid login.\"}");
+            out.print("{\"success\": false, \"error\": \"AUTH_EXPIRED\"}");
+            out.flush();
+            out.close();
             return;
         }
 
@@ -66,10 +72,10 @@ public class ExportReportServlet extends HttpServlet {
         String recipientQuery = "SELECT email FROM communication_email WHERE username = ?";
         String senderQuery = "SELECT config_value FROM system_config WHERE config_key = ?";
         
-        // Using our internal connection helper block
+        // 2. Query configurations dynamically from local rows
         try (Connection conn = getConnection()) {
             
-            // 1. Get Recipient Communication Target
+            // Get user's dynamic recipient email destination
             try (PreparedStatement psRec = conn.prepareStatement(recipientQuery)) {
                 psRec.setString(1, username);
                 try (ResultSet rsRec = psRec.executeQuery()) {
@@ -79,7 +85,7 @@ public class ExportReportServlet extends HttpServlet {
                 }
             }
             
-            // 2. Get Dynamic Corporate SMTP Mailer Address
+            // Get corporate system sender email configuration
             try (PreparedStatement psSenderEmail = conn.prepareStatement(senderQuery)) {
                 psSenderEmail.setString(1, "smtp_sender_email");
                 try (ResultSet rsSE = psSenderEmail.executeQuery()) {
@@ -89,7 +95,7 @@ public class ExportReportServlet extends HttpServlet {
                 }
             }
 
-            // 3. Get App Specific Credentials Token String Pass
+            // Get corporate system sender password configuration
             try (PreparedStatement psSenderPass = conn.prepareStatement(senderQuery)) {
                 psSenderPass.setString(1, "smtp_sender_password");
                 try (ResultSet rsSP = psSenderPass.executeQuery()) {
@@ -101,34 +107,38 @@ public class ExportReportServlet extends HttpServlet {
 
         } catch (Exception e) {
             e.printStackTrace();
-            out.print("{\"success\": false, \"error\": \"Internal Database extraction error: " + e.getMessage() + "\"}");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // Keeps user in place on page
+            out.print("{\"success\": false, \"error\": \"Database Error: Could not load authentication parameters. " + e.getMessage() + "\"}");
             return;
         }
 
-        // Operational Assertions
+        // Validate values fetched from database
         if (targetRecipientEmail == null || targetRecipientEmail.trim().isEmpty()) {
-            out.print("{\"success\": false, \"error\": \"No recipient mapping matching this user session.\"}");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.print("{\"success\": false, \"error\": \"Database missing target recipient mapping inside communication_email for user: " + username + "\"}");
             return;
         }
         if (systemSenderEmail == null || systemSenderPassword == null || systemSenderEmail.trim().isEmpty()) {
-            out.print("{\"success\": false, \"error\": \"Missing system configuration SMTP parameters in DB rows.\"}");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.print("{\"success\": false, \"error\": \"System configurations missing. Ensure smtp_sender_email and smtp_sender_password records exist inside system_config.\"}");
             return;
         }
 
-        // 4. Capture Excel payload stream
+        // 3. Receive file payload data
         String base64ExcelData = request.getParameter("excelData");
         if (base64ExcelData == null || base64ExcelData.isEmpty()) {
-            out.print("{\"success\": false, \"error\": \"Bad Request: Missing spreadsheet payload context parameters.\"}");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.print("{\"success\": false, \"error\": \"Local spreadsheet generated, but mail delivery failed: Excel spreadsheet input stream parameter payload is empty.\"}");
             return;
         }
 
         final String finalSenderEmail = systemSenderEmail;
         final String finalSenderPassword = systemSenderPassword;
 
+        // 4. Assemble and dispatch email
         try {
             byte[] excelBytes = Base64.getDecoder().decode(base64ExcelData);
 
-            // 5. Build Mail Properties Structure Context Configuration
             Properties properties = new Properties();
             properties.put("mail.smtp.host", SMTP_HOST);
             properties.put("mail.smtp.port", SMTP_PORT);
@@ -143,37 +153,40 @@ public class ExportReportServlet extends HttpServlet {
             });
 
             Message message = new MimeMessage(mailSession);
-            message.setFrom(new InternetAddress(finalSenderEmail, "BlueVibes Automated Portal"));
+            message.setFrom(new InternetAddress(finalSenderEmail, "BlueVibes Corporate Portal"));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(targetRecipientEmail));
-            message.setSubject("BlueVibes | Weekly Status Report - " + username);
+            message.setSubject("BlueVibes | Weekly Status Report Archive - " + username);
 
             Multipart multipart = new MimeMultipart();
 
-            // Text email body component
+            // Main Body Text
             MimeBodyPart textBodyPart = new MimeBodyPart();
-            String emailMessageContent = "Dear Worker,\n\n"
-                    + "Please find attached your newly generated Weekly Status Report spreadsheet logs.\n\n"
+            String emailMessageContent = "Dear " + username + ",\n\n"
+                    + "Your Weekly Status Report spreadsheet has been processed successfully.\n\n"
+                    + "Please find your compliance archive copy attached directly to this email message.\n\n"
                     + "Best regards,\n"
-                    + "BlueVibes Engine Automated Mail Gateway Portal System Node Container.";
+                    + "BlueVibes Automated Reporting Gateway Engine Notification Node.";
             textBodyPart.setText(emailMessageContent);
             multipart.addBodyPart(textBodyPart);
 
-            // Binary Excel attachment mapping component
+            // Reconstructed Excel Binary File Attachment
             MimeBodyPart attachmentBodyPart = new MimeBodyPart();
             attachmentBodyPart.setContent(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             attachmentBodyPart.setFileName(username + "_Weekly_Status_Report.xlsx");
             multipart.addBodyPart(attachmentBodyPart);
 
             message.setContent(multipart);
-
-            // 6. Push stream directly across mail server routes
+            
+            // Connect and send
             Transport.send(message);
 
+            // Success json response packet
             out.print("{\"success\": true}");
 
         } catch (Exception mailError) {
             mailError.printStackTrace();
-            out.print("{\"success\": false, \"error\": \"SMTP transmission dropped or error encountered: " + mailError.getMessage() + "\"}");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); 
+            out.print("{\"success\": false, \"error\": \"Local file saved, but connection to corporate mail engine dropped: " + mailError.getMessage() + "\"}");
         } finally {
             out.flush();
             out.close();
