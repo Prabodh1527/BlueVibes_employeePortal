@@ -386,34 +386,34 @@
         const params = new URLSearchParams();
         params.append("excelData", base64ExcelStream);
 
-        // FIX 1: Explicitly pass the 'body' data payload into the fetch setup options configuration
-        fetch('ExportReportServlet', { 
+        // Fixed endpoint target context to bind cookie states securely
+        fetch('./ExportReportServlet', { 
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             credentials: 'include',
             body: params.toString() 
         })
         .then(response => {
-            // FIX 2: Only route to index if the server explicitly tells us the login session expired via code 401
-            if (response.status === 401) {
+            // Isolates session failures (401) from backend execution failures (500)
+            if (response.status === 401 || response.redirected) {
                 window.location.href = "index.html?status=session_expired";
                 return null;
             }
             return response.json();
         })
         .then(result => {
-            if (!result) return; // Dropped on redirect routing execution context
+            if (!result) return; 
             
             if (result.success) {
-                alert("Spreadsheet saved locally & corporate audit email log successfully delivered!");
+                alert("🚀 Spreadsheet saved locally & corporate audit email log successfully delivered!");
             } else {
-                // Keep the user on screen when email engines encounter runtime connectivity bugs
-                alert("Local spreadsheet generated, but mail delivery failed: " + result.error);
+                // Keeps user on the active page and explains exactly what failed in the backend code
+                alert("⚠️ Mail delivery engine returned an error: " + result.error);
             }
         })
         .catch(err => {
             console.error(err);
-            alert("⚠️ Local file saved, but connection to corporate mail engine dropped.");
+            alert("❌ Network Error: Connection to corporate mail engine dropped.");
         });
     }
 
