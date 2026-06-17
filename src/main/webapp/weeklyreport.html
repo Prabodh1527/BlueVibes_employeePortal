@@ -366,7 +366,7 @@
             return;
         }
 
-        // Generate a local backup spreadsheet for immediate browser download
+        // Generate local browser backup download
         const excelRows = [["Task ID", "Task Description", "Customer", "Status", "% Completed", "Start Date", "End Date", "Comments"]];
         taskEntries.forEach(r => {
             excelRows.push([r.taskId, r.taskDesc, r.customer, r.status, r.percent, r.startDate, r.endDate, r.comments]);
@@ -376,8 +376,14 @@
         XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
         XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
 
-        // FIX: Send raw row text array data payload to keep size minuscule
-        fetch('ExportReportServlet', { 
+        // Dynamic server contextual routing computation 
+        const pathParts = window.location.pathname.split('/');
+        const contextPath = pathParts.length > 2 ? '/' + pathParts[1] : '';
+        const targetUrl = window.location.origin + contextPath + '/ExportReportServlet';
+
+        console.log("Routing text payload dataset safely to path context: " + targetUrl);
+
+        fetch(targetUrl, { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -400,7 +406,7 @@
         })
         .catch(err => {
             console.error(err);
-            alert("❌ Network Error: Could not reach mail gateway.");
+            alert("❌ Network Error: Could not reach mail gateway target route.");
         });
     }
 
@@ -431,4 +437,4 @@
     };
 </script>
 </body>
-</html>  
+</html>
