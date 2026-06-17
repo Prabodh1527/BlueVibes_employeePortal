@@ -117,7 +117,7 @@ public class ExportReportServlet extends HttpServlet {
             return;
         }
 
-        // Read raw array block safely from standard stream buffers
+        // Read raw data payload stream directly 
         StringBuilder jsonBuffer = new StringBuilder();
         String line;
         try (BufferedReader reader = request.getReader()) {
@@ -133,6 +133,13 @@ public class ExportReportServlet extends HttpServlet {
         csvBuilder.append("Task ID,Task Description,Customer,Status,% Completed,Start Date,End Date,Comments\n");
 
         try {
+            // Strip any wrapping parent object markers to drill straight to the task records block
+            int arrayStart = payload.indexOf("[");
+            int arrayEnd = payload.lastIndexOf("]");
+            if (arrayStart != -1 && arrayEnd != -1) {
+                payload = payload.substring(arrayStart, arrayEnd + 1);
+            }
+
             int searchIdx = 0;
             while ((searchIdx = payload.indexOf("{", searchIdx)) != -1) {
                 int endBox = payload.indexOf("}", searchIdx);
@@ -149,7 +156,7 @@ public class ExportReportServlet extends HttpServlet {
                 String endDate = extractValue(objectBlock, "endDate");
                 String comments = extractValue(objectBlock, "comments");
 
-                // Prevent structure collapse by wiping formatting tokens
+                // Prevent layout shifting inside cells by cleaning delimiter tokens
                 comments = comments.replace(",", " ").replace("\"", "'");
                 taskDesc = taskDesc.replace(",", " ");
 
@@ -178,12 +185,17 @@ public class ExportReportServlet extends HttpServlet {
             System.out.println("===> Handshaking with Gmail SMTP Gateway at port 587...");
             byte[] fileBytes = csvBuilder.toString().getBytes(StandardCharsets.UTF_8);
 
+            // Enhanced SMTP TLS Connection configuration protocols
             Properties props = new Properties();
             props.put("mail.smtp.host", SMTP_HOST);
             props.put("mail.smtp.port", SMTP_PORT);
             props.put("mail.smtp.auth", "true");
             props.put("mail.smtp.starttls.enable", "true");
-            props.put("mail.smtp.ssl.protocols", "TLSv1.2");
+            props.put("mail.smtp.starttls.required", "true");
+            props.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
+            props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+            props.put("mail.smtp.connectiontimeout", "10000"); 
+            props.put("mail.smtp.timeout", "15000");           
 
             Session mailSession = Session.getInstance(props, new Authenticator() {
                 protected PasswordAuthentication getPasswordAuthentication() {
@@ -222,7 +234,7 @@ public class ExportReportServlet extends HttpServlet {
         }
     }
 
-    // Isolate configuration keys out of raw data array elements natively
+    // Isolate value mappings out of data strings natively
     private String extractValue(String block, String key) {
         String matchToken = "\"" + key + "\":\"";
         int start = block.indexOf(matchToken);
