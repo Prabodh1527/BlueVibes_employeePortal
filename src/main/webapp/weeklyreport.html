@@ -383,13 +383,16 @@
 
         const base64ExcelStream = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
 
-        const urlEncodedPayload = "excelData=" + encodeURIComponent(base64ExcelStream);
+        // MODIFIED: Constructing raw structured JSON object body block to clear Render limits
+        const payloadData = {
+            excelData: base64ExcelStream
+        };
 
         fetch('ExportReportServlet', { 
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: urlEncodedPayload
+            body: JSON.stringify(payloadData)
         })
         .then(response => {
             if (response.status === 401) {
@@ -408,7 +411,7 @@
         })
         .catch(err => {
             console.error(err);
-            alert("❌ Network Error: Connection to corporate mail engine dropped.");
+            alert("❌ Network Error: Connection dropped or payload too large.");
         });
     }
 
