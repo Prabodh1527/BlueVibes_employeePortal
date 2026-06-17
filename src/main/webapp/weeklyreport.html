@@ -348,12 +348,8 @@
             if (row.style.display === "none") return;
 
             const taskId = row.querySelector("[name='taskId']")?.value;
-            const taskDescSelect = row.querySelector("[name='taskDesc']");
-            const taskDesc = taskDescSelect?.value;
-            
-            const custSelect = row.querySelector("[name='customer']");
-            const customer = custSelect?.value;
-            
+            const taskDesc = row.querySelector("[name='taskDesc']")?.value;
+            const customer = row.querySelector("[name='customer']")?.value;
             const status = row.querySelector("[name='status']")?.value;
             const percent = row.querySelector("[name='percent']")?.value;
             const startDate = row.querySelector("[name='startDate']")?.value;
@@ -370,29 +366,22 @@
             return;
         }
 
+        // Generate a local backup spreadsheet for immediate browser download
         const excelRows = [["Task ID", "Task Description", "Customer", "Status", "% Completed", "Start Date", "End Date", "Comments"]];
         taskEntries.forEach(r => {
             excelRows.push([r.taskId, r.taskDesc, r.customer, r.status, r.percent, r.startDate, r.endDate, r.comments]);
         });
-
         const ws = XLSX.utils.aoa_to_sheet(excelRows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
-        
         XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
 
-        const base64ExcelStream = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
-
-        // MODIFIED: Constructing raw structured JSON object body block to clear Render limits
-        const payloadData = {
-            excelData: base64ExcelStream
-        };
-
+        // FIX: Send raw row text array data payload to keep size minuscule
         fetch('ExportReportServlet', { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify(payloadData)
+            body: JSON.stringify({ tasks: taskEntries })
         })
         .then(response => {
             if (response.status === 401) {
@@ -411,7 +400,7 @@
         })
         .catch(err => {
             console.error(err);
-            alert("❌ Network Error: Connection dropped or payload too large.");
+            alert("❌ Network Error: Could not reach mail gateway.");
         });
     }
 
@@ -442,4 +431,4 @@
     };
 </script>
 </body>
-</html>
+</html>  
