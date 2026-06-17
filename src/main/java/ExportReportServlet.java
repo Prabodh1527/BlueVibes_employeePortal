@@ -1,11 +1,11 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Base64;
 import java.util.Properties;
 
 import javax.mail.Authenticator;
@@ -93,20 +93,20 @@ public class ExportReportServlet extends HttpServlet {
                 }
             }
         } catch (Exception e) {
-            out.print("{\"success\":false,\"error\":\"Database connection error: " + e.getMessage() + "\"}");
+            out.print("{\"success\":false,\"error\":\"Database validation error: " + e.getMessage() + "\"}");
             return;
         }
 
         if (targetRecipientEmail == null || targetRecipientEmail.trim().isEmpty()) {
-            out.print("{\"success\":false,\"error\":\"Recipient profile missing from email tables.\"}");
+            out.print("{\"success\":false,\"error\":\"Recipient route missing from communication tables.\"}");
             return;
         }
         if (systemSenderEmail == null || systemSenderPassword == null || systemSenderEmail.trim().isEmpty()) {
-            out.print("{\"success\":false,\"error\":\"SMTP accounts not configured in system_config table rows.\"}");
+            out.print("{\"success\":false,\"error\":\"SMTP accounts missing from system_config configuration maps.\"}");
             return;
         }
 
-        // READ RAW JSON FROM REQ BODY (Prevents Render payload size drops)
+        // Parse incoming text-based JSON array body to avoid Render limits completely
         StringBuilder jsonBuffer = new StringBuilder();
         String line;
         try (BufferedReader reader = request.getReader()) {
@@ -114,21 +114,47 @@ public class ExportReportServlet extends HttpServlet {
                 jsonBuffer.append(line);
             }
         }
+        String payload = jsonBuffer.toString();
 
-        String rawJson = jsonBuffer.toString();
-        String base64ExcelData = "";
-        
-        // Native string parsing to extract excelData content out of the raw JSON
-        if (rawJson.contains("\"excelData\":\"")) {
-            int startIdx = rawJson.indexOf("\"excelData\":\"") + 13;
-            int endIdx = rawJson.indexOf("\"", startIdx);
-            if (startIdx > 12 && endIdx > startIdx) {
-                base64ExcelData = rawJson.substring(startIdx, endIdx);
+        // Dynamically build clean CSV sheet content on-the-fly
+        StringBuilder csvBuilder = new StringBuilder();
+        csvBuilder.append("Task ID,Task Description,Customer,Status,% Completed,Start Date,End Date,Comments\n");
+
+        try {
+            // Native lightweight parsing loop to find tasks blocks
+            int searchIdx = 0;
+            while ((searchIdx = payload.indexOf("{", searchIdx)) != -1) {
+                int endBox = payload.indexOf("}", searchIdx);
+                if (endBox == -1) break;
+                
+                String objectBlock = payload.substring(searchIdx, endBox + 1);
+                
+                String taskId = extractValue(objectBlock, "taskId");
+                String taskDesc = extractValue(objectBlock, "taskDesc");
+                String customer = extractValue(objectBlock, "customer");
+                String status = extractValue(objectBlock, "status");
+                String percent = extractValue(objectBlock, "percent");
+                String startDate = extractValue(objectBlock, "startDate");
+                String endDate = extractValue(objectBlock, "endDate");
+                String comments = extractValue(objectBlock, "comments");
+
+                // Escape commas to ensure rows don't break in Excel views
+                comments = comments.replace(",", " ").replace("\"", "'");
+                taskDesc = taskDesc.replace(",", " ");
+
+                csvBuilder.append(taskId).append(",")
+                          .append(taskDesc).append(",")
+                          .append(customer).append(",")
+                          .append(status).append(",")
+                          .append(percent).append(",")
+                          .append(startDate).append(",")
+                          .append(endDate).append(",")
+                          .append(comments).append("\n");
+
+                searchIdx = endBox + 1;
             }
-        }
-
-        if (base64ExcelData.trim().isEmpty()) {
-            out.print("{\"success\":false,\"error\":\"Excel spreadsheet data extraction failed or body missing.\"}");
+        } catch (Exception ex) {
+            out.print("{\"success\":false,\"error\":\"Failed compiling JSON payload structure matrix.\"}");
             return;
         }
 
@@ -136,7 +162,7 @@ public class ExportReportServlet extends HttpServlet {
         final String authPassword = systemSenderPassword;
 
         try {
-            byte[] excelBytes = Base64.getDecoder().decode(base64ExcelData.trim());
+            byte[] fileBytes = csvBuilder.toString().getBytes(StandardCharsets.UTF_8);
 
             Properties props = new Properties();
             props.put("mail.smtp.host", SMTP_HOST);
@@ -159,12 +185,12 @@ public class ExportReportServlet extends HttpServlet {
             Multipart multipart = new MimeMultipart();
 
             MimeBodyPart textPart = new MimeBodyPart();
-            textPart.setText("Please find your processed Weekly Status Report document attached to this mail log.");
+            textPart.setText("Hello,\n\nPlease find your processed Weekly Status Report document attached to this mail log.");
             multipart.addBodyPart(textPart);
 
             MimeBodyPart attachPart = new MimeBodyPart();
-            attachPart.setContent(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            attachPart.setFileName(username + "_Weekly_Status_Report.xlsx");
+            attachPart.setContent(fileBytes, "text/csv; charset=UTF-8");
+            attachPart.setFileName(username + "_Weekly_Status_Report.csv");
             multipart.addBodyPart(attachPart);
 
             message.setContent(multipart);
@@ -172,10 +198,31 @@ public class ExportReportServlet extends HttpServlet {
 
             out.print("{\"success\":true}");
         } catch (Exception mailError) {
-            out.print("{\"success\":false,\"error\":\"JavaMail transmission exception: " + mailError.getMessage() + "\"}");
+            out.print("{\"success\":false,\"error\":\"JavaMail engine transmission exception: " + mailError.getMessage() + "\"}");
         } finally {
             out.flush();
             out.close();
         }
     }
-}  
+
+    // Helper string extractor for parsing key values out of raw JSON string format block
+    private String extractValue(String block, String key) {
+        String matchToken = "\"" + key + "\":\"";
+        int start = block.indexOf(matchToken);
+        if (start != -1) {
+            start += matchToken.length();
+            int end = block.indexOf("\"", start);
+            return (end != -1) ? block.substring(start, end) : "";
+        }
+        // Fallback trace in case the value is numeric (like % completed or task id)
+        matchToken = "\"" + key + "\":";
+        start = block.indexOf(matchToken);
+        if (start != -1) {
+            start += matchToken.length();
+            int end = block.indexOf(",", start);
+            if (end == -1) end = block.indexOf("}", start);
+            return (end != -1) ? block.substring(start, end).replace("\"", "").trim() : "";
+        }
+        return "";
+    }
+}
