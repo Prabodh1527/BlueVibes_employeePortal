@@ -1,3 +1,5 @@
+package com.bluevibes.servlet; // <--- ADD THIS LINE BACK AT THE VERY TOP
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -23,14 +25,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-// Import your database connection helper safely
+// This will now link perfectly because they share the same source root tree
 import com.bluevibes.util.DBConnection; 
 
 @WebServlet("/ExportReportServlet")
 public class ExportReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // Infrastructure Configuration
     private final String SMTP_HOST = "smtp.gmail.com"; 
     private final String SMTP_PORT = "587";
 
@@ -54,13 +55,12 @@ public class ExportReportServlet extends HttpServlet {
         String systemSenderPassword = null;
         String targetRecipientEmail = null;
 
-        // DB Query Logic Structures
         String recipientQuery = "SELECT email FROM communication_email WHERE username = ?";
         String senderQuery = "SELECT config_value FROM system_config WHERE config_key = ?";
         
         try (Connection conn = DBConnection.getConnection()) {
             
-            // 1. Get Recipient Communication Target
+            // 1. Get Recipient Email
             try (PreparedStatement psRec = conn.prepareStatement(recipientQuery)) {
                 psRec.setString(1, username);
                 try (ResultSet rsRec = psRec.executeQuery()) {
@@ -70,7 +70,7 @@ public class ExportReportServlet extends HttpServlet {
                 }
             }
             
-            // 2. Get Dynamic Corporate SMTP Mailer Address
+            // 2. Get System Sender Email
             try (PreparedStatement psSenderEmail = conn.prepareStatement(senderQuery)) {
                 psSenderEmail.setString(1, "smtp_sender_email");
                 try (ResultSet rsSE = psSenderEmail.executeQuery()) {
@@ -80,7 +80,7 @@ public class ExportReportServlet extends HttpServlet {
                 }
             }
 
-            // 3. Get App Specific Credentials Token String Pass
+            // 3. Get System Sender Password
             try (PreparedStatement psSenderPass = conn.prepareStatement(senderQuery)) {
                 psSenderPass.setString(1, "smtp_sender_password");
                 try (ResultSet rsSP = psSenderPass.executeQuery()) {
@@ -96,17 +96,15 @@ public class ExportReportServlet extends HttpServlet {
             return;
         }
 
-        // Configuration checks
         if (targetRecipientEmail == null || targetRecipientEmail.trim().isEmpty()) {
             out.print("{\"success\": false, \"error\": \"Recipient email record not found for this username.\"}");
             return;
         }
         if (systemSenderEmail == null || systemSenderPassword == null || systemSenderEmail.trim().isEmpty()) {
-            out.print("{\"success\": false, \"error\": \"SMTP sender variables missing from the system_config table.\"}");
+            out.print("{\"success\": false, \"error\": \"SMTP sender variables missing from database system_config.\"}");
             return;
         }
 
-        // 4. Capture incoming spreadsheet stream parameter mapping from frontend UI
         String base64ExcelData = request.getParameter("excelData");
         if (base64ExcelData == null || base64ExcelData.isEmpty()) {
             out.print("{\"success\": false, \"error\": \"Bad Request: Missing spreadsheet data payload.\"}");
@@ -119,7 +117,6 @@ public class ExportReportServlet extends HttpServlet {
         try {
             byte[] excelBytes = Base64.getDecoder().decode(base64ExcelData);
 
-            // 5. Build JavaMail Runtime Environment Setup
             Properties properties = new Properties();
             properties.put("mail.smtp.host", SMTP_HOST);
             properties.put("mail.smtp.port", SMTP_PORT);
@@ -140,31 +137,27 @@ public class ExportReportServlet extends HttpServlet {
 
             Multipart multipart = new MimeMultipart();
 
-            // Text email part mapping
             MimeBodyPart textBodyPart = new MimeBodyPart();
             String emailMessageContent = "Dear Worker,\n\n"
                     + "Please find attached your newly generated Weekly Status Report spreadsheet logs.\n\n"
                     + "Best regards,\n"
-                    + "BlueVibes Engine Automated Mail Gateway Node Instance Portal Server Context Base Framework Layer.";
+                    + "BlueVibes Automated Mail Gateway System Center.";
             textBodyPart.setText(emailMessageContent);
             multipart.addBodyPart(textBodyPart);
 
-            // Binary Excel attachment part mapping
             MimeBodyPart attachmentBodyPart = new MimeBodyPart();
             attachmentBodyPart.setContent(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             attachmentBodyPart.setFileName(username + "_Weekly_Status_Report.xlsx");
             multipart.addBodyPart(attachmentBodyPart);
 
             message.setContent(multipart);
-
-            // 6. Direct execution to server network sockets
             Transport.send(message);
 
             out.print("{\"success\": true}");
 
         } catch (Exception mailError) {
             mailError.printStackTrace();
-            out.print("{\"success\": false, \"error\": \"SMTP Engine runtime delivery exception encountered: " + mailError.getMessage() + "\"}");
+            out.print("{\"success\": false, \"error\": \"SMTP Engine delivery error: " + mailError.getMessage() + "\"}");
         } finally {
             out.flush();
             out.close();
