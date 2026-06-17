@@ -1,3 +1,5 @@
+package com.bluevibes.employeeportal;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -28,19 +30,14 @@ import javax.servlet.http.HttpSession;
 public class ExportReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    private final String SMTP_HOST = "smtp.gmail.com"; 
-    private final String SMTP_PORT = "587";
+    private static final String SMTP_HOST = "smtp.gmail.com"; 
+    private static final String SMTP_PORT = "587";
 
-    // =========================================================================
-    // UPDATED WITH YOUR LIVE RENDER POSTGRESQL ENVIRONMENT CREDENTIALS
-    // =========================================================================
-    private final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require";
-    private final String DB_USER = "bluevibes_db_new_user";
-    private final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jb9MD";
-    // =========================================================================
+    private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require";
+    private static final String DB_USER = "bluevibes_db_new_user";
+    private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jb9MD";
 
     private Connection getConnection() throws Exception {
-        // Updated to use the PostgreSQL modern driver class
         Class.forName("org.postgresql.Driver");
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
@@ -53,12 +50,9 @@ public class ExportReportServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         
         String username = "Employee"; 
-        
         HttpSession session = request.getSession(false);
         if (session != null && session.getAttribute("username") != null) {
             username = (String) session.getAttribute("username"); 
-        } else {
-            System.out.println("[WARNING] ExportReportServlet received request with empty session context.");
         }
 
         String systemSenderEmail = null;
@@ -69,7 +63,6 @@ public class ExportReportServlet extends HttpServlet {
         String senderQuery = "SELECT config_value FROM system_config WHERE config_key = ?";
         
         try (Connection conn = getConnection()) {
-            
             try (PreparedStatement psRec = conn.prepareStatement(recipientQuery)) {
                 psRec.setString(1, username);
                 try (ResultSet rsRec = psRec.executeQuery()) {
@@ -79,10 +72,9 @@ public class ExportReportServlet extends HttpServlet {
                 }
             }
             
-            // Fallback strategy if session username mapping isn't found
             if (targetRecipientEmail == null) {
-                try (PreparedStatement psFallbackEmail = conn.prepareStatement("SELECT email FROM communication_email LIMIT 1")) {
-                    try (ResultSet rsFE = psFallbackEmail.executeQuery()) {
+                try (PreparedStatement psFallback = conn.prepareStatement("SELECT email FROM communication_email LIMIT 1")) {
+                    try (ResultSet rsFE = psFallback.executeQuery()) {
                         if (rsFE.next()) { targetRecipientEmail = rsFE.getString("email"); }
                     }
                 }
@@ -91,85 +83,77 @@ public class ExportReportServlet extends HttpServlet {
             try (PreparedStatement psSenderEmail = conn.prepareStatement(senderQuery)) {
                 psSenderEmail.setString(1, "smtp_sender_email");
                 try (ResultSet rsSE = psSenderEmail.executeQuery()) {
-                    if (rsSE.next()) {
-                        systemSenderEmail = rsSE.getString("config_value");
-                    }
+                    if (rsSE.next()) { systemSenderEmail = rsSE.getString("config_value"); }
                 }
             }
 
             try (PreparedStatement psSenderPass = conn.prepareStatement(senderQuery)) {
                 psSenderPass.setString(1, "smtp_sender_password");
                 try (ResultSet rsSP = psSenderPass.executeQuery()) {
-                    if (rsSP.next()) {
-                        systemSenderPassword = rsSP.getString("config_value");
-                    }
+                    if (rsSP.next()) { systemSenderPassword = rsSP.getString("config_value"); }
                 }
             }
-
         } catch (Exception e) {
-            e.printStackTrace();
-            out.print("{\"success\": false, \"error\": \"Live PostgreSQL connection failure: " + e.getMessage() + "\"}");
+            out.print("{\"success\":false,\"error\":\"Database connection error: " + e.getMessage() + "\"}");
             return;
         }
 
         if (targetRecipientEmail == null || targetRecipientEmail.trim().isEmpty()) {
-            out.print("{\"success\": false, \"error\": \"Target recipient address missing from communication_email tables.\"}");
+            out.print("{\"success\":false,\"error\":\"Recipient profile missing from email tables.\"}");
             return;
         }
         if (systemSenderEmail == null || systemSenderPassword == null || systemSenderEmail.trim().isEmpty()) {
-            out.print("{\"success\": false, \"error\": \"SMTP configuration variables (smtp_sender_email / smtp_sender_password) missing from database.\"}");
+            out.print("{\"success\":false,\"error\":\"SMTP accounts not configured in system_config table rows.\"}");
             return;
         }
 
         String base64ExcelData = request.getParameter("excelData");
         if (base64ExcelData == null || base64ExcelData.trim().isEmpty()) {
-            out.print("{\"success\": false, \"error\": \"Excel spreadsheet input stream parameter payload is empty.\"}");
+            out.print("{\"success\":false,\"error\":\"Excel spreadsheet body stream is empty.\"}");
             return;
         }
 
-        final String finalSenderEmail = systemSenderEmail;
-        final String finalSenderPassword = systemSenderPassword;
+        final String authEmail = systemSenderEmail;
+        final String authPassword = systemSenderPassword;
 
         try {
             byte[] excelBytes = Base64.getDecoder().decode(base64ExcelData.trim());
 
-            Properties properties = new Properties();
-            properties.put("mail.smtp.host", SMTP_HOST);
-            properties.put("mail.smtp.port", SMTP_PORT);
-            properties.put("mail.smtp.auth", "true");
-            properties.put("mail.smtp.starttls.enable", "true");
-            properties.put("mail.smtp.ssl.protocols", "TLSv1.2");
+            Properties props = new Properties();
+            props.put("mail.smtp.host", SMTP_HOST);
+            props.put("mail.smtp.port", SMTP_PORT);
+            props.put("mail.smtp.auth", "true");
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.ssl.protocols", "TLSv1.2");
 
-            Session mailSession = Session.getInstance(properties, new Authenticator() {
+            Session mailSession = Session.getInstance(props, new Authenticator() {
                 protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(finalSenderEmail, finalSenderPassword);
+                    return new PasswordAuthentication(authEmail, authPassword);
                 }
             });
 
             Message message = new MimeMessage(mailSession);
-            message.setFrom(new InternetAddress(finalSenderEmail, "BlueVibes System Gateway"));
+            message.setFrom(new InternetAddress(authEmail, "BlueVibes System Gateway"));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(targetRecipientEmail));
             message.setSubject("BlueVibes | Weekly Status Report - " + username);
 
             Multipart multipart = new MimeMultipart();
 
-            MimeBodyPart textBodyPart = new MimeBodyPart();
-            textBodyPart.setText("Please find your processed Weekly Status Report document attached to this mail log.");
-            multipart.addBodyPart(textBodyPart);
+            MimeBodyPart textPart = new MimeBodyPart();
+            textPart.setText("Please find your processed Weekly Status Report document attached to this mail log.");
+            multipart.addBodyPart(textPart);
 
-            MimeBodyPart attachmentBodyPart = new MimeBodyPart();
-            attachmentBodyPart.setContent(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            attachmentBodyPart.setFileName(username + "_Weekly_Status_Report.xlsx");
-            multipart.addBodyPart(attachmentBodyPart);
+            MimeBodyPart attachPart = new MimeBodyPart();
+            attachPart.setContent(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            attachPart.setFileName(username + "_Weekly_Status_Report.xlsx");
+            multipart.addBodyPart(attachPart);
 
             message.setContent(multipart);
             Transport.send(message);
 
-            out.print("{\"success\": true}");
-
+            out.print("{\"success\":true}");
         } catch (Exception mailError) {
-            mailError.printStackTrace();
-            out.print("{\"success\": false, \"error\": \"JavaMail Engine Exception: " + mailError.getMessage() + "\"}");
+            out.print("{\"success\":false,\"error\":\"JavaMail engine transmission exception: " + mailError.getMessage() + "\"}");
         } finally {
             out.flush();
             out.close();
