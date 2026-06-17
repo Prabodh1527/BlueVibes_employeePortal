@@ -1,5 +1,4 @@
-package com.bluevibes.employeeportal;
-
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -107,9 +106,29 @@ public class ExportReportServlet extends HttpServlet {
             return;
         }
 
-        String base64ExcelData = request.getParameter("excelData");
-        if (base64ExcelData == null || base64ExcelData.trim().isEmpty()) {
-            out.print("{\"success\":false,\"error\":\"Excel spreadsheet body stream is empty.\"}");
+        // READ RAW JSON FROM REQ BODY (Prevents Render payload size drops)
+        StringBuilder jsonBuffer = new StringBuilder();
+        String line;
+        try (BufferedReader reader = request.getReader()) {
+            while ((line = reader.readLine()) != null) {
+                jsonBuffer.append(line);
+            }
+        }
+
+        String rawJson = jsonBuffer.toString();
+        String base64ExcelData = "";
+        
+        // Native string parsing to extract excelData content out of the raw JSON
+        if (rawJson.contains("\"excelData\":\"")) {
+            int startIdx = rawJson.indexOf("\"excelData\":\"") + 13;
+            int endIdx = rawJson.indexOf("\"", startIdx);
+            if (startIdx > 12 && endIdx > startIdx) {
+                base64ExcelData = rawJson.substring(startIdx, endIdx);
+            }
+        }
+
+        if (base64ExcelData.trim().isEmpty()) {
+            out.print("{\"success\":false,\"error\":\"Excel spreadsheet data extraction failed or body missing.\"}");
             return;
         }
 
@@ -153,7 +172,7 @@ public class ExportReportServlet extends HttpServlet {
 
             out.print("{\"success\":true}");
         } catch (Exception mailError) {
-            out.print("{\"success\":false,\"error\":\"JavaMail engine transmission exception: " + mailError.getMessage() + "\"}");
+            out.print("{\"success\":false,\"error\":\"JavaMail transmission exception: " + mailError.getMessage() + "\"}");
         } finally {
             out.flush();
             out.close();
