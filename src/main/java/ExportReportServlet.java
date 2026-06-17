@@ -117,7 +117,7 @@ public class ExportReportServlet extends HttpServlet {
             return;
         }
 
-        // Ingest the raw string data payload directly from stream
+        // Read raw array block safely from standard stream buffers
         StringBuilder jsonBuffer = new StringBuilder();
         String line;
         try (BufferedReader reader = request.getReader()) {
@@ -128,7 +128,7 @@ public class ExportReportServlet extends HttpServlet {
         String payload = jsonBuffer.toString();
         System.out.println("===> Data payload safely ingested. Character size: " + payload.length());
 
-        // Build spreadsheet structural content directly on the server
+        // Build spreadsheet dataset format dynamically on the server instance
         StringBuilder csvBuilder = new StringBuilder();
         csvBuilder.append("Task ID,Task Description,Customer,Status,% Completed,Start Date,End Date,Comments\n");
 
@@ -149,7 +149,7 @@ public class ExportReportServlet extends HttpServlet {
                 String endDate = extractValue(objectBlock, "endDate");
                 String comments = extractValue(objectBlock, "comments");
 
-                // Clear structural data of breaking characters
+                // Prevent structure collapse by wiping formatting tokens
                 comments = comments.replace(",", " ").replace("\"", "'");
                 taskDesc = taskDesc.replace(",", " ");
 
@@ -222,7 +222,7 @@ public class ExportReportServlet extends HttpServlet {
         }
     }
 
-    // Extraction token parser to isolate keys natively without mapping models
+    // Isolate configuration keys out of raw data array elements natively
     private String extractValue(String block, String key) {
         String matchToken = "\"" + key + "\":\"";
         int start = block.indexOf(matchToken);
