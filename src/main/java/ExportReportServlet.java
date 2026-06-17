@@ -1,11 +1,21 @@
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Base64;
+import java.util.Properties;
+
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.Multipart;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -13,110 +23,151 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+// Import your database connection helper safely
+import com.bluevibes.util.DBConnection; 
+
 @WebServlet("/ExportReportServlet")
 public class ExportReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    private static final String BREVO_API_KEY = System.getenv("BREVO_API_KEY") != null ? 
-            System.getenv("BREVO_API_KEY") : "your_real_brevo_api_key_here";
-    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
-    private static final String SYSTEM_NOTIFICATION_EMAIL = "admin@bluevibes-employeeportal.onrender.com";
+    // Infrastructure Configuration
+    private final String SMTP_HOST = "smtp.gmail.com"; 
+    private final String SMTP_PORT = "587";
 
-    private void applyCorsHeaders(HttpServletRequest request, HttpServletResponse response) {
-        String origin = request.getHeader("Origin");
-        if (origin != null) {
-            response.setHeader("Access-Control-Allow-Origin", origin);
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-            response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-            response.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
-        }
-    }
-
-    @Override
-    protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        applyCorsHeaders(request, response);
-        response.setStatus(HttpServletResponse.SC_OK);
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        applyCorsHeaders(request, response);
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
-
+        
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("userName") == null) {
+        if (session == null || session.getAttribute("username") == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            out.print("{\"error\":\"session_expired\"}");
+            out.print("{\"success\": false, \"error\": \"Session expired or invalid login.\"}");
             return;
         }
 
-        String loggedInUser = (String) session.getAttribute("userName");
-        String userEmail = (String) session.getAttribute("userEmail");
-        if (userEmail == null || userEmail.trim().isEmpty()) {
-            userEmail = "audit-logs@bluevibes.com"; 
-        }
+        String username = (String) session.getAttribute("username"); 
+        
+        String systemSenderEmail = null;
+        String systemSenderPassword = null;
+        String targetRecipientEmail = null;
 
-        String excelDataBase64 = request.getParameter("excelData");
-        if (excelDataBase64 == null || excelDataBase64.trim().isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"success\":false,\"error\":\"Excel spreadsheet input stream parameter payload is empty.\"}");
-            return;
-        }
-
-        try {
-            String htmlContent = "<html><body>"
-                    + "<h2>Weekly Status Report Submitted Successfully</h2>"
-                    + "<p><strong>Employee Profile:</strong> " + loggedInUser + "</p>"
-                    + "<p>Please view your compiled worksheet attachment below sent securely from the server backend dashboard terminal entry log.</p>"
-                    + "<br><p><em>This is an automated operational notification email confirmation message.</em></p>"
-                    + "</body></html>";
-
-            String jsonPayload = "{"
-                    + "\"sender\":{\"name\":\"BlueVibes Portal Engine\",\"email\":\"" + SYSTEM_NOTIFICATION_EMAIL + "\"},"
-                    + "\"to\":[{\"name\":\"" + loggedInUser + "\",\"email\":\"" + userEmail + "\"}],"
-                    + "\"subject\":\"Weekly Status Report Audit Attachment: " + loggedInUser + "\","
-                    + "\"htmlContent\":\"" + htmlContent.replace("\"", "\\\"") + "\","
-                    + "\"attachment\":["
-                    + "{"
-                    + "\"content\":\"" + excelDataBase64 + "\","
-                    + "\"name\":\"Weekly_Status_Report.xlsx\""
-                    + "}"
-                    + "]"
-                    + "}";
-
-            URL url = new URL(BREVO_API_URL);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("api-key", BREVO_API_KEY);
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setDoOutput(true);
-
-            try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-            }
-
-            int responseCode = conn.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_CREATED) {
-                out.print("{\"success\":true}");
-            } else {
-                StringBuilder errorResponse = new StringBuilder();
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        errorResponse.append(line.trim());
+        // DB Query Logic Structures
+        String recipientQuery = "SELECT email FROM communication_email WHERE username = ?";
+        String senderQuery = "SELECT config_value FROM system_config WHERE config_key = ?";
+        
+        try (Connection conn = DBConnection.getConnection()) {
+            
+            // 1. Get Recipient Communication Target
+            try (PreparedStatement psRec = conn.prepareStatement(recipientQuery)) {
+                psRec.setString(1, username);
+                try (ResultSet rsRec = psRec.executeQuery()) {
+                    if (rsRec.next()) {
+                        targetRecipientEmail = rsRec.getString("email");
                     }
                 }
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.print("{\"success\":false,\"error\":\"Brevo API Delivery Pipeline Rejection\",\"code\":" + responseCode + "}");
             }
+            
+            // 2. Get Dynamic Corporate SMTP Mailer Address
+            try (PreparedStatement psSenderEmail = conn.prepareStatement(senderQuery)) {
+                psSenderEmail.setString(1, "smtp_sender_email");
+                try (ResultSet rsSE = psSenderEmail.executeQuery()) {
+                    if (rsSE.next()) {
+                        systemSenderEmail = rsSE.getString("config_value");
+                    }
+                }
+            }
+
+            // 3. Get App Specific Credentials Token String Pass
+            try (PreparedStatement psSenderPass = conn.prepareStatement(senderQuery)) {
+                psSenderPass.setString(1, "smtp_sender_password");
+                try (ResultSet rsSP = psSenderPass.executeQuery()) {
+                    if (rsSP.next()) {
+                        systemSenderPassword = rsSP.getString("config_value");
+                    }
+                }
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.print("{\"success\":false,\"error\":\"Internal System Mailing Engine Exception Error: " + e.getMessage() + "\"}");
+            out.print("{\"success\": false, \"error\": \"Database connection lookup error: " + e.getMessage() + "\"}");
+            return;
+        }
+
+        // Configuration checks
+        if (targetRecipientEmail == null || targetRecipientEmail.trim().isEmpty()) {
+            out.print("{\"success\": false, \"error\": \"Recipient email record not found for this username.\"}");
+            return;
+        }
+        if (systemSenderEmail == null || systemSenderPassword == null || systemSenderEmail.trim().isEmpty()) {
+            out.print("{\"success\": false, \"error\": \"SMTP sender variables missing from the system_config table.\"}");
+            return;
+        }
+
+        // 4. Capture incoming spreadsheet stream parameter mapping from frontend UI
+        String base64ExcelData = request.getParameter("excelData");
+        if (base64ExcelData == null || base64ExcelData.isEmpty()) {
+            out.print("{\"success\": false, \"error\": \"Bad Request: Missing spreadsheet data payload.\"}");
+            return;
+        }
+
+        final String finalSenderEmail = systemSenderEmail;
+        final String finalSenderPassword = systemSenderPassword;
+
+        try {
+            byte[] excelBytes = Base64.getDecoder().decode(base64ExcelData);
+
+            // 5. Build JavaMail Runtime Environment Setup
+            Properties properties = new Properties();
+            properties.put("mail.smtp.host", SMTP_HOST);
+            properties.put("mail.smtp.port", SMTP_PORT);
+            properties.put("mail.smtp.auth", "true");
+            properties.put("mail.smtp.starttls.enable", "true");
+            properties.put("mail.smtp.ssl.protocols", "TLSv1.2");
+
+            Session mailSession = Session.getInstance(properties, new Authenticator() {
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication(finalSenderEmail, finalSenderPassword);
+                }
+            });
+
+            Message message = new MimeMessage(mailSession);
+            message.setFrom(new InternetAddress(finalSenderEmail, "BlueVibes Automated Reporting Engine"));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(targetRecipientEmail));
+            message.setSubject("BlueVibes | Weekly Status Report Archive Summary - " + username);
+
+            Multipart multipart = new MimeMultipart();
+
+            // Text email part mapping
+            MimeBodyPart textBodyPart = new MimeBodyPart();
+            String emailMessageContent = "Dear Worker,\n\n"
+                    + "Please find attached your newly generated Weekly Status Report spreadsheet logs.\n\n"
+                    + "Best regards,\n"
+                    + "BlueVibes Engine Automated Mail Gateway Node Instance Portal Server Context Base Framework Layer.";
+            textBodyPart.setText(emailMessageContent);
+            multipart.addBodyPart(textBodyPart);
+
+            // Binary Excel attachment part mapping
+            MimeBodyPart attachmentBodyPart = new MimeBodyPart();
+            attachmentBodyPart.setContent(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            attachmentBodyPart.setFileName(username + "_Weekly_Status_Report.xlsx");
+            multipart.addBodyPart(attachmentBodyPart);
+
+            message.setContent(multipart);
+
+            // 6. Direct execution to server network sockets
+            Transport.send(message);
+
+            out.print("{\"success\": true}");
+
+        } catch (Exception mailError) {
+            mailError.printStackTrace();
+            out.print("{\"success\": false, \"error\": \"SMTP Engine runtime delivery exception encountered: " + mailError.getMessage() + "\"}");
+        } finally {
+            out.flush();
+            out.close();
         }
     }
 }
