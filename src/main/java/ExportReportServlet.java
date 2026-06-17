@@ -32,15 +32,16 @@ public class ExportReportServlet extends HttpServlet {
     private final String SMTP_PORT = "587";
 
     // =========================================================================
-    // UPDATE THESE WITH YOUR LIVE ENVIRONMENT ACCESS CREDENTIALS
+    // UPDATED WITH YOUR LIVE RENDER POSTGRESQL ENVIRONMENT CREDENTIALS
     // =========================================================================
-    private final String DB_URL = "jdbc:mysql://localhost:3306/your_live_db_name";
-    private final String DB_USER = "root";
-    private final String DB_PASSWORD = "your_live_db_password";
+    private final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require";
+    private final String DB_USER = "bluevibes_db_new_user";
+    private final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jb9MD";
     // =========================================================================
 
     private Connection getConnection() throws Exception {
-        Class.forName("com.mysql.cj.jdbc.Driver");
+        // Updated to use the PostgreSQL modern driver class
+        Class.forName("org.postgresql.Driver");
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 
@@ -51,14 +52,13 @@ public class ExportReportServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
         
-        String username = "Employee"; // Default fallback to prevent crash if session fails
+        String username = "Employee"; 
         
         HttpSession session = request.getSession(false);
         if (session != null && session.getAttribute("username") != null) {
             username = (String) session.getAttribute("username"); 
         } else {
-            // Log that session is missing but continue execution to send the email anyway
-            System.out.println("[WARNING] ExportReportServlet received request with an empty session context.");
+            System.out.println("[WARNING] ExportReportServlet received request with empty session context.");
         }
 
         String systemSenderEmail = null;
@@ -79,7 +79,7 @@ public class ExportReportServlet extends HttpServlet {
                 }
             }
             
-            // If recipient mapping is not found because of fallback username, get any valid email to test
+            // Fallback strategy if session username mapping isn't found
             if (targetRecipientEmail == null) {
                 try (PreparedStatement psFallbackEmail = conn.prepareStatement("SELECT email FROM communication_email LIMIT 1")) {
                     try (ResultSet rsFE = psFallbackEmail.executeQuery()) {
@@ -101,30 +101,29 @@ public class ExportReportServlet extends HttpServlet {
                 psSenderPass.setString(1, "smtp_sender_password");
                 try (ResultSet rsSP = psSenderPass.executeQuery()) {
                     if (rsSP.next()) {
-                        systemSenderPassword = rsSE.getString("config_value");
+                        systemSenderPassword = rsSP.getString("config_value");
                     }
                 }
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(HttpServletResponse.SC_OK); // Force 200 so UI can capture the text description safely
-            out.print("{\"success\": false, \"error\": \"Database Error Processing: " + e.getMessage() + "\"}");
+            out.print("{\"success\": false, \"error\": \"Live PostgreSQL connection failure: " + e.getMessage() + "\"}");
             return;
         }
 
         if (targetRecipientEmail == null || targetRecipientEmail.trim().isEmpty()) {
-            out.print("{\"success\": false, \"error\": \"Target recipient address missing from database tables.\"}");
+            out.print("{\"success\": false, \"error\": \"Target recipient address missing from communication_email tables.\"}");
             return;
         }
         if (systemSenderEmail == null || systemSenderPassword == null || systemSenderEmail.trim().isEmpty()) {
-            out.print("{\"success\": false, \"error\": \"SMTP variables (smtp_sender_email/smtp_sender_password) missing from system_config rows.\"}");
+            out.print("{\"success\": false, \"error\": \"SMTP configuration variables (smtp_sender_email / smtp_sender_password) missing from database.\"}");
             return;
         }
 
         String base64ExcelData = request.getParameter("excelData");
-        if (base64ExcelData == null || base64ExcelData.isEmpty()) {
-            out.print("{\"success\": false, \"error\": \"Payload delivery error: excelData parameter was received empty by backend.\"}");
+        if (base64ExcelData == null || base64ExcelData.trim().isEmpty()) {
+            out.print("{\"success\": false, \"error\": \"Excel spreadsheet input stream parameter payload is empty.\"}");
             return;
         }
 
@@ -132,7 +131,7 @@ public class ExportReportServlet extends HttpServlet {
         final String finalSenderPassword = systemSenderPassword;
 
         try {
-            byte[] excelBytes = Base64.getDecoder().decode(base64ExcelData);
+            byte[] excelBytes = Base64.getDecoder().decode(base64ExcelData.trim());
 
             Properties properties = new Properties();
             properties.put("mail.smtp.host", SMTP_HOST);
@@ -170,7 +169,7 @@ public class ExportReportServlet extends HttpServlet {
 
         } catch (Exception mailError) {
             mailError.printStackTrace();
-            out.print("{\"success\": false, \"error\": \"JavaMail Exception Processing Error: " + mailError.getMessage() + "\"}");
+            out.print("{\"success\": false, \"error\": \"JavaMail Engine Exception: " + mailError.getMessage() + "\"}");
         } finally {
             out.flush();
             out.close();
