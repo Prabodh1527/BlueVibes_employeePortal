@@ -75,27 +75,129 @@
 </aside>
 
 <main class="main-wrapper">
-    <header class="top-header"><h2>Notifications</h2></header>
+    <header class="top-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h2>Notifications</h2>
+    
+        <button onclick="openHistory()"
+                style="padding:10px 16px;border:none;border-radius:8px;background:#0284c7;color:white;font-weight:600;cursor:pointer;">
+            Notification History
+        </button>
+    </header>
     <div class="content-area" id="wallFeed">
         <p style="color: #94a3b8;">Fetching announcements...</p>
     </div>
 </main>
 
+<div id="historyModal"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;">
+
+    <div style="
+        width:800px;
+        max-width:95%;
+        max-height:80vh;
+        overflow:auto;
+        background:white;
+        border-radius:12px;
+        padding:25px;
+        margin:50px auto;
+    ">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3>Notification History</h3>
+
+            <button onclick="closeHistory()"
+                    style="border:none;background:#ef4444;color:white;padding:8px 12px;border-radius:6px;cursor:pointer;">
+                Close
+            </button>
+        </div>
+
+        <div id="historyContent"></div>
+
+    </div>
+</div>
+
 <script>
+    let allNotifications = [];
+
     function loadNotifications() {
-        fetch('BroadcastServlet').then(res => res.json()).then(data => {
+    
+        fetch('BroadcastServlet')
+        .then(res => res.json())
+        .then(data => {
+    
+            allNotifications = data;
+    
             const feed = document.getElementById('wallFeed');
-            feed.innerHTML = data.length ? "" : "<p>No active notifications.</p>";
-            data.forEach(item => {
+    
+            if (!data || data.length === 0) {
+                feed.innerHTML = "<p>No active notifications.</p>";
+                return;
+            }
+    
+            const latestThree = data.slice(0,3);
+    
+            feed.innerHTML = "";
+    
+            latestThree.forEach(item => {
+    
                 feed.innerHTML += `
                     <div class="wall-card">
-                        <span class="tag tag-${item.category}">${item.category}</span>
-                        <p style="font-weight: 500; font-size: 1.05rem;">${item.message}</p>
-                        <small style="color:#94a3b8; display:block; margin-top:15px;"><i class="ph ph-clock"></i> ${new Date(item.time).toLocaleString()}</small>
-                    </div>`;
+                        <span class="tag tag-${item.category}">
+                            ${item.category}
+                        </span>
+    
+                        <p style="font-weight:500;font-size:1.05rem;">
+                            ${item.message}
+                        </p>
+    
+                        <small style="color:#94a3b8;display:block;margin-top:15px;">
+                            <i class="ph ph-clock"></i>
+                            ${new Date(item.time).toLocaleString()}
+                        </small>
+                    </div>
+                `;
             });
         });
     }
+    
+    function openHistory() {
+    
+        const modal = document.getElementById('historyModal');
+        const content = document.getElementById('historyContent');
+    
+        modal.style.display = "block";
+    
+        content.innerHTML = "";
+    
+        allNotifications.slice(3).forEach(item => {
+    
+            content.innerHTML += `
+                <div class="wall-card">
+                    <span class="tag tag-${item.category}">
+                        ${item.category}
+                    </span>
+    
+                    <p style="font-weight:500;">
+                        ${item.message}
+                    </p>
+    
+                    <small style="color:#94a3b8;">
+                        ${new Date(item.time).toLocaleString()}
+                    </small>
+                </div>
+            `;
+        });
+    
+        if(allNotifications.length <= 3){
+            content.innerHTML =
+                "<p style='color:#64748b;'>No older notifications available.</p>";
+        }
+    }
+    
+    function closeHistory() {
+        document.getElementById('historyModal').style.display = "none";
+    }
+    
     window.onload = loadNotifications;
 </script>
 </body>
