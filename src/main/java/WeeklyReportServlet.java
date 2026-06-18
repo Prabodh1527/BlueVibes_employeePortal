@@ -36,14 +36,20 @@ public class WeeklyReportServlet extends HttpServlet {
         String userEmail = null;
 
         if (session != null) {
-            if (session.getAttribute("email") != null) userEmail = (String) session.getAttribute("email");
+            userEmail = (String) session.getAttribute("userEmail");
+            /*if (session.getAttribute("email") != null) userEmail = (String) session.getAttribute("email");
             else if (session.getAttribute("username") != null) userEmail = (String) session.getAttribute("username");
             else if (session.getAttribute("user") != null) userEmail = (String) session.getAttribute("user");
-            else if (session.getAttribute("employeeName") != null) userEmail = (String) session.getAttribute("employeeName");
+            else if (session.getAttribute("employeeName") != null) userEmail = (String) session.getAttribute("employeeName");*/
         }
 
-        if (userEmail == null || userEmail.trim().isEmpty()) {
+        /*if (userEmail == null || userEmail.trim().isEmpty()) {
             userEmail = "Employee"; 
+        }*/
+        if(userEmail==null){
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            out.print("{\"error\":\"session_expired\"}");
+            return;
         }
         
         String action = request.getParameter("action");
@@ -100,7 +106,7 @@ public class WeeklyReportServlet extends HttpServlet {
         HttpSession session = request.getSession(false);
         String userEmail = null;
 
-        if (session != null) {
+        /*if (session != null) {
             if (session.getAttribute("email") != null) userEmail = (String) session.getAttribute("email");
             else if (session.getAttribute("username") != null) userEmail = (String) session.getAttribute("username");
             else if (session.getAttribute("user") != null) userEmail = (String) session.getAttribute("user");
@@ -109,6 +115,22 @@ public class WeeklyReportServlet extends HttpServlet {
 
         if (userEmail == null || userEmail.trim().isEmpty()) {
             userEmail = "Employee"; 
+        }*/
+        if (session != null) {
+            userEmail = (String) session.getAttribute("userEmail");
+            /*if (session.getAttribute("email") != null) userEmail = (String) session.getAttribute("email");
+            else if (session.getAttribute("username") != null) userEmail = (String) session.getAttribute("username");
+            else if (session.getAttribute("user") != null) userEmail = (String) session.getAttribute("user");
+            else if (session.getAttribute("employeeName") != null) userEmail = (String) session.getAttribute("employeeName");*/
+        }
+
+        /*if (userEmail == null || userEmail.trim().isEmpty()) {
+            userEmail = "Employee"; 
+        }*/
+        if(userEmail==null){
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            out.print("{\"error\":\"session_expired\"}");
+            return;
         }
         
         String action = request.getParameter("action");
