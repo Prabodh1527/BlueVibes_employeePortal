@@ -31,8 +31,6 @@ public class ExportReportServlet extends HttpServlet {
 
     private static final String SMTP_HOST = "smtp.gmail.com"; 
     private static final String SMTP_PORT = "587";
-
-    // Hardcoded target routing email requested for auditing delivery
     private static final String AUDITOR_EMAIL = "prasanthram@bluegitalllp.com";
 
     private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require";
@@ -47,29 +45,33 @@ public class ExportReportServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
-        System.out.println("===> ExportReportServlet INVOKED. Processing inbound JSON packet...");
+        System.out.println("===> ExportReportServlet invoked.");
         
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
         
-        String username = "Employee"; 
         HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("username") != null) {
-            username = (String) session.getAttribute("username"); 
+        String username = null;
+
+        if (session != null) {
+            if (session.getAttribute("username") != null) username = (String) session.getAttribute("username");
+            else if (session.getAttribute("user") != null) username = (String) session.getAttribute("user");
+            else if (session.getAttribute("employeeName") != null) username = (String) session.getAttribute("employeeName");
+            else if (session.getAttribute("email") != null) username = (String) session.getAttribute("email");
         }
-        System.out.println("===> Processing report delivery request for user: " + username);
+
+        if (username == null || username.trim().isEmpty()) {
+            username = "Employee"; 
+        }
 
         String systemSenderEmail = null;
         String systemSenderPassword = null;
         String targetRecipientEmail = null;
 
-        String recipientQuery = "SELECT email FROM communication_email WHERE username = ?";
-        String senderQuery = "SELECT config_value FROM system_config WHERE config_key = ?";
-        
+        // DB Settings Fetch Loop
         try (Connection conn = getConnection()) {
-            System.out.println("===> Database connection established successfully.");
-            
+            String recipientQuery = "SELECT email FROM communication_email WHERE username = ?";
             try (PreparedStatement psRec = conn.prepareStatement(recipientQuery)) {
                 psRec.setString(1, username);
                 try (ResultSet rsRec = psRec.executeQuery()) {
@@ -80,15 +82,14 @@ public class ExportReportServlet extends HttpServlet {
             }
             
             if (targetRecipientEmail == null) {
-                System.out.println("===> Target email not found for user, attempting fallback to first communication record.");
                 try (PreparedStatement psFallback = conn.prepareStatement("SELECT email FROM communication_email LIMIT 1")) {
                     try (ResultSet rsFE = psFallback.executeQuery()) {
                         if (rsFE.next()) { targetRecipientEmail = rsFE.getString("email"); }
                     }
                 }
             }
-            System.out.println("===> Primary User Routing Confirmed: " + targetRecipientEmail);
             
+            String senderQuery = "SELECT config_value FROM system_config WHERE config_key = ?";
             try (PreparedStatement psSenderEmail = conn.prepareStatement(senderQuery)) {
                 psSenderEmail.setString(1, "smtp_sender_email");
                 try (ResultSet rsSE = psSenderEmail.executeQuery()) {
@@ -103,19 +104,19 @@ public class ExportReportServlet extends HttpServlet {
                 }
             }
         } catch (Exception e) {
-            System.err.println("!!! DATABASE FAILURE IN SERVLET LOOP: " + e.getMessage());
-            e.printStackTrace();
-            out.print("{\"success\":false,\"error\":\"Database validation error: " + e.getMessage() + "\"}");
+            System.err.println("!!! DB ACCESS ERROR: " + e.getMessage());
+            out.print("{\"success\":false,\"error\":\"Database Verification Failure: " + e.getMessage() + "\"}");
+            out.flush();
             return;
         }
 
         if (systemSenderEmail == null || systemSenderPassword == null || systemSenderEmail.trim().isEmpty()) {
-            System.err.println("!!! CONFIGURATION ERROR: System SMTP key configurations are missing from database.");
             out.print("{\"success\":false,\"error\":\"SMTP accounts missing from system_config configuration maps.\"}");
+            out.flush();
             return;
         }
 
-        // Read raw data payload stream directly 
+        // Read Request Stream
         StringBuilder jsonBuffer = new StringBuilder();
         String line;
         try (BufferedReader reader = request.getReader()) {
@@ -124,19 +125,12 @@ public class ExportReportServlet extends HttpServlet {
             }
         }
         String payload = jsonBuffer.toString();
-        System.out.println("===> Data payload safely ingested. Character size: " + payload.length());
 
-        // Build spreadsheet dataset format dynamically on the server instance
         StringBuilder csvBuilder = new StringBuilder();
         csvBuilder.append("Task ID,Task Description,Customer,Status,% Completed,Start Date,End Date,Comments\n");
 
+        // Bulletproof parsing engine loop protecting against missing metrics/null properties
         try {
-            int arrayStart = payload.indexOf("[");
-            int arrayEnd = payload.lastIndexOf("]");
-            if (arrayStart != -1 && arrayEnd != -1) {
-                payload = payload.substring(arrayStart, arrayEnd + 1);
-            }
-
             int searchIdx = 0;
             while ((searchIdx = payload.indexOf("{", searchIdx)) != -1) {
                 int endBox = payload.indexOf("}", searchIdx);
@@ -153,7 +147,16 @@ public class ExportReportServlet extends HttpServlet {
                 String endDate = extractValue(objectBlock, "endDate");
                 String comments = extractValue(objectBlock, "comments");
 
-                // Clean delimiter tokens to prevent layout breakage inside standard cell blocks
+                // Null / Empty fallback mitigations
+                if (taskId.isEmpty()) taskId = "N/A";
+                if (taskDesc.isEmpty()) taskDesc = "Unassigned Task";
+                if (customer.isEmpty()) customer = "Internal";
+                if (status.isEmpty()) status = "InProgress";
+                if (percent.isEmpty()) percent = "0";
+                if (startDate.isEmpty()) startDate = "-";
+                if (endDate.isEmpty()) endDate = "-";
+                if (comments.isEmpty()) comments = "-";
+
                 comments = comments.replace(",", " ").replace("\"", "'").replace("\n", " ").trim();
                 taskDesc = taskDesc.replace(",", " ").trim();
                 customer = customer.replace(",", " ").trim();
@@ -170,21 +173,19 @@ public class ExportReportServlet extends HttpServlet {
 
                 searchIdx = endBox + 1;
             }
-            System.out.println("===> CSV translation matrix compiled successfully.");
         } catch (Exception ex) {
-            System.err.println("!!! PARSING RUNTIME ERROR: " + ex.getMessage());
-            out.print("{\"success\":false,\"error\":\"Failed compiling JSON payload structure matrix.\"}");
+            out.print("{\"success\":false,\"error\":\"JSON Engine parsing syntax failure: " + ex.getMessage() + "\"}");
+            out.flush();
             return;
         }
 
+        // Email Transport Handshake Block
         final String authEmail = systemSenderEmail;
         final String authPassword = systemSenderPassword;
 
         try {
-            System.out.println("===> Handshaking with Gmail SMTP Gateway at port 587...");
             byte[] fileBytes = csvBuilder.toString().getBytes(StandardCharsets.UTF_8);
 
-            // Modern Explicit TLS Connection Protocols Configuration
             Properties props = new Properties();
             props.put("mail.smtp.host", SMTP_HOST);
             props.put("mail.smtp.port", SMTP_PORT);
@@ -202,27 +203,23 @@ public class ExportReportServlet extends HttpServlet {
                 }
             });
 
-            Message message = new MimeMessage(mailSession);
+            MimeMessage message = new MimeMessage(mailSession);
             message.setFrom(new InternetAddress(authEmail, "BlueVibes System Gateway"));
 
-            // Compile the comma-separated dual recipient string logic safely
-            StringBuilder recipientsList = new StringBuilder(AUDITOR_EMAIL);
-            if (targetRecipientEmail != null && !targetRecipientEmail.trim().isEmpty()) {
-                recipientsList.append(",").append(targetRecipientEmail.trim());
+            String finalRecipients = AUDITOR_EMAIL; 
+            if (targetRecipientEmail != null && !targetRecipientEmail.trim().isEmpty() && !targetRecipientEmail.equalsIgnoreCase("null")) {
+                finalRecipients = AUDITOR_EMAIL + "," + targetRecipientEmail.trim();
             }
             
-            System.out.println("===> Preparing multi-recipient broadcast routing payload target to: " + recipientsList.toString());
-            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipientsList.toString()));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(finalRecipients));
             message.setSubject("BlueVibes | Weekly Status Report - " + username);
 
             Multipart multipart = new MimeMultipart();
 
-            // Part 1: Body Text Context
             MimeBodyPart textPart = new MimeBodyPart();
-            textPart.setText("Hello,\n\nPlease find the processed Weekly Status Report data sheet attached directly to this system message log.");
+            textPart.setText("Hello,\n\nPlease find the generated spreadsheet attached below.");
             multipart.addBodyPart(textPart);
 
-            // Part 2: File Attachment Wrapper (Transmitted cleanly as UTF-8 Spreadsheet)
             MimeBodyPart attachPart = new MimeBodyPart();
             attachPart.setContent(fileBytes, "text/csv; charset=UTF-8");
             attachPart.setFileName(username + "_Weekly_Status_Report.csv");
@@ -231,12 +228,11 @@ public class ExportReportServlet extends HttpServlet {
             message.setContent(multipart);
             Transport.send(message);
 
-            System.out.println("🚀 SUCCESS! Report attachments successfully routed and delivered.");
             out.print("{\"success\":true}");
         } catch (Exception mailError) {
-            System.err.println("!!! SMTP TRANSMISSION EXCEPTION: " + mailError.getMessage());
+            System.err.println("!!! SMTP ENGINE FAILURE: " + mailError.getMessage());
             mailError.printStackTrace();
-            out.print("{\"success\":false,\"error\":\"JavaMail engine transmission exception: " + mailError.getMessage() + "\"}");
+            out.print("{\"success\":false,\"error\":\"Mail Transmission Failure: " + mailError.getMessage() + "\"}");
         } finally {
             out.flush();
             out.close();
