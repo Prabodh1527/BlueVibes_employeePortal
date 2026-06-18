@@ -197,7 +197,8 @@ public class LeaveServlet extends HttpServlet {
                 + "<br>"
     
                 + "<p>Please login through Admin Portal and approve/reject the request.</p>"
-    
+                + "<p><a href='https://bluevibes-employeeportal.onrender.com'>Open BlueVibes Portal</a></p>"
+                
                 + "\""
                 + "}";
     
