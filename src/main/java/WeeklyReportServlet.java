@@ -16,10 +16,10 @@ import javax.servlet.http.HttpSession;
 public class WeeklyReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // Fixed External URL and uppercase 'B' password parameter configuration
+    // Correct external route pointing to bluevibes_db_new with lowercase 'j' password
     private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require&sslfactory=org.postgresql.ssl.NonValidatingFactory";
     private static final String DB_USER = "bluevibes_db_new_user";
-    private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30JB9MD";
+    private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jB9MD";
 
     private Connection getConnection() throws Exception {
         Class.forName("org.postgresql.Driver");
