@@ -4,6 +4,10 @@ import java.sql.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 @WebServlet("/BroadcastServlet")
 public class BroadcastServlet extends HttpServlet {
@@ -28,6 +32,7 @@ public class BroadcastServlet extends HttpServlet {
                 ps.setString(1, msg);
                 ps.setString(2, cat);
                 ps.executeUpdate();
+                sendBroadcastEmail(msg, cat);
                 out.print("{\"success\": true}");
             }
         } catch (Exception e) {
@@ -72,6 +77,74 @@ public class BroadcastServlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             out.print("[]");
+        }
+    }
+
+    private void sendBroadcastEmail(String message, String category) {
+
+        try {
+    
+            URL url = new URL("https://api.brevo.com/v3/smtp/email");
+            HttpURLConnection conn =
+                    (HttpURLConnection) url.openConnection();
+    
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("api-key",
+                "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");
+    
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+    
+            String jsonPayload =
+                "{"
+                + "\"sender\":{"
+                + "\"name\":\"BlueVibes Portal\","
+                + "\"email\":\"gprabodhchandra@gmail.com\""
+                + "},"
+    
+                + "\"to\":["
+                + "{\"email\":\"gprabodhchandra@gmail.com\"}"
+                + "],"
+    
+                + "\"subject\":\"BlueVibes Notification\","
+    
+                + "\"htmlContent\":\""
+    
+                + "<h3>New Notification</h3>"
+    
+                + "<p><b>Category:</b> "
+                + category
+                + "</p>"
+    
+                + "<p><b>Message:</b><br>"
+                + message
+                + "</p>"
+    
+                + "<hr>"
+    
+                + "<p>Please check the portal for more details.</p>"
+    
+                + "<a href='YOUR_PORTAL_URL'>"
+                + "Open BlueVibes Portal"
+                + "</a>"
+    
+                + "\""
+                + "}";
+    
+            try (OutputStream os = conn.getOutputStream()) {
+    
+                byte[] input =
+                    jsonPayload.getBytes(StandardCharsets.UTF_8);
+    
+                os.write(input, 0, input.length);
+            }
+    
+            System.out.println("MAIL STATUS = "
+                    + conn.getResponseCode());
+    
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
