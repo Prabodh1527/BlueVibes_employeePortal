@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>BlueVibes | Weekly Status Report</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -85,7 +85,7 @@
     <div class="content-area">
         <div class="card">
             <div class="card-header">
-                <h3 style="color: var(--primary)"><i class="ph ph-list-bullets"></i> Task Entry Sheet</h3>
+                <h3 style="color: var(--primary);"><i class="ph ph-list-bullets"></i> Task Entry Sheet</h3>
                 <div style="display:flex; gap:10px;">
                     <select id="customerFilter" class="form-input" style="width:220px;">
                         <option value="">All Customers</option>
@@ -124,7 +124,7 @@
                 </button>
 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-excel" onclick="exportToExcel()"><i class="ph ph-file-xls"></i> Export Report</button>
+                    <button type="button" class="btn btn-excel" onclick="exportToExcel()"><i class="ph ph-file-xls"></i> Export & Send Mail</button>
                     <button type="submit" class="btn btn-save"><i class="ph ph-floppy-disk"></i> Save Weekly Report</button>
                 </div>
             </form>
@@ -340,15 +340,71 @@
         });
     }
 
-    /**
-     * Directly triggers ExportReportServlet spreadsheet streaming.
-     * Bypasses port connection blocks completely by fetching files over port 443.
-     */
     function exportToExcel() {
-        console.log("Routing stream directly via location routing channel...");
-        
-        // Routes straight to the context endpoint root to invoke file creation stream
-        window.location.href = "ExportReportServlet";
+        const rows = document.querySelectorAll("#reportTbody tr");
+        const taskEntries = [];
+
+        rows.forEach(row => {
+            if (row.style.display === "none") return;
+
+            const taskId = row.querySelector("[name='taskId']")?.value;
+            const taskDesc = row.querySelector("[name='taskDesc']")?.value;
+            const customer = row.querySelector("[name='customer']")?.value;
+            const status = row.querySelector("[name='status']")?.value;
+            const percent = row.querySelector("[name='percent']")?.value;
+            const startDate = row.querySelector("[name='startDate']")?.value;
+            const endDate = row.querySelector("[name='endDate']")?.value;
+            const comments = row.querySelector("[name='comments']")?.value;
+
+            if (taskId && taskDesc) {
+                taskEntries.push({ taskId, taskDesc, customer, status, percent, startDate, endDate, comments });
+            }
+        });
+
+        if (taskEntries.length === 0) {
+            alert("No task entries found to export!");
+            return;
+        }
+
+        // Generate local browser backup download
+        const excelRows = [["Task ID", "Task Description", "Customer", "Status", "% Completed", "Start Date", "End Date", "Comments"]];
+        taskEntries.forEach(r => {
+            excelRows.push([r.taskId, r.taskDesc, r.customer, r.status, r.percent, r.startDate, r.endDate, r.comments]);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(excelRows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
+        XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
+
+        // Route cleanly back to root-level domain endpoint directly on Render
+        const targetUrl = window.location.origin + '/ExportReportServlet';
+        console.log("Transmitting dataset payload directly to root route: " + targetUrl);
+
+        fetch(targetUrl, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ tasks: taskEntries })
+        })
+        .then(response => {
+            if (response.status === 401) {
+                window.location.href = "index.html?status=session_expired";
+                return null;
+            }
+            return response.json();
+        })
+        .then(result => {
+            if (!result) return;
+            if (result.success) {
+                alert("🚀 Spreadsheet saved locally & corporate audit email log successfully delivered!");
+            } else {
+                alert("⚠️ Mail delivery engine returned an error: " + result.error);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("❌ Network Error: Connection dropped or payload parsing limit reached.");
+        });
     }
 
     function filterByCustomer() {
