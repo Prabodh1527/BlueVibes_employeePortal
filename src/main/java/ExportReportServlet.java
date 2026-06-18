@@ -1,3 +1,7 @@
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.io.OutputStream;
+import java.util.Base64;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -6,7 +10,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Properties;
+/*import java.util.Properties;
 
 import javax.mail.Authenticator;
 import javax.mail.Message;
@@ -17,7 +21,7 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
+import javax.mail.internet.MimeMultipart;*/
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -29,9 +33,10 @@ import javax.servlet.http.HttpSession;
 public class ExportReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    private static final String SMTP_HOST = "smtp.gmail.com"; 
-    private static final String SMTP_PORT = "465"; 
+    /*private static final String SMTP_HOST = "smtp.gmail.com"; 
+    private static final String SMTP_PORT = "465"; */
     private static final String AUDITOR_EMAIL = "prasanthram@bluegitalllp.com";
+    private static final String BREVO_API_KEY = "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";
 
     private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require&sslfactory=org.postgresql.ssl.NonValidatingFactory";
     private static final String DB_USER = "bluevibes_db_new_user";
@@ -52,24 +57,28 @@ public class ExportReportServlet extends HttpServlet {
         HttpSession session = request.getSession(false);
         String userEmail = null;
 
-        if (session != null) {
+        /*if (session != null) {
             if (session.getAttribute("email") != null) userEmail = (String) session.getAttribute("email");
             else if (session.getAttribute("username") != null) userEmail = (String) session.getAttribute("username");
             else if (session.getAttribute("user") != null) userEmail = (String) session.getAttribute("user");
             else if (session.getAttribute("employeeName") != null) userEmail = (String) session.getAttribute("employeeName");
+        }*/
+
+        if (session != null) {
+            userEmail = (String) session.getAttribute("userEmail");
         }
 
         if (userEmail == null || userEmail.trim().isEmpty()) {
             userEmail = "Employee"; 
         }
 
-        String systemSenderEmail = null;
-        String systemSenderPassword = null;
+        /*String systemSenderEmail = null;
+        String systemSenderPassword = null;*/
         String targetRecipientEmail = null;
 
         try (Connection conn = getConnection()) {
             // Mapped to accurate pre-existing schema layout column
-            String recipientQuery = "SELECT email FROM communication_email WHERE user_email = ?";
+            /*String recipientQuery = "SELECT email FROM communication_email WHERE user_email = ?";
             try (PreparedStatement psRec = conn.prepareStatement(recipientQuery)) {
                 psRec.setString(1, userEmail);
                 try (ResultSet rsRec = psRec.executeQuery()) {
@@ -94,9 +103,39 @@ public class ExportReportServlet extends HttpServlet {
                         if (rsFE.next()) { targetRecipientEmail = rsFE.getString("email"); }
                     }
                 }
+            }*/
+            String recipientQuery =
+                "SELECT communication_email FROM users WHERE email = ?";
+            
+            try (PreparedStatement psRec = conn.prepareStatement(recipientQuery)) {
+            
+                psRec.setString(1, userEmail);
+            
+                try (ResultSet rsRec = psRec.executeQuery()) {
+            
+                    if (rsRec.next()) {
+                        targetRecipientEmail =
+                            rsRec.getString("communication_email");
+                    }
+                }
+            }
+            if (targetRecipientEmail == null ||
+                targetRecipientEmail.trim().isEmpty()) {
+            
+                targetRecipientEmail = userEmail;
             }
             
-            String senderQuery = "SELECT config_value FROM system_config WHERE config_key = ?";
+            System.out.println("LOGIN EMAIL = " + userEmail);
+            System.out.println("COMMUNICATION EMAIL = " + targetRecipientEmail);
+            }
+            catch (Exception e) {
+                System.err.println("!!! DB ACCESS ERROR: " + e.getMessage());
+                out.print("{\"success\":false,\"error\":\"Database Credentials Failure: " + e.getMessage() + "\"}");
+                out.flush();
+                return;
+            }
+            
+            /*String senderQuery = "SELECT config_value FROM system_config WHERE config_key = ?";
             try (PreparedStatement psSenderEmail = conn.prepareStatement(senderQuery)) {
                 psSenderEmail.setString(1, "smtp_sender_email");
                 try (ResultSet rsSE = psSenderEmail.executeQuery()) {
@@ -115,13 +154,13 @@ public class ExportReportServlet extends HttpServlet {
             out.print("{\"success\":false,\"error\":\"Database Credentials Failure: " + e.getMessage() + "\"}");
             out.flush();
             return;
-        }
+        }*/
 
-        if (systemSenderEmail == null || systemSenderPassword == null || systemSenderEmail.trim().isEmpty()) {
+        /*if (systemSenderEmail == null || systemSenderPassword == null || systemSenderEmail.trim().isEmpty()) {
             out.print("{\"success\":false,\"error\":\"SMTP variables missing inside system_config setup tables.\"}");
             out.flush();
             return;
-        }
+        }*/
 
         StringBuilder jsonBuffer = new StringBuilder();
         String line;
@@ -183,7 +222,7 @@ public class ExportReportServlet extends HttpServlet {
             return;
         }
 
-        final String authEmail = systemSenderEmail;
+        /*final String authEmail = systemSenderEmail;
         final String authPassword = systemSenderPassword;
 
         try {
@@ -248,7 +287,79 @@ public class ExportReportServlet extends HttpServlet {
             out.flush();
             out.close();
         }
+    }*/
+    /*final String authEmail = systemSenderEmail;*/
+
+        try {
+        
+            String encodedCsv = Base64.getEncoder()
+                    .encodeToString(csvBuilder.toString().getBytes(StandardCharsets.UTF_8));
+        
+            URL url = new URL("https://api.brevo.com/v3/smtp/email");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("api-key", BREVO_API_KEY);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+
+            if (targetRecipientEmail == null || targetRecipientEmail.trim().isEmpty()) {
+                out.print("{\"success\":false,\"error\":\"Communication email not found\"}");
+                return;
+            }
+            System.out.println("BREVO TO = " + targetRecipientEmail);
+        
+            String jsonPayload =
+                "{"
+                + "\"sender\":{"
+                + "\"name\":\"BlueVibes Portal\","
+                + "\"email\":\"gprabodhchandra@gmail.com\""
+                + "},"
+        
+                + "\"to\":["
+                + "{\"email\":\"" + AUDITOR_EMAIL + "\"},"
+                + "{\"email\":\"" + targetRecipientEmail + "\"}"
+                + "],"
+        
+                + "\"subject\":\"BlueVibes Weekly Status Report - " + userEmail + "\","
+        
+                + "\"htmlContent\":\""
+                + "<h3>Weekly Status Report</h3>"
+                + "<p>Please find the attached report.</p>"
+                + "<p>Generated By: " + userEmail + "</p>"
+                + "\","
+        
+                + "\"attachment\":[{"
+                + "\"name\":\"" + userEmail + "_Weekly_Status_Report.csv\","
+                + "\"content\":\"" + encodedCsv + "\""
+                + "}]"
+        
+                + "}";
+        
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonPayload.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            }
+        
+            int responseCode = conn.getResponseCode();
+        
+            if (responseCode == 200 || responseCode == 201) {
+                out.print("{\"success\":true}");
+            } else {
+                out.print("{\"success\":false,\"error\":\"Brevo returned HTTP " + responseCode + "\"}");
+            }
+        
+        } 
+        catch (Exception mailError) {
+            mailError.printStackTrace();
+            out.print("{\"success\":false,\"error\":\"" + mailError.getMessage() + "\"}");
+        }
+    
+        out.flush();
+        out.close();
     }
+    
 
     private String extractValue(String block, String key) {
         String matchToken = "\"" + key + "\":\"";
