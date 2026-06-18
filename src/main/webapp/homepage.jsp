@@ -25,7 +25,7 @@
             margin-bottom: 10px;
         }
         .logo-main{
-            width: 160px;
+            width: 120px;
             height: auto;
             object-fit: contain;
         }
@@ -128,9 +128,9 @@
         .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; }
         .content-area { padding: 2.5rem; overflow-y: auto; flex-grow: 1; }
 
-        .welcome-box { padding: 3rem; border-radius: 20px; color: white; margin-bottom: 2rem; background: linear-gradient(135deg, #0f172a 0%, #0284c7 100%); position: relative; overflow: hidden; }
-        .welcome-box h1 { font-size: 2.2rem; margin-bottom: 10px; }
-        .welcome-box p { font-size: 1.1rem; opacity: 0.9; }
+        .welcome-box { padding: 2rem; border-radius: 20px; color: white; margin-bottom: 1.2rem; background: linear-gradient(135deg, #0f172a 0%, #0284c7 100%); position: relative; overflow: hidden; }
+        .welcome-box h1 { font-size: 1.8rem; margin-bottom: 6px; }
+        .welcome-box p { font-size: 1rem; opacity: 0.9, margin: 0; }
 
         .stat-container { display: flex; gap: 20px; margin-top: 25px; }
         .stat-item { background: rgba(255,255,255,0.1); padding: 15px 25px; border-radius: 12px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); min-width: 200px; }
@@ -169,16 +169,7 @@
             <h1>Welcome <%= userName %>!</h1>
             <p>You are a part of <strong>BlueVibes</strong>.</p>
 
-            <div class="stat-container">
-                <div class="stat-item">
-                    <span class="stat-label">Monthly Attendance</span>
-                    <strong id="statAttendance" class="stat-value">-- Days</strong>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Total Tasks</span>
-                    <strong id="statTasks" class="stat-value">--</strong>
-                </div>
-            </div>
+            
         </div>
 
         <div class="quick-actions-card">
