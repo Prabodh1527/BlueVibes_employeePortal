@@ -69,6 +69,50 @@
             font-size:2rem;
             color:#0f172a;
         }
+        .quick-actions-card{
+            background:white;
+            border-radius:15px;
+            padding:25px;
+            border:1px solid #e2e8f0;
+            margin-bottom:25px;
+        }
+        
+        .quick-actions-card h3{
+            margin-bottom:20px;
+        }
+        
+        .quick-grid{
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:20px;
+        }
+        
+        .quick-btn{
+            text-decoration:none;
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            border-radius:12px;
+            padding:25px;
+            text-align:center;
+            transition:0.3s;
+            color:#0f172a;
+        }
+        
+        .quick-btn:hover{
+            background:#0284c7;
+            color:white;
+            transform:translateY(-3px);
+        }
+        
+        .quick-btn i{
+            font-size:2rem;
+            display:block;
+            margin-bottom:12px;
+        }
+        
+        .quick-btn span{
+            font-weight:600;
+        }
 
         .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .sidebar-logo { width: 80px; height: 80px; background: transparent; padding: 0; border-radius: 8px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
@@ -134,6 +178,29 @@
                     <span class="stat-label">Total Tasks</span>
                     <strong id="statTasks" class="stat-value">--</strong>
                 </div>
+            </div>
+        </div>
+
+        <div class="quick-actions-card">
+            <h3>Quick Actions</h3>
+        
+            <div class="quick-grid">
+        
+                <a href="user_notifications.html" class="quick-btn">
+                    <i class="ph ph-bell"></i>
+                    <span>Latest Notifications</span>
+                </a>
+        
+                <a href="weeklyreport.html" class="quick-btn">
+                    <i class="ph ph-clipboard-text"></i>
+                    <span>Update WSR</span>
+                </a>
+        
+                <a href="leavereq.html" class="quick-btn">
+                    <i class="ph ph-calendar-x"></i>
+                    <span>Apply Leave</span>
+                </a>
+        
             </div>
         </div>
 
