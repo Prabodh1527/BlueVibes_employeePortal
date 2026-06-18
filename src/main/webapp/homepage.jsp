@@ -129,7 +129,7 @@
         .content-area { padding: 2.5rem; overflow-y: auto; flex-grow: 1; }
 
         .welcome-box { padding: 2rem; border-radius: 20px; color: white; margin-bottom: 1.2rem; background: linear-gradient(135deg, #0f172a 0%, #0284c7 100%); position: relative; overflow: hidden; }
-        .welcome-box h1 { font-size: 1.8rem; margin-bottom: 6px; }
+        .welcome-box h1 { font-size: 2.1rem; margin-bottom: 6px; }
         .welcome-box p { font-size: 1rem; opacity: 0.9; margin: 0; }
 
         .stat-container { display: flex; gap: 20px; margin-top: 25px; }
@@ -167,7 +167,6 @@
     <div class="content-area">
         <div class="welcome-box">
             <h1>Welcome <%= userName %>!</h1>
-            <p>You are a part of <strong>BlueVibes</strong>.</p>
 
             
         </div>
