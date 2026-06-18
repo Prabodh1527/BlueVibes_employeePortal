@@ -41,7 +41,7 @@
             margin-bottom: 15px;
         }
         .logo-main{
-            width: 100px;
+            width: 160px;
             height: auto;
             object-fit: contain;
         }
