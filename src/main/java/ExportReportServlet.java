@@ -29,12 +29,10 @@ import javax.servlet.http.HttpSession;
 public class ExportReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // Mail server configuration over secure port 465 to bypass firewall drops
     private static final String SMTP_HOST = "smtp.gmail.com"; 
     private static final String SMTP_PORT = "465"; 
     private static final String AUDITOR_EMAIL = "prasanthram@bluegitalllp.com";
 
-    // Verified production database variables configuration
     private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require&sslfactory=org.postgresql.ssl.NonValidatingFactory";
     private static final String DB_USER = "bluevibes_db_new_user";
     private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jB9MD";
@@ -52,17 +50,17 @@ public class ExportReportServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         
         HttpSession session = request.getSession(false);
-        String username = null;
+        String userEmail = null;
 
         if (session != null) {
-            if (session.getAttribute("username") != null) username = (String) session.getAttribute("username");
-            else if (session.getAttribute("user") != null) username = (String) session.getAttribute("user");
-            else if (session.getAttribute("employeeName") != null) username = (String) session.getAttribute("employeeName");
-            else if (session.getAttribute("email") != null) username = (String) session.getAttribute("email");
+            if (session.getAttribute("email") != null) userEmail = (String) session.getAttribute("email");
+            else if (session.getAttribute("username") != null) userEmail = (String) session.getAttribute("username");
+            else if (session.getAttribute("user") != null) userEmail = (String) session.getAttribute("user");
+            else if (session.getAttribute("employeeName") != null) userEmail = (String) session.getAttribute("employeeName");
         }
 
-        if (username == null || username.trim().isEmpty()) {
-            username = "Employee"; 
+        if (userEmail == null || userEmail.trim().isEmpty()) {
+            userEmail = "Employee"; 
         }
 
         String systemSenderEmail = null;
@@ -70,12 +68,22 @@ public class ExportReportServlet extends HttpServlet {
         String targetRecipientEmail = null;
 
         try (Connection conn = getConnection()) {
-            String recipientQuery = "SELECT email FROM communication_email WHERE username = ?";
+            // Mapped to accurate pre-existing schema layout column
+            String recipientQuery = "SELECT email FROM communication_email WHERE user_email = ?";
             try (PreparedStatement psRec = conn.prepareStatement(recipientQuery)) {
-                psRec.setString(1, username);
+                psRec.setString(1, userEmail);
                 try (ResultSet rsRec = psRec.executeQuery()) {
                     if (rsRec.next()) {
                         targetRecipientEmail = rsRec.getString("email");
+                    }
+                }
+            } catch (Exception columnFallback) {
+                // Quick fallback in case communication_email uses username instead of user_email
+                String altQuery = "SELECT email FROM communication_email WHERE username = ?";
+                try (PreparedStatement psAlt = conn.prepareStatement(altQuery)) {
+                    psAlt.setString(1, userEmail);
+                    try (ResultSet rsAlt = psAlt.executeQuery()) {
+                        if (rsAlt.next()) { targetRecipientEmail = rsAlt.getString("email"); }
                     }
                 }
             }
@@ -186,18 +194,20 @@ public class ExportReportServlet extends HttpServlet {
             props.put("mail.smtp.port", SMTP_PORT);
             props.put("mail.smtp.auth", "true");
             
-            // Direct Socket Factory Parameters
+            // Firewall Override Tunnels Configuration
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.starttls.required", "false");
+            props.put("mail.smtp.ssl.enable", "true");
+            
             props.put("mail.smtp.socketFactory.port", SMTP_PORT);
             props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-            props.put("mail.smtp.socketFactory.fallback", "true"); // Fallback routing if direct socket times out
+            props.put("mail.smtp.socketFactory.fallback", "true"); 
 
-            // Security Protocol Options
             props.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
             props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
 
-            // Connections Optimization
-            props.put("mail.smtp.connectiontimeout", "20000"); 
-            props.put("mail.smtp.timeout", "30000");           
+            props.put("mail.smtp.connectiontimeout", "10000"); 
+            props.put("mail.smtp.timeout", "15000");           
 
             Session mailSession = Session.getInstance(props, new Authenticator() {
                 protected PasswordAuthentication getPasswordAuthentication() {
@@ -214,7 +224,7 @@ public class ExportReportServlet extends HttpServlet {
             }
             
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(finalRecipients));
-            message.setSubject("BlueVibes | Weekly Status Report - " + username);
+            message.setSubject("BlueVibes | Weekly Status Report - " + userEmail);
 
             Multipart multipart = new MimeMultipart();
 
@@ -224,7 +234,7 @@ public class ExportReportServlet extends HttpServlet {
 
             MimeBodyPart attachPart = new MimeBodyPart();
             attachPart.setContent(fileBytes, "text/csv; charset=UTF-8");
-            attachPart.setFileName(username + "_Weekly_Status_Report.csv");
+            attachPart.setFileName(userEmail + "_Weekly_Status_Report.csv");
             multipart.addBodyPart(attachPart);
 
             message.setContent(multipart);
