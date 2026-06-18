@@ -21,11 +21,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
         .logo-main{
-            width: 100px;
+            width: 180px;
             height: auto;
             object-fit: contain;
         }
