@@ -29,11 +29,12 @@ import javax.servlet.http.HttpSession;
 public class ExportReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // Configured to route over secure port 465 to clear mail engine timeouts
+    // Mail server configuration over secure port 465 to bypass firewall drops
     private static final String SMTP_HOST = "smtp.gmail.com"; 
     private static final String SMTP_PORT = "465"; 
     private static final String AUDITOR_EMAIL = "prasanthram@bluegitalllp.com";
 
+    // Verified production database variables configuration
     private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require&sslfactory=org.postgresql.ssl.NonValidatingFactory";
     private static final String DB_USER = "bluevibes_db_new_user";
     private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jB9MD";
@@ -185,12 +186,18 @@ public class ExportReportServlet extends HttpServlet {
             props.put("mail.smtp.port", SMTP_PORT);
             props.put("mail.smtp.auth", "true");
             
-            // Enforces direct SSL socket factory initialization over port 465
+            // Direct Socket Factory Parameters
             props.put("mail.smtp.socketFactory.port", SMTP_PORT);
             props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            props.put("mail.smtp.socketFactory.fallback", "true"); // Fallback routing if direct socket times out
+
+            // Security Protocol Options
             props.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
-            props.put("mail.smtp.connectiontimeout", "15000"); 
-            props.put("mail.smtp.timeout", "25000");           
+            props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
+
+            // Connections Optimization
+            props.put("mail.smtp.connectiontimeout", "20000"); 
+            props.put("mail.smtp.timeout", "30000");           
 
             Session mailSession = Session.getInstance(props, new Authenticator() {
                 protected PasswordAuthentication getPasswordAuthentication() {
