@@ -25,7 +25,7 @@
             margin-bottom: 15px;
         }
         .logo-main{
-            width: 160px;
+            width: 120px;
             height: auto;
             object-fit: contain;
         }
