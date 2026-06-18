@@ -170,7 +170,7 @@ public class BroadcastServlet extends HttpServlet {
     
                 + "<p>Please check the portal for more details.</p>"
     
-                + "<a href='YOUR_PORTAL_URL'>"
+                + "<a href='https://bluevibes-employeeportal.onrender.com'>"
                 + "Open BlueVibes Portal"
                 + "</a>"
     
