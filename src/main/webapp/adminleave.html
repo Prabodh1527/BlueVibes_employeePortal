@@ -134,6 +134,18 @@
             <p style="color: #64748b; font-size: 0.9rem;">Approve or reject leave requests from the BlueVibes below.</p>
         </div>
         <div class="card">
+
+            <div style="display:flex;justify-content:flex-end;margin-bottom:15px;">
+                <select id="statusFilter"
+                        onchange="applyFilter()"
+                        style="padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px;font-weight:600;">
+                    <option value="Pending" selected>Pending Approvals</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="All">All Requests</option>
+                </select>
+            </div>
+        
             <table class="data-table">
                 <thead>
                 <tr>
@@ -154,8 +166,9 @@
         const submenu = document.getElementById('mastersSubmenu');
         submenu.classList.toggle('show');
     }
+    let allLeaves = [];
 
-    function fetchAll() {
+    /*function fetchAll() {
         fetch('LeaveServlet?action=fetchAllPending')
             .then(res => res.json())
             .then(data => {
@@ -178,6 +191,68 @@
                         </td>
                     </tr>`).join('');
             });
+    }*/
+    function fetchAll() {
+        fetch('LeaveServlet?action=fetchAllPending')
+            .then(res => res.json())
+            .then(data => {
+                allLeaves = data || [];
+                applyFilter();
+            });
+    }
+
+    function applyFilter() {
+
+        const filter = document.getElementById("statusFilter").value;
+        const tbody = document.getElementById("adminLeaveBody");
+    
+        let filtered = allLeaves;
+    
+        if (filter !== "All") {
+            filtered = allLeaves.filter(
+                leave => leave.status.toLowerCase() === filter.toLowerCase()
+            );
+        }
+    
+        if (filtered.length === 0) {
+            tbody.innerHTML =
+                '<tr><td colspan="5" style="text-align:center;padding:2rem;">No records found.</td></tr>';
+            return;
+        }
+    
+        tbody.innerHTML = filtered.map(leave => `
+            <tr>
+                <td style="font-weight:600;">${leave.email}</td>
+    
+                <td>
+                    <span class="status-badge status-${leave.status.toLowerCase()}">
+                        ${leave.status}
+                    </span>
+                    <br>
+                    <b>${leave.type}</b>
+                </td>
+    
+                <td>${leave.dates}</td>
+    
+                <td>${leave.reason}</td>
+    
+                <td>
+                    <div style="display:flex;">
+                        <button class="btn-act btn-app"
+                            ${leave.status === 'Approved' ? 'disabled' : ''}
+                            onclick="updateStatus(${leave.id}, 'Approved')">
+                            APPROVE
+                        </button>
+    
+                        <button class="btn-act btn-rej"
+                            ${leave.status === 'Rejected' ? 'disabled' : ''}
+                            onclick="updateStatus(${leave.id}, 'Rejected')">
+                            REJECT
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
     }
 
     function updateStatus(id, newStatus) {
