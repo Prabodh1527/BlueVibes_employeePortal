@@ -128,6 +128,88 @@ public class LeaveServlet extends HttpServlet {
                     ps.setString(1, status);
                     ps.setInt(2, Integer.parseInt(id));
                     int res = ps.executeUpdate();
+                    String employeeEmail = null;
+                    String leaveType = null;
+                    String leaveDates = null;
+                    
+                    PreparedStatement mailPs = con.prepareStatement(
+                        "SELECT l.user_email, l.leave_type, l.date_range, u.communication_email " +
+                        "FROM leaves l " +
+                        "LEFT JOIN users u ON l.user_email = u.email " +
+                        "WHERE l.id=?");
+                    
+                    mailPs.setInt(1, Integer.parseInt(id));
+                    
+                    ResultSet rs = mailPs.executeQuery();
+                    
+                    if(rs.next()){
+                        employeeEmail = rs.getString("communication_email");
+
+                        if(employeeEmail == null || employeeEmail.trim().isEmpty()){
+                            employeeEmail = rs.getString("user_email");
+                        }
+                        leaveType = rs.getString("leave_type");
+                        leaveDates = rs.getString("date_range");
+                    }
+                    if(employeeEmail != null){
+
+                        URL url = new URL("https://api.brevo.com/v3/smtp/email");
+                        HttpURLConnection connMail =
+                                (HttpURLConnection) url.openConnection();
+                    
+                        connMail.setRequestMethod("POST");
+                        connMail.setRequestProperty("api-key", BREVO_API_KEY);
+                        connMail.setRequestProperty("Content-Type", "application/json");
+                        connMail.setDoOutput(true);
+                    
+                        String jsonPayload =
+                            "{"
+                            + "\"sender\":{"
+                            + "\"name\":\"BlueVibes Portal\","
+                            + "\"email\":\"gprabodhchandra@gmail.com\""
+                            + "},"
+                    
+                            + "\"to\":["
+                            + "{\"email\":\"" + employeeEmail + "\"}"
+                            + "],"
+                    
+                            + "\"subject\":\"BlueVibes Leave Request " + status + "\","
+                    
+                            + "\"htmlContent\":\""
+                    
+                            + "<h3>Leave Request Update</h3>"
+                    
+                            + "<p>Your leave request has been <b>"
+                            + status +
+                            "</b>.</p>"
+                    
+                            + "<p><b>Leave Type:</b> "
+                            + leaveType +
+                            "</p>"
+                    
+                            + "<p><b>Date Range:</b> "
+                            + leaveDates +
+                            "</p>"
+                    
+                            + "<br>"
+                    
+                            + "<p>Please login to BlueVibes Portal for more details.</p>"
+                    
+                            + "<p>"
+                            + "<a href='https://bluevibes-employeeportal.onrender.com'>"
+                            + "Open BlueVibes Portal"
+                            + "</a>"
+                            + "</p>"
+                    
+                            + "\""
+                            + "}";
+                    
+                        try(OutputStream os = connMail.getOutputStream()){
+                            os.write(jsonPayload.getBytes(StandardCharsets.UTF_8));
+                        }
+                    
+                        connMail.getResponseCode();
+                    }
                     out.print("{\"success\":" + (res > 0) + "}");
                 }
             }
