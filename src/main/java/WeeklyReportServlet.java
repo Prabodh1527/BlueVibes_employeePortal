@@ -16,10 +16,10 @@ import javax.servlet.http.HttpSession;
 public class WeeklyReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // Fixed database connection URL using the NonValidatingFactory property
+    // Fixed External URL and capitalization typo ('B' instead of 'b')
     private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require&sslfactory=org.postgresql.ssl.NonValidatingFactory";
     private static final String DB_USER = "bluevibes_db_new_user";
-    private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jb9MD";
+    private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jB9MD";
 
     private Connection getConnection() throws Exception {
         Class.forName("org.postgresql.Driver");
@@ -49,17 +49,12 @@ public class WeeklyReportServlet extends HttpServlet {
         }
 
         if (username == null || username.trim().isEmpty()) {
-            System.out.println("⚠️ WARNING: Session token tracking lost in doGet. Using 'Employee' fallback profile.");
             username = "Employee"; 
-        } else {
-            System.out.println("✅ Active session verified for user token: " + username);
         }
         
         String action = request.getParameter("action");
 
         if ("fetchMyReports".equalsIgnoreCase(action)) {
-            System.out.println("===> Fetching weekly reports data from database for: " + username);
-            
             String fetchQuery = "SELECT id, task_id, task_description, customer, status, percent_completed, start_date, end_date, comments " +
                                 "FROM weekly_reports WHERE username = ? ORDER BY id DESC";
             
@@ -91,9 +86,9 @@ public class WeeklyReportServlet extends HttpServlet {
                     out.print(jsonResult.toString());
                 }
             } catch (Exception e) {
-                System.err.println("!!! DB FETCH RUNTIME ERROR: " + e.getMessage());
+                System.err.println("!!! DB FETCH ERROR: " + e.getMessage());
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                out.print("{\"error\":\"Failed to fetch records from database: " + e.getMessage() + "\"}");
+                out.print("{\"error\":\"Failed to fetch records: " + e.getMessage() + "\"}");
             }
         }
         out.flush();
@@ -111,15 +106,10 @@ public class WeeklyReportServlet extends HttpServlet {
         String username = null;
 
         if (session != null) {
-            if (session.getAttribute("username") != null) {
-                username = (String) session.getAttribute("username");
-            } else if (session.getAttribute("user") != null) {
-                username = (String) session.getAttribute("user");
-            } else if (session.getAttribute("employeeName") != null) {
-                username = (String) session.getAttribute("employeeName");
-            } else if (session.getAttribute("email") != null) {
-                username = (String) session.getAttribute("email");
-            }
+            if (session.getAttribute("username") != null) username = (String) session.getAttribute("username");
+            else if (session.getAttribute("user") != null) username = (String) session.getAttribute("user");
+            else if (session.getAttribute("employeeName") != null) username = (String) session.getAttribute("employeeName");
+            else if (session.getAttribute("email") != null) username = (String) session.getAttribute("email");
         }
 
         if (username == null || username.trim().isEmpty()) {
@@ -155,7 +145,7 @@ public class WeeklyReportServlet extends HttpServlet {
         String[] commentsArray = request.getParameterValues("comments");
 
         if (taskIds == null || taskIds.length == 0) {
-            out.print("{\"success\":false,\"error\":\"Empty matrix rows provided inside form array payload.\"}");
+            out.print("{\"success\":false,\"error\":\"No dynamic matrix rows provided inside form payload.\"}");
             out.flush();
             return;
         }
@@ -207,8 +197,8 @@ public class WeeklyReportServlet extends HttpServlet {
                 throw batchError;
             }
         } catch (Exception ex) {
-            System.err.println("!!! TRANSACTION REJECTION ERROR: " + ex.getMessage());
-            out.print("{\"success\":false,\"error\":\"Database Transaction execution error: " + ex.getMessage() + "\"}");
+            System.err.println("!!! TRANSACTION ERROR: " + ex.getMessage());
+            out.print("{\"success\":false,\"error\":\"Database error: " + ex.getMessage() + "\"}");
         } finally {
             out.flush();
             out.close();
