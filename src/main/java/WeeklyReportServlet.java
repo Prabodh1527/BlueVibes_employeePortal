@@ -33,30 +33,30 @@ public class WeeklyReportServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         
         HttpSession session = request.getSession(false);
-        String username = null;
+        String userEmail = null;
 
         if (session != null) {
-            if (session.getAttribute("username") != null) username = (String) session.getAttribute("username");
-            else if (session.getAttribute("user") != null) username = (String) session.getAttribute("user");
-            else if (session.getAttribute("employeeName") != null) username = (String) session.getAttribute("employeeName");
-            else if (session.getAttribute("email") != null) username = (String) session.getAttribute("email");
+            if (session.getAttribute("email") != null) userEmail = (String) session.getAttribute("email");
+            else if (session.getAttribute("username") != null) userEmail = (String) session.getAttribute("username");
+            else if (session.getAttribute("user") != null) userEmail = (String) session.getAttribute("user");
+            else if (session.getAttribute("employeeName") != null) userEmail = (String) session.getAttribute("employeeName");
         }
 
-        if (username == null || username.trim().isEmpty()) {
-            username = "Employee"; 
+        if (userEmail == null || userEmail.trim().isEmpty()) {
+            userEmail = "Employee"; 
         }
         
         String action = request.getParameter("action");
 
         if ("fetchMyReports".equalsIgnoreCase(action)) {
-            // TARGETING EXISTING TABLE: user_weekly_reports
-            String fetchQuery = "SELECT id, task_id, task_description, customer, status, percent_completed, start_date, end_date, comments " +
-                                "FROM user_weekly_reports WHERE username = ? ORDER BY id DESC";
+            // Mapped directly to report_id, user_email, and percentage_completed
+            String fetchQuery = "SELECT report_id, task_id, task_description, customer, status, percentage_completed, start_date, end_date, comments " +
+                                "FROM user_weekly_reports WHERE user_email = ? ORDER BY report_id DESC";
             
             try (Connection conn = getConnection();
                  PreparedStatement ps = conn.prepareStatement(fetchQuery)) {
                 
-                ps.setString(1, username);
+                ps.setString(1, userEmail);
                 try (ResultSet rs = ps.executeQuery()) {
                     StringBuilder jsonResult = new StringBuilder("[");
                     boolean first = true;
@@ -66,12 +66,12 @@ public class WeeklyReportServlet extends HttpServlet {
                         first = false;
                         
                         jsonResult.append("{")
-                                  .append("\"reportId\":").append(rs.getInt("id")).append(",")
+                                  .append("\"reportId\":").append(rs.getInt("report_id")).append(",")
                                   .append("\"taskId\":\"").append(rs.getString("task_id")).append("\",")
                                   .append("\"taskDesc\":\"").append(rs.getString("task_description")).append("\",")
                                   .append("\"customer\":\"").append(rs.getString("customer")).append("\",")
                                   .append("\"status\":\"").append(rs.getString("status")).append("\",")
-                                  .append("\"percent\":").append(rs.getInt("percent_completed")).append(",")
+                                  .append("\"percent\":").append(rs.getInt("percentage_completed")).append(",")
                                   .append("\"startDate\":\"").append(rs.getDate("start_date")).append("\",")
                                   .append("\"endDate\":\"").append(rs.getDate("end_date")).append("\",")
                                   .append("\"comments\":\"").append(rs.getString("comments") != null ? rs.getString("comments").replace("\"", "\\\"") : "").append("\"")
@@ -98,29 +98,29 @@ public class WeeklyReportServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
 
         HttpSession session = request.getSession(false);
-        String username = null;
+        String userEmail = null;
 
         if (session != null) {
-            if (session.getAttribute("username") != null) username = (String) session.getAttribute("username");
-            else if (session.getAttribute("user") != null) username = (String) session.getAttribute("user");
-            else if (session.getAttribute("employeeName") != null) username = (String) session.getAttribute("employeeName");
-            else if (session.getAttribute("email") != null) username = (String) session.getAttribute("email");
+            if (session.getAttribute("email") != null) userEmail = (String) session.getAttribute("email");
+            else if (session.getAttribute("username") != null) userEmail = (String) session.getAttribute("username");
+            else if (session.getAttribute("user") != null) userEmail = (String) session.getAttribute("user");
+            else if (session.getAttribute("employeeName") != null) userEmail = (String) session.getAttribute("employeeName");
         }
 
-        if (username == null || username.trim().isEmpty()) {
-            username = "Employee"; 
+        if (userEmail == null || userEmail.trim().isEmpty()) {
+            userEmail = "Employee"; 
         }
         
         String action = request.getParameter("action");
 
         if ("delete".equalsIgnoreCase(action)) {
             String targetId = request.getParameter("id");
-            // TARGETING EXISTING TABLE: user_weekly_reports
-            String deleteSQL = "DELETE FROM user_weekly_reports WHERE id = ? AND username = ?";
+            // Mapped to report_id and user_email
+            String deleteSQL = "DELETE FROM user_weekly_reports WHERE report_id = ? AND user_email = ?";
             try (Connection conn = getConnection();
                  PreparedStatement ps = conn.prepareStatement(deleteSQL)) {
                 ps.setInt(1, Integer.parseInt(targetId));
-                ps.setString(2, username);
+                ps.setString(2, userEmail);
                 int rows = ps.executeUpdate();
                 out.print("{\"success\":" + (rows > 0) + "}");
             } catch (Exception ex) {
@@ -146,9 +146,9 @@ public class WeeklyReportServlet extends HttpServlet {
             return;
         }
 
-        // TARGETING EXISTING TABLE: user_weekly_reports
-        String insertSQL = "INSERT INTO user_weekly_reports (username, task_id, task_description, customer, status, percent_completed, start_date, end_date, comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        String updateSQL = "UPDATE user_weekly_reports SET task_id=?, task_description=?, customer=?, status=?, percent_completed=?, start_date=?, end_date=?, comments=? WHERE id=? AND username=?";
+        // Mapped to accurate column structure positions
+        String insertSQL = "INSERT INTO user_weekly_reports (user_email, task_id, task_description, customer, status, percentage_completed, start_date, end_date, comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String updateSQL = "UPDATE user_weekly_reports SET task_id=?, task_description=?, customer=?, status=?, percentage_completed=?, start_date=?, end_date=?, comments=? WHERE report_id=? AND user_email=?";
 
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
@@ -160,7 +160,7 @@ public class WeeklyReportServlet extends HttpServlet {
                     
                     if (rId == 0) {
                         try (PreparedStatement psInsert = conn.prepareStatement(insertSQL)) {
-                            psInsert.setString(1, username);
+                            psInsert.setString(1, userEmail);
                             psInsert.setString(2, taskIds[i]);
                             psInsert.setString(3, taskDescs[i]);
                             psInsert.setString(4, (customers != null && i < customers.length) ? customers[i] : "");
@@ -182,7 +182,7 @@ public class WeeklyReportServlet extends HttpServlet {
                             psUpdate.setDate(7, java.sql.Date.valueOf(endDates[i]));
                             psUpdate.setString(8, (commentsArray != null && i < commentsArray.length) ? commentsArray[i] : "");
                             psUpdate.setInt(9, rId);
-                            psUpdate.setString(10, username);
+                            psUpdate.setString(10, userEmail);
                             psUpdate.executeUpdate();
                         }
                     }
