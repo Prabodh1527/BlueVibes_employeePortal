@@ -16,7 +16,8 @@ import javax.servlet.http.HttpSession;
 public class WeeklyReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require";
+    // Fixed database connection URL using the NonValidatingFactory property
+    private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require&sslfactory=org.postgresql.ssl.NonValidatingFactory";
     private static final String DB_USER = "bluevibes_db_new_user";
     private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jb9MD";
 
@@ -25,7 +26,6 @@ public class WeeklyReportServlet extends HttpServlet {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 
-    // 1. FETCH OPERATION (Handles loading previous entries on window.onload)
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
@@ -33,7 +33,6 @@ public class WeeklyReportServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
         
-        // Robust Session Check to prevent unexpected logouts
         HttpSession session = request.getSession(false);
         String username = null;
 
@@ -49,7 +48,6 @@ public class WeeklyReportServlet extends HttpServlet {
             }
         }
 
-        // Safe Fallback: If session tracking fails temporarily, resolve to "Employee" to avoid UI crash
         if (username == null || username.trim().isEmpty()) {
             System.out.println("⚠️ WARNING: Session token tracking lost in doGet. Using 'Employee' fallback profile.");
             username = "Employee"; 
@@ -102,7 +100,6 @@ public class WeeklyReportServlet extends HttpServlet {
         out.close();
     }
 
-    // 2. SAVE AND DELETE OPERATIONS (Handles form data post processing submissions)
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
@@ -110,7 +107,6 @@ public class WeeklyReportServlet extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
 
-        // Robust Session Check to prevent unexpected logouts during data save tasks
         HttpSession session = request.getSession(false);
         String username = null;
 
@@ -126,21 +122,14 @@ public class WeeklyReportServlet extends HttpServlet {
             }
         }
 
-        // Safe Fallback: If session tracking fails temporarily, resolve to "Employee" to avoid UI crash
         if (username == null || username.trim().isEmpty()) {
-            System.out.println("⚠️ WARNING: Session token tracking lost in doPost. Using 'Employee' fallback profile.");
             username = "Employee"; 
-        } else {
-            System.out.println("✅ Active session verified for user token: " + username);
         }
         
         String action = request.getParameter("action");
 
-        // Sub-Operation: Hard Delete Entry Row
         if ("delete".equalsIgnoreCase(action)) {
             String targetId = request.getParameter("id");
-            System.out.println("===> Requesting row deletion inside table matrix. Record Serial ID: " + targetId);
-            
             String deleteSQL = "DELETE FROM weekly_reports WHERE id = ? AND username = ?";
             try (Connection conn = getConnection();
                  PreparedStatement ps = conn.prepareStatement(deleteSQL)) {
@@ -155,9 +144,6 @@ public class WeeklyReportServlet extends HttpServlet {
             return;
         }
 
-        // Sub-Operation: Save / Update Form Rows Dataset Array Block
-        System.out.println("===> Processing batch update payload transaction mapping loop for: " + username);
-        
         String[] reportIds = request.getParameterValues("reportId");
         String[] taskIds = request.getParameterValues("taskId");
         String[] taskDescs = request.getParameterValues("taskDesc");
@@ -178,17 +164,14 @@ public class WeeklyReportServlet extends HttpServlet {
         String updateSQL = "UPDATE weekly_reports SET task_id=?, task_description=?, customer=?, status=?, percent_completed=?, start_date=?, end_date=?, comments=? WHERE id=? AND username=?";
 
         try (Connection conn = getConnection()) {
-            conn.setAutoCommit(false); // Enable batch transaction management loop safely
-            
+            conn.setAutoCommit(false);
             try {
                 for (int i = 0; i < taskIds.length; i++) {
-                    // Skip entirely empty row structures
                     if (taskDescs[i] == null || taskDescs[i].trim().isEmpty()) continue;
 
                     int rId = (reportIds != null && i < reportIds.length) ? Integer.parseInt(reportIds[i]) : 0;
                     
                     if (rId == 0) {
-                        // Create and execute a brand new record insert
                         try (PreparedStatement psInsert = conn.prepareStatement(insertSQL)) {
                             psInsert.setString(1, username);
                             psInsert.setString(2, taskIds[i]);
@@ -202,7 +185,6 @@ public class WeeklyReportServlet extends HttpServlet {
                             psInsert.executeUpdate();
                         }
                     } else {
-                        // Update an existing row record layout matched via unique DB ID serial key
                         try (PreparedStatement psUpdate = conn.prepareStatement(updateSQL)) {
                             psUpdate.setString(1, taskIds[i]);
                             psUpdate.setString(2, taskDescs[i]);
@@ -218,16 +200,14 @@ public class WeeklyReportServlet extends HttpServlet {
                         }
                     }
                 }
-                conn.commit(); // Push all changes cleanly downstream
-                System.out.println("🚀 Batch update transaction loop completed successfully.");
+                conn.commit();
                 out.print("{\"success\":true}");
             } catch (Exception batchError) {
-                conn.rollback(); // Undo modifications if array iteration faults out halfway
+                conn.rollback();
                 throw batchError;
             }
         } catch (Exception ex) {
             System.err.println("!!! TRANSACTION REJECTION ERROR: " + ex.getMessage());
-            ex.printStackTrace();
             out.print("{\"success\":false,\"error\":\"Database Transaction execution error: " + ex.getMessage() + "\"}");
         } finally {
             out.flush();
