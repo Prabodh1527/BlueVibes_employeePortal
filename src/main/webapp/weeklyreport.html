@@ -376,7 +376,7 @@
         XLSX.utils.book_append_sheet(wb, ws, "Weekly Status Report");
         XLSX.writeFile(wb, "My_Weekly_Status_Report.xlsx");
 
-        // FIX: Route cleanly back to root-level domain endpoint directly on Render
+        // Route cleanly back to root-level domain endpoint directly on Render
         const targetUrl = window.location.origin + '/ExportReportServlet';
         console.log("Transmitting dataset payload directly to root route: " + targetUrl);
 
