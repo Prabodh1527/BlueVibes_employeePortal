@@ -95,6 +95,51 @@ public class BroadcastServlet extends HttpServlet {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
+
+            StringBuilder recipients = new StringBuilder();
+
+            try (Connection con = DBConnection.getConnection()) {
+            
+                String sql =
+                    "SELECT email, communication_email FROM users";
+            
+                try (PreparedStatement ps =
+                        con.prepareStatement(sql);
+            
+                     ResultSet rs = ps.executeQuery()) {
+            
+                    boolean first = true;
+            
+                    while (rs.next()) {
+            
+                        String targetEmail =
+                            rs.getString("communication_email");
+            
+                        if (targetEmail == null ||
+                            targetEmail.trim().isEmpty()) {
+            
+                            targetEmail =
+                                rs.getString("email");
+                        }
+            
+                        if (targetEmail == null ||
+                            targetEmail.trim().isEmpty()) {
+                            continue;
+                        }
+            
+                        if (!first) {
+                            recipients.append(",");
+                        }
+            
+                        recipients.append(
+                            "{\"email\":\"")
+                            .append(targetEmail)
+                            .append("\"}");
+            
+                        first = false;
+                    }
+                }
+            }
     
             String jsonPayload =
                 "{"
@@ -104,7 +149,7 @@ public class BroadcastServlet extends HttpServlet {
                 + "},"
     
                 + "\"to\":["
-                + "{\"email\":\"gprabodhchandra@gmail.com\"}"
+                + recipients.toString()
                 + "],"
     
                 + "\"subject\":\"BlueVibes Notification\","
