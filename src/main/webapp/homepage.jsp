@@ -218,6 +218,28 @@
             padding:0 15px;
             cursor:pointer;
         }
+        .help-option{
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            padding:12px;
+            border-radius:10px;
+            margin-bottom:10px;
+            cursor:pointer;
+            transition:0.3s;
+        }
+        
+        .help-option:hover{
+            background:#0284c7;
+            color:white;
+        }
+        
+        #answerBox{
+            margin-top:15px;
+            padding:12px;
+            border-radius:10px;
+            background:#e0f2fe;
+            display:none;
+        }
     </style>
 </head>
 <body>
@@ -363,43 +385,69 @@
         }
         
         function sendMessage(){
+    
+        }
+        function showAnswer(type){
+
+            const box=document.getElementById("answerBox");
         
-            const input=document.getElementById("userInput");
-            const msg=input.value.trim();
+            let html="";
         
-            if(msg==="") return;
-        
-            const chat=document.getElementById("chatMessages");
-        
-            chat.innerHTML += `
-                <div class="user-msg">${msg}</div>
-            `;
-        
-            let reply="I am still learning.";
-        
-            const text=msg.toLowerCase();
-        
-            if(text.includes("leave")){
-                reply="You can apply leave from Leave Request section.";
-            }
-            else if(text.includes("notification")){
-                reply="Check the Notifications page for latest updates.";
-            }
-            else if(text.includes("wsr")){
-                reply="Weekly Status Reports can be updated from the WSR page.";
-            }
-            else if(text.includes("payslip")){
-                reply="Payslips are available in the Payslips section.";
-            }
-        
-            setTimeout(()=>{
-                chat.innerHTML += `
-                    <div class="bot-msg">${reply}</div>
+            if(type==="leave"){
+                html=`
+                <b>Leave Request</b><br><br>
+                <a href="leavereq.html">Open Leave Request</a>
                 `;
-                chat.scrollTop=chat.scrollHeight;
-            },500);
+            }
         
-            input.value="";
+            if(type==="wsr"){
+                html=`
+                <b>Weekly Status Report</b><br><br>
+                <a href="weeklyreport.html">Open WSR</a>
+                `;
+            }
+        
+            if(type==="notification"){
+                html=`
+                <b>Notifications</b><br><br>
+                <a href="user_notifications.html">View Notifications</a>
+                `;
+            }
+        
+            if(type==="payslip"){
+                html=`
+                <b>Payslips</b><br><br>
+                <a href="payslips.jsp">Open Payslips</a>
+                `;
+            }
+        
+            if(type==="policy"){
+                html=`
+                <b>Company Policies</b><br><br>
+                <a href="policyview.jsp">View Policies</a>
+                `;
+            }
+        
+            if(type==="faq"){
+                html=`
+                <b>Frequently Asked Questions</b>
+                <br><br>
+        
+                • Apply leave from Leave Request page.
+                <br><br>
+        
+                • Submit weekly work in WSR section.
+                <br><br>
+        
+                • Payslips are available in Payslips page.
+                <br><br>
+        
+                • Notifications contain all company announcements.
+                `;
+            }
+        
+            box.style.display="block";
+            box.innerHTML=html;
         }
         
     </script>
@@ -413,15 +461,41 @@
         </div>
     
         <div id="chatMessages" class="chat-messages">
+
             <div class="bot-msg">
-                Hi! How can I help you today?
+                👋 Welcome to BlueVibes Assistant
+                <br><br>
+                Select an option below:
             </div>
+        
+            <div class="help-option" onclick="showAnswer('leave')">
+                📅 Apply Leave
+            </div>
+        
+            <div class="help-option" onclick="showAnswer('wsr')">
+                📝 Update Weekly Status Report
+            </div>
+        
+            <div class="help-option" onclick="showAnswer('notification')">
+                🔔 Notifications
+            </div>
+        
+            <div class="help-option" onclick="showAnswer('payslip')">
+                💰 Payslips
+            </div>
+        
+            <div class="help-option" onclick="showAnswer('policy')">
+                📖 Company Policies
+            </div>
+        
+            <div class="help-option" onclick="showAnswer('faq')">
+                ❓ Frequently Asked Questions
+            </div>
+        
+            <div id="answerBox"></div>
+        
         </div>
     
-        <div class="chat-input-area">
-            <input type="text" id="userInput" placeholder="Ask something...">
-            <button onclick="sendMessage()">Send</button>
-        </div>
     </div>
 </body>
 </html>
