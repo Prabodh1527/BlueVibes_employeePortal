@@ -16,7 +16,6 @@ import javax.servlet.http.HttpSession;
 public class WeeklyReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // Correct external route pointing to bluevibes_db_new with lowercase 'j' password
     private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require&sslfactory=org.postgresql.ssl.NonValidatingFactory";
     private static final String DB_USER = "bluevibes_db_new_user";
     private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jB9MD";
@@ -50,8 +49,9 @@ public class WeeklyReportServlet extends HttpServlet {
         String action = request.getParameter("action");
 
         if ("fetchMyReports".equalsIgnoreCase(action)) {
+            // TARGETING EXISTING TABLE: user_weekly_reports
             String fetchQuery = "SELECT id, task_id, task_description, customer, status, percent_completed, start_date, end_date, comments " +
-                                "FROM weekly_reports WHERE username = ? ORDER BY id DESC";
+                                "FROM user_weekly_reports WHERE username = ? ORDER BY id DESC";
             
             try (Connection conn = getConnection();
                  PreparedStatement ps = conn.prepareStatement(fetchQuery)) {
@@ -115,7 +115,8 @@ public class WeeklyReportServlet extends HttpServlet {
 
         if ("delete".equalsIgnoreCase(action)) {
             String targetId = request.getParameter("id");
-            String deleteSQL = "DELETE FROM weekly_reports WHERE id = ? AND username = ?";
+            // TARGETING EXISTING TABLE: user_weekly_reports
+            String deleteSQL = "DELETE FROM user_weekly_reports WHERE id = ? AND username = ?";
             try (Connection conn = getConnection();
                  PreparedStatement ps = conn.prepareStatement(deleteSQL)) {
                 ps.setInt(1, Integer.parseInt(targetId));
@@ -145,8 +146,9 @@ public class WeeklyReportServlet extends HttpServlet {
             return;
         }
 
-        String insertSQL = "INSERT INTO weekly_reports (username, task_id, task_description, customer, status, percent_completed, start_date, end_date, comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        String updateSQL = "UPDATE weekly_reports SET task_id=?, task_description=?, customer=?, status=?, percent_completed=?, start_date=?, end_date=?, comments=? WHERE id=? AND username=?";
+        // TARGETING EXISTING TABLE: user_weekly_reports
+        String insertSQL = "INSERT INTO user_weekly_reports (username, task_id, task_description, customer, status, percent_completed, start_date, end_date, comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String updateSQL = "UPDATE user_weekly_reports SET task_id=?, task_description=?, customer=?, status=?, percent_completed=?, start_date=?, end_date=?, comments=? WHERE id=? AND username=?";
 
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
