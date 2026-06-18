@@ -136,6 +136,88 @@
         .stat-item { background: rgba(255,255,255,0.1); padding: 15px 25px; border-radius: 12px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); min-width: 200px; }
         .stat-label { display: block; font-size: 0.8rem; opacity: 0.8; }
         .stat-value { font-size: 1.8rem; font-weight: 700; }
+
+        #chatButton{
+            position:fixed;
+            bottom:25px;
+            right:25px;
+            width:60px;
+            height:60px;
+            border-radius:50%;
+            background:#0284c7;
+            color:white;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:28px;
+            cursor:pointer;
+            box-shadow:0 5px 15px rgba(0,0,0,0.2);
+            z-index:9999;
+        }
+        
+        #chatBox{
+            position:fixed;
+            bottom:95px;
+            right:25px;
+            width:320px;
+            height:420px;
+            background:white;
+            border-radius:15px;
+            border:1px solid #e2e8f0;
+            display:none;
+            flex-direction:column;
+            overflow:hidden;
+            z-index:9999;
+        }
+        
+        .chat-header{
+            background:#0f172a;
+            color:white;
+            padding:15px;
+            font-weight:600;
+        }
+        
+        .chat-messages{
+            flex:1;
+            padding:15px;
+            overflow-y:auto;
+        }
+        
+        .bot-msg{
+            background:#f1f5f9;
+            padding:10px;
+            border-radius:10px;
+            margin-bottom:10px;
+        }
+        
+        .user-msg{
+            background:#0284c7;
+            color:white;
+            padding:10px;
+            border-radius:10px;
+            margin-bottom:10px;
+            text-align:right;
+        }
+        
+        .chat-input-area{
+            display:flex;
+            border-top:1px solid #e2e8f0;
+        }
+        
+        .chat-input-area input{
+            flex:1;
+            border:none;
+            padding:12px;
+            outline:none;
+        }
+        
+        .chat-input-area button{
+            border:none;
+            background:#0284c7;
+            color:white;
+            padding:0 15px;
+            cursor:pointer;
+        }
     </style>
 </head>
 <body>
@@ -269,7 +351,78 @@
             loadStats();
             loadTaskSummary();
         };
+        
+        function toggleChat(){
+            const box = document.getElementById("chatBox");
+        
+            if(box.style.display==="flex"){
+                box.style.display="none";
+            }else{
+                box.style.display="flex";
+            }
+        }
+        
+        function sendMessage(){
+        
+            const input=document.getElementById("userInput");
+            const msg=input.value.trim();
+        
+            if(msg==="") return;
+        
+            const chat=document.getElementById("chatMessages");
+        
+            chat.innerHTML += `
+                <div class="user-msg">${msg}</div>
+            `;
+        
+            let reply="I am still learning.";
+        
+            const text=msg.toLowerCase();
+        
+            if(text.includes("leave")){
+                reply="You can apply leave from Leave Request section.";
+            }
+            else if(text.includes("notification")){
+                reply="Check the Notifications page for latest updates.";
+            }
+            else if(text.includes("wsr")){
+                reply="Weekly Status Reports can be updated from the WSR page.";
+            }
+            else if(text.includes("payslip")){
+                reply="Payslips are available in the Payslips section.";
+            }
+        
+            setTimeout(()=>{
+                chat.innerHTML += `
+                    <div class="bot-msg">${reply}</div>
+                `;
+                chat.scrollTop=chat.scrollHeight;
+            },500);
+        
+            input.value="";
+        }
+        
     </script>
+    <div id="chatButton" onclick="toggleChat()">
+        <i class="ph ph-robot"></i>
+    </div>
+    
+    <div id="chatBox">
+        <div class="chat-header">
+            BlueVibes Assistant
+        </div>
+    
+        <div id="chatMessages" class="chat-messages">
+            <div class="bot-msg">
+                Hi! How can I help you today?
+            </div>
+        </div>
+    
+        <div class="chat-input-area">
+            <input type="text" id="userInput" placeholder="Ask something...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
 </body>
 </html>
 
