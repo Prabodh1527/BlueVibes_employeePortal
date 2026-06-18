@@ -1,23 +1,12 @@
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Properties;
+import java.util.ArrayList;
+import java.util.List;
 
-import javax.mail.Authenticator;
-import javax.mail.Message;
-import javax.mail.Multipart;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -25,15 +14,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-@WebServlet("/ExportReportServlet")
-public class ExportReportServlet extends HttpServlet {
+@WebServlet("/WeeklyReportServlet")
+public class WeeklyReportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-
-    private static final String SMTP_HOST = "smtp.gmail.com"; 
-    private static final String SMTP_PORT = "587";
-
-    // Static auditor endpoint
-    private static final String AUDITOR_EMAIL = "prasanthram@bluegitalllp.com";
 
     private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require";
     private static final String DB_USER = "bluevibes_db_new_user";
@@ -44,233 +27,182 @@ public class ExportReportServlet extends HttpServlet {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+    // 1. FETCH OPERATION (Handles loading previous entries on window.onload)
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        
-        System.out.println("===> ExportReportServlet INVOKED. Processing inbound JSON packet...");
         
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
         
-        String username = "Employee"; 
         HttpSession session = request.getSession(false);
-        if (session != null && session.getAttribute("username") != null) {
-            username = (String) session.getAttribute("username"); 
+        if (session == null || session.getAttribute("username") == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            out.print("{\"error\":\"Session expired or invalid.\"}");
+            return;
         }
-        System.out.println("===> Processing report delivery request for user: " + username);
-
-        String systemSenderEmail = null;
-        String systemSenderPassword = null;
-        String targetRecipientEmail = null;
-
-        String recipientQuery = "SELECT email FROM communication_email WHERE username = ?";
-        String senderQuery = "SELECT config_value FROM system_config WHERE config_key = ?";
         
+        String username = (String) session.getAttribute("username");
+        String action = request.getParameter("action");
+
+        if ("fetchMyReports".equalsIgnoreCase(action)) {
+            System.out.println("===> Fetching weekly reports database array matrix for user: " + username);
+            
+            // Query selects all active report tracks matching the session user string ordered chronologically
+            String fetchQuery = "SELECT id, task_id, task_description, customer, status, percent_completed, start_date, end_date, comments " +
+                                "FROM weekly_reports WHERE username = ? ORDER BY id DESC";
+            
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(fetchQuery)) {
+                
+                ps.setString(1, username);
+                try (ResultSet rs = ps.executeQuery()) {
+                    StringBuilder jsonResult = new StringBuilder("[");
+                    boolean first = true;
+                    
+                    while (rs.next()) {
+                        if (!first) { jsonResult.append(","); }
+                        first = false;
+                        
+                        jsonResult.append("{")
+                                  .append("\"reportId\":").append(rs.getInt("id")).append(",")
+                                  .append("\"taskId\":\"").append(rs.getString("task_id")).append("\",")
+                                  .append("\"taskDesc\":\"").append(rs.getString("task_description")).append("\",")
+                                  .append("\"customer\":\"").append(rs.getString("customer")).append("\",")
+                                  .append("\"status\":\"").append(rs.getString("status")).append("\",")
+                                  .append("\"percent\":").append(rs.getInt("percent_completed")).append(",")
+                                  .append("\"startDate\":\"").append(rs.getDate("start_date")).append("\",")
+                                  .append("\"endDate\":\"").append(rs.getDate("end_date")).append("\",")
+                                  .append("\"comments\":\"").append(rs.getString("comments") != null ? rs.getString("comments").replace("\"", "\\\"") : "").append("\"")
+                                  .append("}");
+                    }
+                    jsonResult.append("]");
+                    out.print(jsonResult.toString());
+                }
+            } catch (Exception e) {
+                System.err.println("!!! DB FETCH RUNTIME ERROR: " + e.getMessage());
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                out.print("{\"error\":\"Failed to fetch records: " + e.getMessage() + "\"}");
+            }
+        }
+        out.flush();
+        out.close();
+    }
+
+    // 2. SAVE AND DELETE OPERATIONS (Handles form data post processing submissions)
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        PrintWriter out = response.getWriter();
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("username") == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            out.print("{\"success\":false,\"error\":\"Session missing inside secure endpoint.\"}");
+            return;
+        }
+        
+        String username = (String) session.getAttribute("username");
+        String action = request.getParameter("action");
+
+        // Sub-Operation: Hard Delete Entry Row
+        if ("delete".equalsIgnoreCase(action)) {
+            String targetId = request.getParameter("id");
+            System.out.println("===> Requesting row deletion inside table matrix. Record Serial ID: " + targetId);
+            
+            String deleteSQL = "DELETE FROM weekly_reports WHERE id = ? AND username = ?";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(deleteSQL)) {
+                ps.setInt(1, Integer.parseInt(targetId));
+                ps.setString(2, username);
+                int rows = ps.executeUpdate();
+                out.print("{\"success\":" + (rows > 0) + "}");
+            } catch (Exception ex) {
+                out.print("{\"success\":false,\"error\":\"" + ex.getMessage() + "\"}");
+            }
+            out.flush();
+            return;
+        }
+
+        // Sub-Operation: Save / Update Form Rows Dataset Array Block
+        System.out.println("===> Processing batch update payload transaction mapping loop for: " + username);
+        
+        String[] reportIds = request.getParameterValues("reportId");
+        String[] taskIds = request.getParameterValues("taskId");
+        String[] taskDescs = request.getParameterValues("taskDesc");
+        String[] customers = request.getParameterValues("customer");
+        String[] statuses = request.getParameterValues("status");
+        String[] percents = request.getParameterValues("percent");
+        String[] startDates = request.getParameterValues("startDate");
+        String[] endDates = request.getParameterValues("endDate");
+        String[] commentsArray = request.getParameterValues("comments");
+
+        if (taskIds == null || taskIds.length == 0) {
+            out.print("{\"success\":false,\"error\":\"Empty matrix rows provided inside form array payload.\"}");
+            out.flush();
+            return;
+        }
+
+        String insertSQL = "INSERT INTO weekly_reports (username, task_id, task_description, customer, status, percent_completed, start_date, end_date, comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String updateSQL = "UPDATE weekly_reports SET task_id=?, task_description=?, customer=?, status=?, percent_completed=?, start_date=?, end_date=?, comments=? WHERE id=? AND username=?";
+
         try (Connection conn = getConnection()) {
-            System.out.println("===> Database connection established successfully.");
+            conn.setAutoCommit(false); // Enable batch transaction management loop safely
             
-            try (PreparedStatement psRec = conn.prepareStatement(recipientQuery)) {
-                psRec.setString(1, username);
-                try (ResultSet rsRec = psRec.executeQuery()) {
-                    if (rsRec.next()) {
-                        targetRecipientEmail = rsRec.getString("email");
+            try {
+                for (int i = 0; i < taskIds.length; i++) {
+                    // Skip entirely empty row structures
+                    if (taskDescs[i] == null || taskDescs[i].trim().isEmpty()) continue;
+
+                    int rId = (reportIds != null && i < reportIds.length) ? Integer.parseInt(reportIds[i]) : 0;
+                    
+                    if (rId == 0) {
+                        // Create and execute a brand new record insert
+                        try (PreparedStatement psInsert = conn.prepareStatement(insertSQL)) {
+                            psInsert.setString(1, username);
+                            psInsert.setString(2, taskIds[i]);
+                            psInsert.setString(3, taskDescs[i]);
+                            psInsert.setString(4, (customers != null && i < customers.length) ? customers[i] : "");
+                            psInsert.setString(5, (statuses != null && i < statuses.length) ? statuses[i] : "InProgress");
+                            psInsert.setInt(6, (percents != null && i < percents.length) ? Integer.parseInt(percents[i]) : 0);
+                            psInsert.setDate(7, java.sql.Date.valueOf(startDates[i]));
+                            psInsert.setDate(8, java.sql.Date.valueOf(endDates[i]));
+                            psInsert.setString(9, (commentsArray != null && i < commentsArray.length) ? commentsArray[i] : "");
+                            psInsert.executeUpdate();
+                        }
+                    } else {
+                        // Update an existing row record layout matched via unique DB ID serial key
+                        try (PreparedStatement psUpdate = conn.prepareStatement(updateSQL)) {
+                            psUpdate.setString(1, taskIds[i]);
+                            psUpdate.setString(2, taskDescs[i]);
+                            psUpdate.setString(3, (customers != null && i < customers.length) ? customers[i] : "");
+                            psUpdate.setString(4, (statuses != null && i < statuses.length) ? statuses[i] : "InProgress");
+                            psUpdate.setInt(5, (percents != null && i < percents.length) ? Integer.parseInt(percents[i]) : 0);
+                            psUpdate.setDate(6, java.sql.Date.valueOf(startDates[i]));
+                            psUpdate.setDate(7, java.sql.Date.valueOf(endDates[i]));
+                            psUpdate.setString(8, (commentsArray != null && i < commentsArray.length) ? commentsArray[i] : "");
+                            psUpdate.setInt(9, rId);
+                            psUpdate.setString(10, username);
+                            psUpdate.executeUpdate();
+                        }
                     }
                 }
+                conn.commit(); // Push all changes cleanly downstream
+                System.out.println("🚀 Batch update transaction loop completed successfully.");
+                out.print("{\"success\":true}");
+            } catch (Exception batchError) {
+                conn.rollback(); // Undo any partial mutations if array iteration faults out halfway
+                throw batchError;
             }
-            
-            // Administrative routing fallback mechanism if username lookup fails
-            if (targetRecipientEmail == null) {
-                System.out.println("===> Target email not found for user, attempting fallback to first configuration profile record.");
-                try (PreparedStatement psFallback = conn.prepareStatement("SELECT email FROM communication_email LIMIT 1")) {
-                    try (ResultSet rsFE = psFallback.executeQuery()) {
-                        if (rsFE.next()) { targetRecipientEmail = rsFE.getString("email"); }
-                    }
-                }
-            }
-            System.out.println("===> Primary User Routing Confirmed: " + targetRecipientEmail);
-            
-            try (PreparedStatement psSenderEmail = conn.prepareStatement(senderQuery)) {
-                psSenderEmail.setString(1, "smtp_sender_email");
-                try (ResultSet rsSE = psSenderEmail.executeQuery()) {
-                    if (rsSE.next()) { systemSenderEmail = rsSE.getString("config_value"); }
-                }
-            }
-
-            try (PreparedStatement psSenderPass = conn.prepareStatement(senderQuery)) {
-                psSenderPass.setString(1, "smtp_sender_password");
-                try (ResultSet rsSP = psSenderPass.executeQuery()) {
-                    if (rsSP.next()) { systemSenderPassword = rsSP.getString("config_value"); }
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("!!! DATABASE FAILURE IN SERVLET LOOP: " + e.getMessage());
-            e.printStackTrace();
-            out.print("{\"success\":false,\"error\":\"Database validation error: " + e.getMessage() + "\"}");
-            out.flush();
-            return;
-        }
-
-        if (systemSenderEmail == null || systemSenderPassword == null || systemSenderEmail.trim().isEmpty()) {
-            System.err.println("!!! CONFIGURATION ERROR: System SMTP configuration params missing from database tables.");
-            out.print("{\"success\":false,\"error\":\"SMTP key accounts are missing from system_config configuration maps.\"}");
-            out.flush();
-            return;
-        }
-
-        // Read raw data payload stream directly 
-        StringBuilder jsonBuffer = new StringBuilder();
-        String line;
-        try (BufferedReader reader = request.getReader()) {
-            while ((line = reader.readLine()) != null) {
-                jsonBuffer.append(line);
-            }
-        }
-        String payload = jsonBuffer.toString();
-        System.out.println("===> Data payload safely ingested. Character size: " + payload.length());
-
-        // Build spreadsheet dataset format dynamically on the server instance
-        StringBuilder csvBuilder = new StringBuilder();
-        csvBuilder.append("Task ID,Task Description,Customer,Status,% Completed,Start Date,End Date,Comments\n");
-
-        try {
-            if (payload == null || !payload.contains("[")) {
-                throw new IllegalArgumentException("Inbound payload data matrix stream is empty or missing array blocks.");
-            }
-
-            int arrayStart = payload.indexOf("[");
-            int arrayEnd = payload.lastIndexOf("]");
-            if (arrayStart != -1 && arrayEnd != -1) {
-                payload = payload.substring(arrayStart, arrayEnd + 1);
-            }
-
-            int searchIdx = 0;
-            while ((searchIdx = payload.indexOf("{", searchIdx)) != -1) {
-                int endBox = payload.indexOf("}", searchIdx);
-                if (endBox == -1) break;
-                
-                String objectBlock = payload.substring(searchIdx, endBox + 1);
-                
-                String taskId = extractValue(objectBlock, "taskId");
-                String taskDesc = extractValue(objectBlock, "taskDesc");
-                String customer = extractValue(objectBlock, "customer");
-                String status = extractValue(objectBlock, "status");
-                String percent = extractValue(objectBlock, "percent");
-                String startDate = extractValue(objectBlock, "startDate");
-                String endDate = extractValue(objectBlock, "endDate");
-                String comments = extractValue(objectBlock, "comments");
-
-                if(comments == null) comments = "";
-                if(taskDesc == null) taskDesc = "";
-                if(customer == null) customer = "";
-                if(status == null) status = "";
-
-                // Prevent cell delimiter shifts by removing commas or newline tokens
-                comments = comments.replace(",", " ").replace("\"", "'").replace("\n", " ").trim();
-                taskDesc = taskDesc.replace(",", " ").trim();
-                customer = customer.replace(",", " ").trim();
-                status = status.replace(",", " ").trim();
-
-                csvBuilder.append(taskId).append(",")
-                          .append(taskDesc).append(",")
-                          .append(customer).append(",")
-                          .append(status).append(",")
-                          .append(percent).append(",")
-                          .append(startDate).append(",")
-                          .append(endDate).append(",")
-                          .append(comments).append("\n");
-
-                searchIdx = endBox + 1;
-            }
-            System.out.println("===> CSV translation matrix compiled successfully.");
         } catch (Exception ex) {
-            System.err.println("!!! PARSING RUNTIME ERROR: " + ex.getMessage());
-            out.print("{\"success\":false,\"error\":\"Failed compiling JSON payload structure matrix: " + ex.getMessage() + "\"}");
-            out.flush();
-            return;
-        }
-
-        final String authEmail = systemSenderEmail;
-        final String authPassword = systemSenderPassword;
-
-        try {
-            System.out.println("===> Handshaking with Gmail SMTP Gateway at port 587...");
-            byte[] fileBytes = csvBuilder.toString().getBytes(StandardCharsets.UTF_8);
-
-            // Modern Explicit TLS Connection protocols configuration properties
-            Properties props = new Properties();
-            props.put("mail.smtp.host", SMTP_HOST);
-            props.put("mail.smtp.port", SMTP_PORT);
-            props.put("mail.smtp.auth", "true");
-            props.put("mail.smtp.starttls.enable", "true");
-            props.put("mail.smtp.starttls.required", "true");
-            props.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
-            props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
-            props.put("mail.smtp.connectiontimeout", "15000"); 
-            props.put("mail.smtp.timeout", "25000");           
-
-            Session mailSession = Session.getInstance(props, new Authenticator() {
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(authEmail, authPassword);
-                }
-            });
-
-            MimeMessage message = new MimeMessage(mailSession);
-            message.setFrom(new InternetAddress(authEmail, "BlueVibes System Gateway"));
-
-            // Safely build the multi-recipient delivery string sequence
-            String finalRecipients = AUDITOR_EMAIL; // prasanthram@bluegitalllp.com
-            if (targetRecipientEmail != null && !targetRecipientEmail.trim().isEmpty() && !targetRecipientEmail.equalsIgnoreCase("null")) {
-                finalRecipients = AUDITOR_EMAIL + "," + targetRecipientEmail.trim();
-            }
-            
-            System.out.println("===> Dispatching attachment to broadcast targets: " + finalRecipients);
-            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(finalRecipients));
-            message.setSubject("BlueVibes | Weekly Status Report - " + username);
-
-            Multipart multipart = new MimeMultipart();
-
-            MimeBodyPart textPart = new MimeBodyPart();
-            textPart.setText("Hello,\n\nPlease find your processed Weekly Status Report document attached to this mail log entry.");
-            multipart.addBodyPart(textPart);
-
-            // File Attachment segment handled as raw encoded UTF-8 spreadsheet bytes
-            MimeBodyPart attachPart = new MimeBodyPart();
-            attachPart.setContent(fileBytes, "text/csv; charset=UTF-8");
-            attachPart.setFileName(username + "_Weekly_Status_Report.csv");
-            multipart.addBodyPart(attachPart);
-
-            message.setContent(multipart);
-            Transport.send(message);
-
-            System.out.println("🚀 SUCCESS! Email broadcast delivered successfully.");
-            out.print("{\"success\":true}");
-        } catch (Exception mailError) {
-            System.err.println("!!! SMTP TRANSMISSION EXCEPTION: " + mailError.getMessage());
-            mailError.printStackTrace();
-            out.print("{\"success\":false,\"error\":\"JavaMail engine transmission exception: " + mailError.getMessage() + "\"}");
+            System.err.println("!!! TRANSACTION REJECTION ERROR: " + ex.getMessage());
+            ex.printStackTrace();
+            out.print("{\"success\":false,\"error\":\"Database Transaction execution error: " + ex.getMessage() + "\"}");
         } finally {
             out.flush();
             out.close();
         }
-    }
-
-    private String extractValue(String block, String key) {
-        String matchToken = "\"" + key + "\":\"";
-        int start = block.indexOf(matchToken);
-        if (start != -1) {
-            start += matchToken.length();
-            int end = block.indexOf("\"", start);
-            return (end != -1) ? block.substring(start, end) : "";
-        }
-        matchToken = "\"" + key + "\":";
-        start = block.indexOf(matchToken);
-        if (start != -1) {
-            start += matchToken.length();
-            int end = block.indexOf(",", start);
-            if (end == -1) end = block.indexOf("}", start);
-            return (end != -1) ? block.substring(start, end).replace("\"", "").trim() : "";
-        }
-        return "";
     }
 }
