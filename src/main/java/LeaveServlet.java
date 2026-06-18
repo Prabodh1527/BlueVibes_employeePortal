@@ -4,9 +4,26 @@ import java.sql.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 @WebServlet("/LeaveServlet")
 public class LeaveServlet extends HttpServlet {
+    private static final String BREVO_API_KEY =
+    "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";
+
+    private static final String HR_EMAIL =
+    "prasanthram@bluegitalllp.com";
+
+    private static final String ADMIN_EMAIL_1 =
+    "gprabodhchandra@gmail.com";
+    /*"mail2blueeye@gmail.com";*/
+
+    private static final String ADMIN_EMAIL_2 =
+    "diptipatra75588@gmail.com";
+    /*"harini.blueeye@gmail.com";*/
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
@@ -31,6 +48,12 @@ public class LeaveServlet extends HttpServlet {
                 ps.setString(3, dateRange);
                 ps.setString(4, reason);
                 ps.executeUpdate();
+                sendLeaveNotification(
+                        email,
+                        leaveType,
+                        dateRange,
+                        reason
+                );
                 response.sendRedirect("leavereq.html?status=success");
             }
         } catch (Exception e) {
@@ -113,6 +136,87 @@ public class LeaveServlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             out.print("[]");
+        }
+    }
+
+    private void sendLeaveNotification(
+        String employeeEmail,
+        String leaveType,
+        String dateRange,
+        String reason) {
+
+        try {
+    
+            URL url =
+                new URL("https://api.brevo.com/v3/smtp/email");
+    
+            HttpURLConnection conn =
+                (HttpURLConnection) url.openConnection();
+    
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("api-key", BREVO_API_KEY);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+    
+            String jsonPayload =
+                "{"
+                + "\"sender\":{"
+                + "\"name\":\"BlueVibes Portal\","
+                + "\"email\":\"gprabodhchandra@gmail.com\""
+                + "},"
+    
+                + "\"to\":["
+                + "{\"email\":\"" + HR_EMAIL + "\"},"
+                + "{\"email\":\"" + ADMIN_EMAIL_1 + "\"},"
+                + "{\"email\":\"" + ADMIN_EMAIL_2 + "\"}"
+                + "],"
+    
+                + "\"subject\":\"New Leave Request Submitted\","
+    
+                + "\"htmlContent\":\""
+    
+                + "<h3>New Leave Application Received</h3>"
+    
+                + "<p><b>Employee:</b> "
+                + employeeEmail
+                + "</p>"
+    
+                + "<p><b>Leave Type:</b> "
+                + leaveType
+                + "</p>"
+    
+                + "<p><b>Date Range:</b> "
+                + dateRange
+                + "</p>"
+    
+                + "<p><b>Reason:</b> "
+                + reason
+                + "</p>"
+    
+                + "<br>"
+    
+                + "<p>Please login through Admin Portal and approve/reject the request.</p>"
+    
+                + "\""
+                + "}";
+    
+            try (OutputStream os = conn.getOutputStream()) {
+    
+                byte[] input =
+                    jsonPayload.getBytes(StandardCharsets.UTF_8);
+    
+                os.write(input, 0, input.length);
+            }
+    
+            System.out.println(
+                "Leave Mail Response Code = "
+                + conn.getResponseCode()
+            );
+    
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
