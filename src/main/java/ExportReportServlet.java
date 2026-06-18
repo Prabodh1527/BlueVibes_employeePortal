@@ -33,10 +33,10 @@ public class ExportReportServlet extends HttpServlet {
     private static final String SMTP_PORT = "587";
     private static final String AUDITOR_EMAIL = "prasanthram@bluegitalllp.com";
 
-    // Fixed database connection URL using the NonValidatingFactory property
+    // Fixed External URL and capitalization typo ('B' instead of 'b')
     private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require&sslfactory=org.postgresql.ssl.NonValidatingFactory";
     private static final String DB_USER = "bluevibes_db_new_user";
-    private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jb9MD";
+    private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30JB9MD";
 
     private Connection getConnection() throws Exception {
         Class.forName("org.postgresql.Driver");
@@ -45,8 +45,6 @@ public class ExportReportServlet extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        
-        System.out.println("===> ExportReportServlet invoked.");
         
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
@@ -105,13 +103,13 @@ public class ExportReportServlet extends HttpServlet {
             }
         } catch (Exception e) {
             System.err.println("!!! DB ACCESS ERROR: " + e.getMessage());
-            out.print("{\"success\":false,\"error\":\"Database Verification Failure: " + e.getMessage() + "\"}");
+            out.print("{\"success\":false,\"error\":\"Database Connection Failure: " + e.getMessage() + "\"}");
             out.flush();
             return;
         }
 
         if (systemSenderEmail == null || systemSenderPassword == null || systemSenderEmail.trim().isEmpty()) {
-            out.print("{\"success\":false,\"error\":\"SMTP accounts missing from system_config configuration maps.\"}");
+            out.print("{\"success\":false,\"error\":\"SMTP settings are missing inside your system_config database table.\"}");
             out.flush();
             return;
         }
@@ -171,7 +169,7 @@ public class ExportReportServlet extends HttpServlet {
                 searchIdx = endBox + 1;
             }
         } catch (Exception ex) {
-            out.print("{\"success\":false,\"error\":\"JSON Engine parsing syntax failure: " + ex.getMessage() + "\"}");
+            out.print("{\"success\":false,\"error\":\"JSON compilation matrix syntax failure: " + ex.getMessage() + "\"}");
             out.flush();
             return;
         }
