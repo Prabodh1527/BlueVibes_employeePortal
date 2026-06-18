@@ -130,7 +130,7 @@
 
         .welcome-box { padding: 2rem; border-radius: 20px; color: white; margin-bottom: 1.2rem; background: linear-gradient(135deg, #0f172a 0%, #0284c7 100%); position: relative; overflow: hidden; }
         .welcome-box h1 { font-size: 1.8rem; margin-bottom: 6px; }
-        .welcome-box p { font-size: 1rem; opacity: 0.9, margin: 0; }
+        .welcome-box p { font-size: 1rem; opacity: 0.9; margin: 0; }
 
         .stat-container { display: flex; gap: 20px; margin-top: 25px; }
         .stat-item { background: rgba(255,255,255,0.1); padding: 15px 25px; border-radius: 12px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); min-width: 200px; }
@@ -224,16 +224,7 @@
 
     <script>
         function loadStats() {
-            // Fetch stats for the top cards
-            fetch('AttendanceServlet?action=stats')
-                .then(res => res.json())
-                .then(data => {
-                    document.getElementById('statAttendance').innerText = (data.present || 0) + " Days";
-                    document.getElementById('statLeaves').innerText = (data.leaves || 0) + " / 24";
-                })
-                .catch(err => {
-                    console.error("Error loading stats:", err);
-                });
+            
         }
 
         function loadTaskSummary() {
@@ -261,7 +252,7 @@
         
                     });
         
-                    document.getElementById("statTasks").innerText = total;
+                    
         
                     document.getElementById("totalTasks").innerText = total;
                     document.getElementById("completedTasks").innerText = completed;
