@@ -33,7 +33,8 @@ public class ExportReportServlet extends HttpServlet {
     private static final String SMTP_PORT = "587";
     private static final String AUDITOR_EMAIL = "prasanthram@bluegitalllp.com";
 
-    private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require";
+    // Fixed database connection URL using the NonValidatingFactory property
+    private static final String DB_URL = "jdbc:postgresql://dpg-d6vrvov5r7bs73f04bpg-a.oregon-postgres.render.com:5432/bluevibes_db_new?sslmode=require&sslfactory=org.postgresql.ssl.NonValidatingFactory";
     private static final String DB_USER = "bluevibes_db_new_user";
     private static final String DB_PASSWORD = "jc0bxNz8YFBiM7BZoa80yWd8T30jb9MD";
 
@@ -69,7 +70,6 @@ public class ExportReportServlet extends HttpServlet {
         String systemSenderPassword = null;
         String targetRecipientEmail = null;
 
-        // DB Settings Fetch Loop
         try (Connection conn = getConnection()) {
             String recipientQuery = "SELECT email FROM communication_email WHERE username = ?";
             try (PreparedStatement psRec = conn.prepareStatement(recipientQuery)) {
@@ -116,7 +116,6 @@ public class ExportReportServlet extends HttpServlet {
             return;
         }
 
-        // Read Request Stream
         StringBuilder jsonBuffer = new StringBuilder();
         String line;
         try (BufferedReader reader = request.getReader()) {
@@ -129,7 +128,6 @@ public class ExportReportServlet extends HttpServlet {
         StringBuilder csvBuilder = new StringBuilder();
         csvBuilder.append("Task ID,Task Description,Customer,Status,% Completed,Start Date,End Date,Comments\n");
 
-        // Bulletproof parsing engine loop protecting against missing metrics/null properties
         try {
             int searchIdx = 0;
             while ((searchIdx = payload.indexOf("{", searchIdx)) != -1) {
@@ -147,7 +145,6 @@ public class ExportReportServlet extends HttpServlet {
                 String endDate = extractValue(objectBlock, "endDate");
                 String comments = extractValue(objectBlock, "comments");
 
-                // Null / Empty fallback mitigations
                 if (taskId.isEmpty()) taskId = "N/A";
                 if (taskDesc.isEmpty()) taskDesc = "Unassigned Task";
                 if (customer.isEmpty()) customer = "Internal";
@@ -179,7 +176,6 @@ public class ExportReportServlet extends HttpServlet {
             return;
         }
 
-        // Email Transport Handshake Block
         final String authEmail = systemSenderEmail;
         final String authPassword = systemSenderPassword;
 
@@ -231,7 +227,6 @@ public class ExportReportServlet extends HttpServlet {
             out.print("{\"success\":true}");
         } catch (Exception mailError) {
             System.err.println("!!! SMTP ENGINE FAILURE: " + mailError.getMessage());
-            mailError.printStackTrace();
             out.print("{\"success\":false,\"error\":\"Mail Transmission Failure: " + mailError.getMessage() + "\"}");
         } finally {
             out.flush();
