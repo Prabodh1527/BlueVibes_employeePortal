@@ -21,7 +21,6 @@ public class LeaveServlet extends HttpServlet {
     "mail2blueeye@gmail.com";
 
     private static final String ADMIN_EMAIL_2 =
-    "diptipatra75588@gmail.com";
     "harini.blueeye@gmail.com";
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
