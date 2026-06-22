@@ -7,6 +7,10 @@ import javax.mail.internet.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 @WebServlet("/AdminReportServlet")
 public class AdminReportServlet extends HttpServlet {
@@ -110,7 +114,7 @@ public class AdminReportServlet extends HttpServlet {
     }
 
     // ✅ ONLY ADDITION (email method)
-    private void sendEmail(String content) {
+    /*private void sendEmail(String content) {
 
         final String from = "gprabodhchandra@gmail.com";
         final String password = "btnzszjiogjhmywi";
@@ -142,6 +146,78 @@ public class AdminReportServlet extends HttpServlet {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }*/
+    private void sendEmail(String content) {
+
+        try {
+    
+            String email1 = "gprabodhchandra@gmail.com";
+            String email2 = "gprabodhchandra@gmail.com";
+            String email3 = "gprabodhchandra@gmail.com";
+    
+            URL url = new URL("https://api.brevo.com/v3/smtp/email");
+            HttpURLConnection conn =
+                    (HttpURLConnection) url.openConnection();
+    
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("api-key",
+                "YOUR_BREVO_API_KEY");
+    
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+    
+            String jsonPayload =
+                "{"
+                + "\"sender\":{"
+                + "\"name\":\"BlueVibes Portal\","
+                + "\"email\":\"gprabodhchandra@gmail.com\""
+                + "},"
+    
+                + "\"to\":["
+                + "{\"email\":\"" + email1 + "\"},"
+                + "{\"email\":\"" + email2 + "\"},"
+                + "{\"email\":\"" + email3 + "\"}"
+                + "],"
+    
+                + "\"subject\":\"BlueVibes Admin Weekly Report Export\","
+    
+                + "\"htmlContent\":\""
+    
+                + "<h3>Weekly Report Export</h3>"
+    
+                + "<p>An admin has exported weekly reports from BlueVibes.</p>"
+    
+                + "<p>Please find the report data below:</p>"
+    
+                + "<pre>"
+                + content.replace("\"","'")
+                + "</pre>"
+    
+                + "<br>"
+    
+                + "<p>"
+                + "<a href='https://bluevibes-employeeportal.onrender.com'>"
+                + "Open BlueVibes Portal"
+                + "</a>"
+                + "</p>"
+    
+                + "\""
+                + "}";
+    
+            try(OutputStream os = conn.getOutputStream()) {
+                os.write(jsonPayload.getBytes(StandardCharsets.UTF_8));
+            }
+    
+            System.out.println(
+                "ADMIN EXPORT MAIL STATUS = "
+                + conn.getResponseCode()
+            );
+    
+        }
+        catch(Exception ex) {
+            ex.printStackTrace();
         }
     }
 }
