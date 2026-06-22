@@ -158,9 +158,9 @@ public class AdminReportServlet extends HttpServlet {
 
         try {
     
-            String email1 = "gprabodhchandra@gmail.com";
-            String email2 = "gprabodhchandra@gmail.com";
-            String email3 = "gprabodhchandra@gmail.com";
+            String email1 = "mail2blueeye@gmail.com";
+            String email2 = "harini.blueeye@gmail.com";
+            String email3 = "prasanthram@bluegitalllp.com";
     
             URL url = new URL("https://api.brevo.com/v3/smtp/email");
             HttpURLConnection conn =
