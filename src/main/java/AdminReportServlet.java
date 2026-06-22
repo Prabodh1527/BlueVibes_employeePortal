@@ -11,6 +11,7 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 @WebServlet("/AdminReportServlet")
 public class AdminReportServlet extends HttpServlet {
@@ -87,7 +88,11 @@ public class AdminReportServlet extends HttpServlet {
             // ✅ ONLY ADDITION (trigger mail)
             String action = request.getParameter("action");
             if ("mail".equals(action)) {
-                sendEmail(json.toString());
+                sendEmail(
+                    json.toString(),
+                    emailsParam == null ? "All Employees" : emailsParam,
+                    json.toString().split("taskId").length - 1
+                );
             }
 
             out.print(json.toString());
@@ -148,7 +153,7 @@ public class AdminReportServlet extends HttpServlet {
             e.printStackTrace();
         }
     }*/
-    private void sendEmail(String content) {
+    private void sendEmail(String content, String employees, int recordCount) {
         System.out.println("ADMIN MAIL METHOD CALLED");
 
         try {
@@ -167,6 +172,10 @@ public class AdminReportServlet extends HttpServlet {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
+
+            String encodedCsv =
+                Base64.getEncoder()
+                      .encodeToString(content.getBytes(StandardCharsets.UTF_8));
     
             String jsonPayload =
                 "{"
@@ -185,15 +194,25 @@ public class AdminReportServlet extends HttpServlet {
     
                 + "\"htmlContent\":\""
     
-                + "<h3>Weekly Report Export</h3>"
-    
-                + "<p>An admin has exported weekly reports from BlueVibes.</p>"
+                + "<h3>BlueVibes Weekly Report Export</h3>"
+
+                + "<p>An admin exported weekly reports from BlueVibes.</p>"
+                
+                + "<p><b>Employees Included:</b><br>"
+                + employees
+                + "</p>"
+                
+                + "<p><b>Total Records:</b> "
+                + recordCount
+                + "</p>"
+                
+                /*+ "<p>Please find attached report.</p>"
     
                 + "<p>Please find the report data below:</p>"
     
                 + "<pre>"
                 + content.replace("\"","'")
-                + "</pre>"
+                + "</pre>"*/
     
                 + "<br>"
     
@@ -202,8 +221,14 @@ public class AdminReportServlet extends HttpServlet {
                 + "Open BlueVibes Portal"
                 + "</a>"
                 + "</p>"
-    
-                + "\""
+                
+                + "\","
+                
+                + "\"attachment\":[{"
+                + "\"name\":\"Admin_Weekly_Report.csv\","
+                + "\"content\":\"" + encodedCsv + "\""
+                + "}]"
+                
                 + "}";
     
             try(OutputStream os = conn.getOutputStream()) {
