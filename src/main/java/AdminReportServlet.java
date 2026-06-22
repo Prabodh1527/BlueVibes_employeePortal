@@ -162,8 +162,7 @@ public class AdminReportServlet extends HttpServlet {
                     (HttpURLConnection) url.openConnection();
     
             conn.setRequestMethod("POST");
-            conn.setRequestProperty("api-key",
-                "YOUR_BREVO_API_KEY");
+            conn.setRequestProperty("api-key", "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");
     
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestProperty("Accept", "application/json");
@@ -211,10 +210,12 @@ public class AdminReportServlet extends HttpServlet {
                 os.write(jsonPayload.getBytes(StandardCharsets.UTF_8));
             }
     
-            System.out.println(
+            /*System.out.println(
                 "ADMIN EXPORT MAIL STATUS = "
                 + conn.getResponseCode()
-            );
+            );*/
+            int code = conn.getResponseCode();
+            System.out.println("BREVO STATUS = " + code);
     
         }
         catch(Exception ex) {
