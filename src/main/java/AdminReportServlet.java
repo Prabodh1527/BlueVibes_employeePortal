@@ -149,6 +149,7 @@ public class AdminReportServlet extends HttpServlet {
         }
     }*/
     private void sendEmail(String content) {
+        System.out.println("ADMIN MAIL METHOD CALLED");
 
         try {
     
