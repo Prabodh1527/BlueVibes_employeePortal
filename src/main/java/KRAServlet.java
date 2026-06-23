@@ -1428,6 +1428,7 @@ public class KRAServlet extends HttpServlet {
     HttpServletRequest request,
     HttpServletResponse response)
     throws IOException {
+        response.setContentType("text/plain");
 
         try{
     
@@ -1479,6 +1480,7 @@ public class KRAServlet extends HttpServlet {
     HttpServletRequest request,
     HttpServletResponse response)
     throws IOException {
+        response.setContentType("text/plain");
 
         try{
     
@@ -1525,7 +1527,7 @@ public class KRAServlet extends HttpServlet {
             .print("Error");
         }
     }
-    response.setContentType("text/plain");
+    
 
     private void getKRADefinition(
     HttpServletRequest request,
