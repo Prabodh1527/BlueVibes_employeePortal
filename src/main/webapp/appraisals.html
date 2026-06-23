@@ -345,7 +345,7 @@ function loadMyKRA(){
 
         body.innerHTML = "";
 
-        data.rows.forEach(r=>{
+        /*data.rows.forEach(r=>{
 
             body.innerHTML += `
 
@@ -391,6 +391,52 @@ function loadMyKRA(){
             </tr>
 
             `;
+        });*/
+        data.rows.forEach(r=>{
+
+            body.innerHTML += `
+        
+            <tr data-kraid="${r.kraId}">
+        
+                <td>${r.objective}</td>
+        
+                <td>${r.measurementCriteria}</td>
+        
+                <td>${r.subActivity}</td>
+        
+                <td>${r.weightage}</td>
+        
+                <td>
+        
+                    <textarea
+                        class="selfAppraisal"
+                        style="
+                        width:100%;
+                        min-height:90px;
+                        padding:10px;
+                        border:1px solid #e2e8f0;
+                        border-radius:6px;
+                        resize:vertical;">${r.selfAppraisal || ""}</textarea>
+        
+                </td>
+        
+                <td>
+        
+                    <select class="selfRating">
+        
+                        <option value="1" ${r.selfRating==1?"selected":""}>1</option>
+                        <option value="2" ${r.selfRating==2?"selected":""}>2</option>
+                        <option value="3" ${r.selfRating==3?"selected":""}>3</option>
+                        <option value="4" ${r.selfRating==4?"selected":""}>4</option>
+                        <option value="5" ${r.selfRating==5?"selected":""}>5</option>
+        
+                    </select>
+        
+                </td>
+        
+            </tr>
+        
+            `;
         });
 
     });
@@ -408,12 +454,15 @@ function saveDraft(){
 
         appraisals.push({
 
+            kraId:
+            row.getAttribute("data-kraid"),
+        
             selfAppraisal:
             row.querySelector(".selfAppraisal").value,
-
+        
             selfRating:
             row.querySelector(".selfRating").value
-
+        
         });
 
     });
@@ -455,12 +504,15 @@ function submitAppraisal(){
 
         appraisals.push({
 
+            kraId:
+            row.getAttribute("data-kraid"),
+        
             selfAppraisal:
             row.querySelector(".selfAppraisal").value,
-
+        
             selfRating:
             row.querySelector(".selfRating").value
-
+        
         });
 
     });
