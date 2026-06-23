@@ -420,6 +420,17 @@ function loadMyKRA(){
                         border:1px solid #e2e8f0;
                         border-radius:6px;
                         resize:vertical;">${r.selfAppraisal || ""}</textarea>
+
+                    <div style="
+                    margin-top:8px;
+                    font-size:12px;
+                    color:#64748b;">
+                    
+                    ${r.managerComments
+                    ? "Manager Comment: " + r.managerComments
+                    : ""}
+                    
+                    </div>
         
                 </td>
         
@@ -442,6 +453,27 @@ function loadMyKRA(){
         
             `;
         });
+        if(
+            data.status === "APPROVED"
+        ){
+            document
+            .querySelectorAll(
+            ".selfAppraisal,.selfRating")
+            .forEach(el=>{
+        
+                el.disabled = true;
+            });
+        
+            document
+            .querySelector(
+            'button[onclick="saveDraft()"]'
+            ).style.display = "none";
+        
+            document
+            .querySelector(
+            'button[onclick="submitAppraisal()"]'
+            ).style.display = "none";
+        }
 
     });
 
