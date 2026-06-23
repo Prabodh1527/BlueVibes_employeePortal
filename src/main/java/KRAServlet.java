@@ -866,7 +866,11 @@ public class KRAServlet extends HttpServlet {
             "r.self_rating," +
             "r.response_status " +
             "FROM kra_master k " +
-            "JOIN kra_response r " +
+            "INNER JOIN (" +
+            "SELECT DISTINCT ON (kra_id) * " +
+            "FROM kra_response " +
+            "ORDER BY kra_id,id DESC" +
+            ") r " +
             "ON k.id=r.kra_id " +
             "WHERE k.employee_email=? " +
             "AND k.assessment_year=? " +
