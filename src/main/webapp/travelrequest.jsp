@@ -179,8 +179,8 @@ input, select { width:100%; padding:6px; border:1px solid var(--border); border-
 <aside class="sidebar">
 <div class="sidebar-header">
 <div class="brand-container">
-<img src="logo1.jpeg" class="sidebar-logo">
-<img src="logo.jpeg" class="sidebar-logo">
+<img src="blueeye.png" class="logo-main">
+<img src="bluedigital.png" class="logo-secondary">
 </div>
 <div class="brand-name">BlueVibes</div>
 </div>
@@ -197,7 +197,7 @@ input, select { width:100%; padding:6px; border:1px solid var(--border); border-
     <i class="ph ph-users-three"></i> Know Your Colleagues
 </a>
 <a href="policyview.jsp" class="nav-item"><i class="ph ph-scroll"></i> Company Policies</a>
-<a href="travelrequest.jsp" class="nav-item">
+<a href="travelrequest.jsp" class="nav-item active">
     <i class="ph ph-airplane"></i> Travel Request
 </a>
 
