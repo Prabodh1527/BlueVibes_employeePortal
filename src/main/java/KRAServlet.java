@@ -193,6 +193,153 @@ public class KRAServlet extends HttpServlet {
     }
 
     private void getEmployeeKRA(
+    HttpServletRequest request,
+    HttpServletResponse response)
+    throws IOException {
+
+        response.setContentType("application/json");
+    
+        JSONObject result = new JSONObject();
+        JSONArray rows = new JSONArray();
+    
+        try{
+    
+            String email =
+            (String)request.getSession()
+                           .getAttribute("userEmail");
+    
+            Connection con =
+            DBConnection.getConnection();
+    
+            String sql =
+    
+            "SELECT * " +
+            "FROM kra_master " +
+            "WHERE employee_email=? " +
+            "AND status='PUBLISHED' " +
+            "ORDER BY id";
+    
+            PreparedStatement ps =
+            con.prepareStatement(sql);
+    
+            ps.setString(1,email);
+    
+            ResultSet rs =
+            ps.executeQuery();
+    
+            boolean first = true;
+    
+            while(rs.next()){
+    
+                int kraId =
+                rs.getInt("id");
+    
+                if(first){
+    
+                    result.put(
+                        "assessmentYear",
+                        rs.getString("assessment_year"));
+    
+                    result.put(
+                        "employeeId",
+                        rs.getString("employee_id"));
+    
+                    result.put(
+                        "designation",
+                        rs.getString("designation"));
+    
+                    first = false;
+                }
+    
+                JSONObject row =
+                new JSONObject();
+    
+                row.put(
+                    "kraId",
+                    kraId);
+    
+                row.put(
+                    "objective",
+                    rs.getString("objective"));
+    
+                row.put(
+                    "measurementCriteria",
+                    rs.getString("measurement_criteria"));
+    
+                row.put(
+                    "subActivity",
+                    rs.getString("sub_activity"));
+    
+                row.put(
+                    "weightage",
+                    rs.getInt("weightage"));
+    
+                String responseSql =
+    
+                "SELECT self_appraisal," +
+                "self_rating," +
+                "response_status " +
+                "FROM kra_response " +
+                "WHERE kra_id=? " +
+                "AND employee_email=? " +
+                "ORDER BY id DESC " +
+                "LIMIT 1";
+    
+                PreparedStatement responsePs =
+                con.prepareStatement(responseSql);
+    
+                responsePs.setInt(1,kraId);
+                responsePs.setString(2,email);
+    
+                ResultSet responseRs =
+                responsePs.executeQuery();
+    
+                if(responseRs.next()){
+    
+                    row.put(
+                        "selfAppraisal",
+                        responseRs.getString(
+                        "self_appraisal"));
+    
+                    row.put(
+                        "selfRating",
+                        responseRs.getInt(
+                        "self_rating"));
+    
+                    row.put(
+                        "status",
+                        responseRs.getString(
+                        "response_status"));
+                }
+                else{
+    
+                    row.put(
+                        "selfAppraisal",
+                        "");
+    
+                    row.put(
+                        "selfRating",
+                        1);
+    
+                    row.put(
+                        "status",
+                        "DRAFT");
+                }
+    
+                rows.put(row);
+            }
+    
+            result.put("rows",rows);
+    
+        }catch(Exception e){
+    
+            e.printStackTrace();
+        }
+    
+        response.getWriter()
+                .print(result.toString());
+    }
+    /*private void getEmployeeKRA(
         HttpServletRequest request,
         HttpServletResponse response)
         throws IOException {
@@ -337,7 +484,7 @@ public class KRAServlet extends HttpServlet {
     
         response.getWriter().print(
         result.toString());
-    }
+    }*/
 
     private void saveDraft(HttpServletRequest request,
                        HttpServletResponse response)
@@ -618,7 +765,7 @@ public class KRAServlet extends HttpServlet {
     }
 
     
-    private void saveEmployeeDraft(
+    /*private void saveEmployeeDraft(
         HttpServletRequest request,
         HttpServletResponse response)
         throws IOException {
@@ -719,9 +866,150 @@ public class KRAServlet extends HttpServlet {
             response.getWriter()
                     .print("Error");
         }
+    }*/
+    private void saveEmployeeDraft(
+    HttpServletRequest request,
+    HttpServletResponse response)
+    throws IOException {
+    
+        try{
+    
+            String email =
+            (String)request.getSession()
+                           .getAttribute("userEmail");
+    
+            String body =
+            getRequestBody(request);
+    
+            JSONObject json =
+            new JSONObject(body);
+    
+            JSONArray appraisals =
+            json.getJSONArray("appraisals");
+    
+            Connection con =
+            DBConnection.getConnection();
+    
+            for(int i=0;i<appraisals.length();i++){
+    
+                JSONObject row =
+                appraisals.getJSONObject(i);
+    
+                int kraId =
+                Integer.parseInt(
+                row.getString("kraId"));
+    
+                String selfAppraisal =
+                row.getString(
+                "selfAppraisal");
+    
+                int selfRating =
+                Integer.parseInt(
+                row.getString(
+                "selfRating"));
+    
+                String checkSql =
+    
+                "SELECT id " +
+                "FROM kra_response " +
+                "WHERE kra_id=? " +
+                "AND employee_email=?";
+    
+                PreparedStatement checkPs =
+                con.prepareStatement(checkSql);
+    
+                checkPs.setInt(1,kraId);
+                checkPs.setString(2,email);
+    
+                ResultSet checkRs =
+                checkPs.executeQuery();
+    
+                if(checkRs.next()){
+    
+                    String updateSql =
+    
+                    "UPDATE kra_response " +
+                    "SET self_appraisal=?," +
+                    "self_rating=?," +
+                    "response_status='DRAFT' " +
+                    "WHERE kra_id=? " +
+                    "AND employee_email=?";
+    
+                    PreparedStatement updatePs =
+                    con.prepareStatement(updateSql);
+    
+                    updatePs.setString(
+                        1,
+                        selfAppraisal);
+    
+                    updatePs.setInt(
+                        2,
+                        selfRating);
+    
+                    updatePs.setInt(
+                        3,
+                        kraId);
+    
+                    updatePs.setString(
+                        4,
+                        email);
+    
+                    updatePs.executeUpdate();
+                }
+                else{
+    
+                    String insertSql =
+    
+                    "INSERT INTO kra_response(" +
+                    "kra_id," +
+                    "employee_email," +
+                    "self_appraisal," +
+                    "self_rating," +
+                    "response_status," +
+                    "submitted_on" +
+                    ") VALUES(?,?,?,?,?,CURRENT_TIMESTAMP)";
+    
+                    PreparedStatement insertPs =
+                    con.prepareStatement(insertSql);
+    
+                    insertPs.setInt(
+                        1,
+                        kraId);
+    
+                    insertPs.setString(
+                        2,
+                        email);
+    
+                    insertPs.setString(
+                        3,
+                        selfAppraisal);
+    
+                    insertPs.setInt(
+                        4,
+                        selfRating);
+    
+                    insertPs.setString(
+                        5,
+                        "DRAFT");
+    
+                    insertPs.executeUpdate();
+                }
+            }
+    
+            response.getWriter()
+                    .print(
+                    "Draft Saved Successfully");
+    
+        }catch(Exception e){
+    
+            e.printStackTrace();
+    
+            response.getWriter()
+                    .print("Error");
+        }
     }
 
-    private void submitEmployeeAppraisal(
+    /*private void submitEmployeeAppraisal(
         HttpServletRequest request,
         HttpServletResponse response)
         throws IOException {
@@ -773,6 +1061,148 @@ public class KRAServlet extends HttpServlet {
             response.getWriter()
                     .print(
                     "Employee Appraisal Submitted");
+    
+        }catch(Exception e){
+    
+            e.printStackTrace();
+    
+            response.getWriter()
+                    .print("Error");
+        }
+    }*/
+    private void submitEmployeeAppraisal(
+    HttpServletRequest request,
+    HttpServletResponse response)
+    throws IOException {
+    
+        try{
+    
+            String email =
+            (String)request.getSession()
+                           .getAttribute("userEmail");
+    
+            String body =
+            getRequestBody(request);
+    
+            JSONObject json =
+            new JSONObject(body);
+    
+            JSONArray appraisals =
+            json.getJSONArray("appraisals");
+    
+            Connection con =
+            DBConnection.getConnection();
+    
+            for(int i=0;i<appraisals.length();i++){
+    
+                JSONObject row =
+                appraisals.getJSONObject(i);
+    
+                int kraId =
+                Integer.parseInt(
+                row.getString("kraId"));
+    
+                String selfAppraisal =
+                row.getString(
+                "selfAppraisal");
+    
+                int selfRating =
+                Integer.parseInt(
+                row.getString(
+                "selfRating"));
+    
+                String checkSql =
+    
+                "SELECT id " +
+                "FROM kra_response " +
+                "WHERE kra_id=? " +
+                "AND employee_email=?";
+    
+                PreparedStatement checkPs =
+                con.prepareStatement(checkSql);
+    
+                checkPs.setInt(1,kraId);
+                checkPs.setString(2,email);
+    
+                ResultSet checkRs =
+                checkPs.executeQuery();
+    
+                if(checkRs.next()){
+    
+                    String updateSql =
+    
+                    "UPDATE kra_response " +
+                    "SET self_appraisal=?," +
+                    "self_rating=?," +
+                    "response_status='SUBMITTED'," +
+                    "submitted_on=CURRENT_TIMESTAMP " +
+                    "WHERE kra_id=? " +
+                    "AND employee_email=?";
+    
+                    PreparedStatement updatePs =
+                    con.prepareStatement(updateSql);
+    
+                    updatePs.setString(
+                        1,
+                        selfAppraisal);
+    
+                    updatePs.setInt(
+                        2,
+                        selfRating);
+    
+                    updatePs.setInt(
+                        3,
+                        kraId);
+    
+                    updatePs.setString(
+                        4,
+                        email);
+    
+                    updatePs.executeUpdate();
+                }
+                else{
+    
+                    String insertSql =
+    
+                    "INSERT INTO kra_response(" +
+                    "kra_id," +
+                    "employee_email," +
+                    "self_appraisal," +
+                    "self_rating," +
+                    "response_status," +
+                    "submitted_on" +
+                    ") VALUES(?,?,?,?,?,CURRENT_TIMESTAMP)";
+    
+                    PreparedStatement insertPs =
+                    con.prepareStatement(insertSql);
+    
+                    insertPs.setInt(
+                        1,
+                        kraId);
+    
+                    insertPs.setString(
+                        2,
+                        email);
+    
+                    insertPs.setString(
+                        3,
+                        selfAppraisal);
+    
+                    insertPs.setInt(
+                        4,
+                        selfRating);
+    
+                    insertPs.setString(
+                        5,
+                        "SUBMITTED");
+    
+                    insertPs.executeUpdate();
+                }
+            }
+    
+            response.getWriter()
+                    .print(
+                    "Appraisal Submitted Successfully");
     
         }catch(Exception e){
     
