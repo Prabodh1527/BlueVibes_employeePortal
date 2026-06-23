@@ -820,9 +820,12 @@ function loadEmployees(){
             </option>`;
 
             review.innerHTML += `
-            <option value="${e.email}">
+            <option
+                value="${e.email}"
+                data-id="${e.employeeId}"
+                data-designation="${e.designation}">
                 ${e.fullname}
-            </option>`;
+            </option>
         });
 
     })
