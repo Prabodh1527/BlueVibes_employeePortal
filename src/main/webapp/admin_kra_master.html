@@ -853,7 +853,7 @@ document.addEventListener("change",function(e){
         selected.getAttribute("data-designation") || "";
 
         fetch(
-        `KRAServlet?action=getKRADefinition&email=${e.target.value}`
+        `KRAServlet?action=getKRADefinition&email=${e.target.value}&year=${document.getElementById("assessmentYear").value}`
         )
         .then(res=>res.json())
         .then(data=>{
