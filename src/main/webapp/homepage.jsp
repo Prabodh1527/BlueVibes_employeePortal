@@ -11,28 +11,50 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        :root { --sidebar-width: 260px; --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --border: #e2e8f0; --text: #1e293b; --white: #ffffff; }
+        :root{
+            --sidebar-width:240px;
+            --primary:#0f172a;
+            --accent:#0284c7;
+            --bg:#f1f5f9;
+            --border:#e2e8f0;
+            --text:#1e293b;
+            --white:#ffffff;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
-        .sidebar { width: var(--sidebar-width); background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.1); overflow-y:auto; scrollbar-width: thin;}
-        .sidebar-header { padding: 2.5rem 1.5rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar{
+            width:var(--sidebar-width);
+            background:linear-gradient(180deg,#0f172a 0%,#111827 100%);
+            display:flex;
+            flex-direction:column;
+            flex-shrink:0;
+            overflow:hidden;
+            border-right:1px solid rgba(255,255,255,0.08);
+        }
+
+        .sidebar-header{
+            padding:18px 15px 12px;
+            text-align:center;
+            border-bottom:1px solid rgba(255,255,255,0.08);
+        }
         .brand-container{
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 10px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:6px;
+            margin-bottom:6px;
         }
         .logo-main{
-            width: 120px;
-            height: auto;
-            object-fit: contain;
+            width:75px;
+            height:auto;
+            object-fit:contain;
         }
+        
         .logo-secondary{
-            width: 220px;
-            height: auto;
-            object-fit: contain;
+            width:150px;
+            height:auto;
+            object-fit:contain;
         }
         .summary-card{
             background:white;
@@ -114,15 +136,89 @@
             font-weight:600;
         }
 
-        .brand-name { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: 4px; margin-top: 10px; background: linear-gradient(to right, #fff, #64748b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .brand-name{
+            font-size:1.5rem;
+            font-weight:800;
+            color:white;
+            letter-spacing:2px;
+            margin-top:5px;
+            background:linear-gradient(to right,#fff,#94a3b8);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+        }
         .sidebar-logo { width: 80px; height: 80px; background: transparent; padding: 0; border-radius: 8px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
 
-        .nav-links { list-style: none; padding: 1.5rem 1rem; flex-grow: 1; overflow-y: auto; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 0.8rem 1rem; border-radius: 8px; color: #94a3b8; text-decoration: none; margin-bottom: 0.5rem; transition: 0.3s; font-size: 0.9rem; }
-        .nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
-        .sidebar-footer { padding: 1.5rem 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
-        .logout-item { color: #f87171 !important; text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 0.8rem 1rem; border-radius: 8px; transition: 0.3s; font-size: 0.9rem; }
-        .logout-item:hover { background: rgba(239, 68, 68, 0.1) !important; color: #ef4444 !important; }
+        .nav-links{
+            list-style:none;
+            padding:12px;
+            flex-grow:1;
+            overflow-y:auto;
+            scrollbar-width:thin;
+        }
+        
+        .nav-links::-webkit-scrollbar{
+            width:5px;
+        }
+        
+        .nav-links::-webkit-scrollbar-thumb{
+            background:#334155;
+            border-radius:10px;
+        }
+        
+        .nav-links::-webkit-scrollbar-track{
+            background:transparent;
+        }
+        
+        .nav-item{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            padding:12px 14px;
+            border-radius:12px;
+            color:#cbd5e1;
+            text-decoration:none;
+            margin-bottom:6px;
+            transition:all .25s ease;
+            font-size:14px;
+            font-weight:500;
+        }
+        
+        .nav-item i{
+            font-size:18px;
+            min-width:18px;
+        }
+        
+        .nav-item:hover{
+            background:rgba(2,132,199,.18);
+            color:white;
+        }
+        
+        .nav-item.active{
+            background:#0284c7;
+            color:white;
+            box-shadow:0 4px 12px rgba(2,132,199,.35);
+        }
+        
+        .sidebar-footer{
+            padding:12px;
+            border-top:1px solid rgba(255,255,255,.08);
+        }
+        
+        .logout-item{
+            color:#f87171 !important;
+            text-decoration:none;
+            display:flex;
+            align-items:center;
+            gap:12px;
+            padding:12px 14px;
+            border-radius:12px;
+            transition:.25s;
+            font-size:14px;
+        }
+        
+        .logout-item:hover{
+            background:rgba(239,68,68,.12);
+        }
 
         .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
         .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; }
