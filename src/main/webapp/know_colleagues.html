@@ -183,6 +183,17 @@ body{
     cursor:pointer;
 }
 
+.birthday-badge{
+    display:inline-block;
+    background:#fff3cd;
+    color:#856404;
+    padding:5px 10px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+    margin-bottom:10px;
+}
+
 </style>
 </head>
 
@@ -356,9 +367,28 @@ fetch('KnowColleaguesServlet')
 
     data.forEach((emp,index)=>{
 
+        let birthdayBadge = "";
+    
+        if(emp.date_of_birth){
+    
+            let birthMonth =
+                emp.date_of_birth.split("-")[1];
+    
+            let currentMonth =
+                String(new Date().getMonth()+1)
+                .padStart(2,"0");
+    
+            if(birthMonth === currentMonth){
+                birthdayBadge =
+                '<div class="birthday-badge">🎂 Birthday Month</div>';
+            }
+        }
+    
         html += `
         <div class="employee-card">
-
+    
+            ${birthdayBadge}
+    
             <h3>${emp.fullname}</h3>
 
             <p>
