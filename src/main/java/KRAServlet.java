@@ -586,6 +586,53 @@ public class KRAServlet extends HttpServlet {
         }
     }
     
+    /*private void publish(HttpServletRequest request,
+                     HttpServletResponse response)
+        throws IOException {
+
+        try{
+    
+            String body =
+            getRequestBody(request);
+    
+            JSONObject json =
+            new JSONObject(body);
+    
+            String assessmentYear =
+            json.getString("assessmentYear");
+    
+            String employeeEmail =
+            json.getString("employeeEmail");
+    
+            Connection con =
+            DBConnection.getConnection();
+    
+            String sql =
+    
+            "UPDATE kra_master " +
+            "SET status='PUBLISHED' " +
+            "WHERE employee_email=? " +
+            "AND assessment_year=?";
+    
+            PreparedStatement ps =
+            con.prepareStatement(sql);
+    
+            ps.setString(1,employeeEmail);
+            ps.setString(2,assessmentYear);
+    
+            ps.executeUpdate();
+    
+            response.getWriter()
+                    .print("Published");
+    
+        }catch(Exception e){
+    
+            e.printStackTrace();
+    
+            response.getWriter()
+                    .print("Error");
+        }
+    }*/
     private void publish(HttpServletRequest request,
                      HttpServletResponse response)
         throws IOException {
@@ -606,6 +653,31 @@ public class KRAServlet extends HttpServlet {
     
             Connection con =
             DBConnection.getConnection();
+    
+            String checkSql =
+    
+            "SELECT COUNT(*) " +
+            "FROM kra_master " +
+            "WHERE employee_email=? " +
+            "AND assessment_year=?";
+    
+            PreparedStatement checkPs =
+            con.prepareStatement(checkSql);
+    
+            checkPs.setString(1,employeeEmail);
+            checkPs.setString(2,assessmentYear);
+    
+            ResultSet rs =
+            checkPs.executeQuery();
+    
+            rs.next();
+    
+            if(rs.getInt(1)==0){
+    
+                response.getWriter()
+                        .print("No KRA Found");
+                return;
+            }
     
             String sql =
     
@@ -1328,12 +1400,14 @@ public class KRAServlet extends HttpServlet {
 
         "SELECT * FROM kra_master " +
         "WHERE employee_email=?" +
+        "AND assessment_year=?" +
         "ORDER BY id";
 
         PreparedStatement ps =
         con.prepareStatement(sql);
 
         ps.setString(1,email);
+        ps.setString(2,request.getParameter("year"));
 
         ResultSet rs =
         ps.executeQuery();
