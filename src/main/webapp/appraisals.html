@@ -340,6 +340,9 @@ function loadMyKRA(){
         document.getElementById("designation").value =
         data.designation;
 
+        document.getElementById("status").value =
+        data.status || "Draft";
+
         const body =
         document.getElementById("appraisalBody");
 
