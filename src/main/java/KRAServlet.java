@@ -896,7 +896,7 @@ public class KRAServlet extends HttpServlet {
             "ON k.id=r.kra_id " +
             "WHERE k.employee_email=? " +
             "AND k.assessment_year=? " +
-            "AND r.response_status='SUBMITTED' " +
+            "AND r.response_status IN ('SUBMITTED','NEEDS_IMPROVEMENT') " +
             "ORDER BY k.id";
     
             PreparedStatement ps =
