@@ -987,7 +987,7 @@ public class KRAServlet extends HttpServlet {
     HttpServletRequest request,
     HttpServletResponse response)
     throws IOException {
-    
+
         try{
     
             String email =
@@ -1006,115 +1006,105 @@ public class KRAServlet extends HttpServlet {
             Connection con =
             DBConnection.getConnection();
     
-            for(int i=0;i<appraisals.length();i++){
+            String year =
+            json.getString("assessmentYear");
+    
+            String kraSql =
+    
+            "SELECT id " +
+            "FROM kra_master " +
+            "WHERE employee_email=? " +
+            "AND assessment_year=? " +
+            "AND status='PUBLISHED' " +
+            "ORDER BY id";
+    
+            PreparedStatement kraPs =
+            con.prepareStatement(kraSql);
+    
+            kraPs.setString(1,email);
+            kraPs.setString(2,year);
+    
+            ResultSet kraRs =
+            kraPs.executeQuery();
+    
+            JSONArray kraIds =
+            new JSONArray();
+    
+            while(kraRs.next()){
+    
+                kraIds.put(
+                kraRs.getInt("id"));
+            }
+    
+            String deleteSql =
+    
+            "DELETE FROM kra_response " +
+            "WHERE employee_email=? " +
+            "AND kra_id IN (" +
+            "SELECT id FROM kra_master " +
+            "WHERE employee_email=? " +
+            "AND assessment_year=?" +
+            ")";
+    
+            PreparedStatement deletePs =
+            con.prepareStatement(deleteSql);
+    
+            deletePs.setString(1,email);
+            deletePs.setString(2,email);
+            deletePs.setString(3,year);
+    
+            deletePs.executeUpdate();
+    
+            String insertSql =
+    
+            "INSERT INTO kra_response(" +
+            "kra_id," +
+            "employee_email," +
+            "self_appraisal," +
+            "self_rating," +
+            "response_status," +
+            "submitted_on" +
+            ") VALUES(?,?,?,?,?,CURRENT_TIMESTAMP)";
+    
+            PreparedStatement ps =
+            con.prepareStatement(insertSql);
+    
+            for(int i=0;
+                i<appraisals.length();
+                i++){
     
                 JSONObject row =
                 appraisals.getJSONObject(i);
     
-                int kraId =
-                Integer.parseInt(
-                row.getString("kraId"));
+                ps.setInt(
+                1,
+                kraIds.getInt(i));
     
-                String selfAppraisal =
+                ps.setString(
+                2,
+                email);
+    
+                ps.setString(
+                3,
                 row.getString(
-                "selfAppraisal");
+                "selfAppraisal"));
     
-                int selfRating =
+                ps.setInt(
+                4,
                 Integer.parseInt(
                 row.getString(
-                "selfRating"));
+                "selfRating")));
     
-                String checkSql =
+                ps.setString(
+                5,
+                "DRAFT");
     
-                "SELECT id " +
-                "FROM kra_response " +
-                "WHERE kra_id=? " +
-                "AND employee_email=?";
-    
-                PreparedStatement checkPs =
-                con.prepareStatement(checkSql);
-    
-                checkPs.setInt(1,kraId);
-                checkPs.setString(2,email);
-    
-                ResultSet checkRs =
-                checkPs.executeQuery();
-    
-                if(checkRs.next()){
-    
-                    String updateSql =
-    
-                    "UPDATE kra_response " +
-                    "SET self_appraisal=?," +
-                    "self_rating=?," +
-                    "response_status='DRAFT' " +
-                    "WHERE kra_id=? " +
-                    "AND employee_email=?";
-    
-                    PreparedStatement updatePs =
-                    con.prepareStatement(updateSql);
-    
-                    updatePs.setString(
-                        1,
-                        selfAppraisal);
-    
-                    updatePs.setInt(
-                        2,
-                        selfRating);
-    
-                    updatePs.setInt(
-                        3,
-                        kraId);
-    
-                    updatePs.setString(
-                        4,
-                        email);
-    
-                    updatePs.executeUpdate();
-                }
-                else{
-    
-                    String insertSql =
-    
-                    "INSERT INTO kra_response(" +
-                    "kra_id," +
-                    "employee_email," +
-                    "self_appraisal," +
-                    "self_rating," +
-                    "response_status," +
-                    "submitted_on" +
-                    ") VALUES(?,?,?,?,?,CURRENT_TIMESTAMP)";
-    
-                    PreparedStatement insertPs =
-                    con.prepareStatement(insertSql);
-    
-                    insertPs.setInt(
-                        1,
-                        kraId);
-    
-                    insertPs.setString(
-                        2,
-                        email);
-    
-                    insertPs.setString(
-                        3,
-                        selfAppraisal);
-    
-                    insertPs.setInt(
-                        4,
-                        selfRating);
-    
-                    insertPs.setString(
-                        5,
-                        "DRAFT");
-    
-                    insertPs.executeUpdate();
-                }
+                ps.executeUpdate();
             }
     
             response.getWriter()
                     .print(
-                    "Draft Saved Successfully");
+                    "Employee Draft Saved");
     
         }catch(Exception e){
     
@@ -1124,7 +1114,6 @@ public class KRAServlet extends HttpServlet {
                     .print("Error");
         }
     }
-
     /*private void submitEmployeeAppraisal(
         HttpServletRequest request,
         HttpServletResponse response)
@@ -1190,7 +1179,7 @@ public class KRAServlet extends HttpServlet {
     HttpServletRequest request,
     HttpServletResponse response)
     throws IOException {
-    
+
         try{
     
             String email =
@@ -1203,122 +1192,111 @@ public class KRAServlet extends HttpServlet {
             JSONObject json =
             new JSONObject(body);
     
+            String year =
+            json.getString("assessmentYear");
+    
             JSONArray appraisals =
             json.getJSONArray("appraisals");
     
             Connection con =
             DBConnection.getConnection();
     
-            for(int i=0;i<appraisals.length();i++){
+            String deleteSql =
+    
+            "DELETE FROM kra_response " +
+            "WHERE employee_email=? " +
+            "AND kra_id IN (" +
+            "SELECT id FROM kra_master " +
+            "WHERE employee_email=? " +
+            "AND assessment_year=?" +
+            ")";
+    
+            PreparedStatement deletePs =
+            con.prepareStatement(deleteSql);
+    
+            deletePs.setString(1,email);
+            deletePs.setString(2,email);
+            deletePs.setString(3,year);
+    
+            deletePs.executeUpdate();
+    
+            String kraSql =
+    
+            "SELECT id " +
+            "FROM kra_master " +
+            "WHERE employee_email=? " +
+            "AND assessment_year=? " +
+            "AND status='PUBLISHED' " +
+            "ORDER BY id";
+    
+            PreparedStatement kraPs =
+            con.prepareStatement(kraSql);
+    
+            kraPs.setString(1,email);
+            kraPs.setString(2,year);
+    
+            ResultSet kraRs =
+            kraPs.executeQuery();
+    
+            JSONArray kraIds =
+            new JSONArray();
+    
+            while(kraRs.next()){
+    
+                kraIds.put(
+                kraRs.getInt("id"));
+            }
+    
+            String insertSql =
+    
+            "INSERT INTO kra_response(" +
+            "kra_id," +
+            "employee_email," +
+            "self_appraisal," +
+            "self_rating," +
+            "response_status," +
+            "submitted_on" +
+            ") VALUES(?,?,?,?,?,CURRENT_TIMESTAMP)";
+    
+            PreparedStatement ps =
+            con.prepareStatement(insertSql);
+    
+            for(int i=0;
+                i<appraisals.length();
+                i++){
     
                 JSONObject row =
                 appraisals.getJSONObject(i);
     
-                int kraId =
-                Integer.parseInt(
-                row.getString("kraId"));
+                ps.setInt(
+                1,
+                kraIds.getInt(i));
     
-                String selfAppraisal =
+                ps.setString(
+                2,
+                email);
+    
+                ps.setString(
+                3,
                 row.getString(
-                "selfAppraisal");
+                "selfAppraisal"));
     
-                int selfRating =
+                ps.setInt(
+                4,
                 Integer.parseInt(
                 row.getString(
-                "selfRating"));
+                "selfRating")));
     
-                String checkSql =
+                ps.setString(
+                5,
+                "SUBMITTED");
     
-                "SELECT id " +
-                "FROM kra_response " +
-                "WHERE kra_id=? " +
-                "AND employee_email=?";
-    
-                PreparedStatement checkPs =
-                con.prepareStatement(checkSql);
-    
-                checkPs.setInt(1,kraId);
-                checkPs.setString(2,email);
-    
-                ResultSet checkRs =
-                checkPs.executeQuery();
-    
-                if(checkRs.next()){
-    
-                    String updateSql =
-    
-                    "UPDATE kra_response " +
-                    "SET self_appraisal=?," +
-                    "self_rating=?," +
-                    "response_status='SUBMITTED'," +
-                    "submitted_on=CURRENT_TIMESTAMP " +
-                    "WHERE kra_id=? " +
-                    "AND employee_email=?";
-    
-                    PreparedStatement updatePs =
-                    con.prepareStatement(updateSql);
-    
-                    updatePs.setString(
-                        1,
-                        selfAppraisal);
-    
-                    updatePs.setInt(
-                        2,
-                        selfRating);
-    
-                    updatePs.setInt(
-                        3,
-                        kraId);
-    
-                    updatePs.setString(
-                        4,
-                        email);
-    
-                    updatePs.executeUpdate();
-                }
-                else{
-    
-                    String insertSql =
-    
-                    "INSERT INTO kra_response(" +
-                    "kra_id," +
-                    "employee_email," +
-                    "self_appraisal," +
-                    "self_rating," +
-                    "response_status," +
-                    "submitted_on" +
-                    ") VALUES(?,?,?,?,?,CURRENT_TIMESTAMP)";
-    
-                    PreparedStatement insertPs =
-                    con.prepareStatement(insertSql);
-    
-                    insertPs.setInt(
-                        1,
-                        kraId);
-    
-                    insertPs.setString(
-                        2,
-                        email);
-    
-                    insertPs.setString(
-                        3,
-                        selfAppraisal);
-    
-                    insertPs.setInt(
-                        4,
-                        selfRating);
-    
-                    insertPs.setString(
-                        5,
-                        "SUBMITTED");
-    
-                    insertPs.executeUpdate();
-                }
+                ps.executeUpdate();
             }
     
             response.getWriter()
                     .print(
-                    "Appraisal Submitted Successfully");
+                    "Employee Appraisal Submitted");
     
         }catch(Exception e){
     
