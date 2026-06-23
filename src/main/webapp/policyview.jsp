@@ -23,6 +23,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
+       
         .sidebar{
             width:var(--sidebar-width);
             background:linear-gradient(180deg,#0f172a 0%,#111827 100%);
@@ -147,7 +148,6 @@
         .logout-btn i{
             font-size:18px;
         }
-
         .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
         .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; }
         .content-area { padding: 2.5rem; overflow-y: auto; flex-grow: 1; }
