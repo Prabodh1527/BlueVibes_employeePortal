@@ -666,6 +666,7 @@ SUMMARY
                         <th>Weightage</th>
                         <th>Self Appraisal</th>
                         <th>Employee Rating</th>
+                        <th>Status</th>
                         <th>Manager Comments</th>
                         <th>Manager Rating</th>
                     </tr>
@@ -1405,7 +1406,7 @@ function loadReviewData(){
 
             body.innerHTML = `
             <tr>
-                <td colspan="6"
+                <td colspan="7"
                     style="text-align:center;padding:20px;">
                     No KRA Defined Yet
                 </td>
@@ -1434,6 +1435,10 @@ function loadReviewData(){
         
                 <td>
                     ${r.selfRating}
+                </td>
+
+                <td>
+                    ${r.status}
                 </td>
         
                 <td>
