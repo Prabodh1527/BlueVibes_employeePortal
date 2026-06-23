@@ -288,6 +288,8 @@ public class KRAServlet extends HttpServlet {
                 "SELECT self_appraisal," +
                 "self_rating," +
                 "response_status " +
+                "manager_comments " +
+                "manager_rating " +
                 "FROM kra_response " +
                 "WHERE kra_id=? " +
                 "AND employee_email=? " +
@@ -319,6 +321,16 @@ public class KRAServlet extends HttpServlet {
                         "status",
                         responseRs.getString(
                         "response_status"));
+                    
+                    row.put(
+                        "managerComments",
+                        responseRs.getString(
+                        "manager_comments"));
+                    
+                    row.put(
+                        "managerRating",
+                        responseRs.getInt(
+                        "manager_rating"));
 
                     result.put(
                         "status",
@@ -335,9 +347,9 @@ public class KRAServlet extends HttpServlet {
                         "selfRating",
                         1);
     
-                    row.put(
-                        "status",
-                        "DRAFT");
+                    row.put("status","DRAFT");
+                    row.put("managerComments","");
+                    row.put("managerRating",0);
                 }
     
                 rows.put(row);
@@ -872,6 +884,8 @@ public class KRAServlet extends HttpServlet {
             "k.weightage," +
             "r.self_appraisal," +
             "r.self_rating," +
+            "r.manager_comments, " +
+            "r.manager_rating, " +
             "r.response_status " +
             "FROM kra_master k " +
             "INNER JOIN (" +
