@@ -689,15 +689,18 @@ SUMMARY
 
             <div class="action-bar">
 
-                <button class="btn btn-success">
+                <button class="btn btn-success"
+                onclick="approveAppraisal()">
                     Approve
                 </button>
 
-                <button class="btn btn-danger">
+                <button class="btn btn-danger"
+                onclick="needsImprovement()">
                     Needs Improvement
                 </button>
 
-                <button class="btn btn-primary">
+                <button class="btn btn-primary"
+                onclick="exportReview()">
                     Export Review
                 </button>
 
@@ -1299,6 +1302,86 @@ window.onload=function(){
 
 }
 
+function approveAppraisal(){
+
+    const row =
+    document.querySelector("#reviewBody tr");
+
+    if(!row){
+        alert("No appraisal loaded");
+        return;
+    }
+
+    fetch(
+    "KRAServlet?action=approveAppraisal",
+    {
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+
+            kraId:
+            row.dataset.kraid,
+
+            comments:
+            row.querySelector(".managerComments").value,
+
+            rating:
+            row.querySelector(".managerRating").value
+        })
+    })
+    .then(res=>res.text())
+    .then(msg=>alert(msg));
+}
+
+function needsImprovement(){
+
+    const row =
+    document.querySelector("#reviewBody tr");
+
+    if(!row){
+        alert("No appraisal loaded");
+        return;
+    }
+
+    fetch(
+    "KRAServlet?action=needsImprovement",
+    {
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+
+            kraId:
+            row.dataset.kraid,
+
+            comments:
+            row.querySelector(".managerComments").value,
+
+            rating:
+            row.querySelector(".managerRating").value
+        })
+    })
+    .then(res=>res.text())
+    .then(msg=>alert(msg));
+}
+
+function exportReview(){
+
+    const table =
+    document.querySelector(".kra-table");
+
+    const wb =
+    XLSX.utils.table_to_book(table);
+
+    XLSX.writeFile(
+        wb,
+        "KRA_Review.xlsx"
+    );
+}
+
 function loadReviewData(){
 
     const email =
@@ -1337,58 +1420,61 @@ function loadReviewData(){
         data.forEach(r=>{
 
             body.innerHTML += `
-
-            <tr>
-
+        
+            <tr data-kraid="${r.kraId}">
+        
                 <td>
                     <b>${r.objective}</b><br>
                     <small>${r.employeeEmail}</small>
                 </td>
-
+        
                 <td>
                     ${r.weightage}
                 </td>
-
+        
                 <td>
                     ${r.selfAppraisal}
                 </td>
-
+        
                 <td>
                     ${r.selfRating}
                 </td>
-
+        
                 <td>
+        
                     <textarea
+                        class="managerComments"
                         style="
                         width:100%;
                         min-height:80px;
                         border:1px solid #e2e8f0;
                         border-radius:6px;
-                        padding:8px;">
-                    </textarea>
+                        padding:8px;">${r.managerComments || ""}</textarea>
+        
                 </td>
-
+        
                 <td>
-
+        
                     <select
+                        class="managerRating"
                         style="
                         width:100%;
                         padding:8px;
                         border:1px solid #e2e8f0;
                         border-radius:6px;">
-
-                        <option>1</option>
-                        <option>2</option>
-                        <option>3</option>
-                        <option>4</option>
-                        <option>5</option>
-
+        
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+        
                     </select>
-
+        
                 </td>
-
+        
             </tr>
-
+        
             `;
         });
 
