@@ -33,6 +33,20 @@
             --text:#1e293b;
             --white:#ffffff;
         }
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+        }
+        
+        body{
+            font-family:'Inter',sans-serif;
+            background:var(--bg);
+            color:var(--text);
+            display:flex;
+            height:100vh;
+            overflow:hidden;
+        }
         
         .sidebar{
             width:var(--sidebar-width);
@@ -210,8 +224,8 @@
         </a>
         <a href="leavereq.html" class="nav-item"><i class="ph ph-calendar-x"></i> Leave Request</a>
     </nav>
-    <div class="logout-sect">
-        <a href="index.html" class="logout-btn"><i class="ph ph-power"></i> Logout Account</a>
+    <div class="sidebar-footer">
+        <a href="index.html" class="logout-item"><i class="ph ph-power"></i> Logout Account</a>
     </div>
 </aside>
 
