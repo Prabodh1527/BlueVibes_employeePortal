@@ -26,7 +26,7 @@ public class KnowColleaguesServlet extends HttpServlet {
             "SELECT fullname, communication_email, designation, " +
             "date_of_birth, date_of_joining " +
             "FROM users " +
-            "ORDER BY date_of_joining DESC";
+            "ORDER BY date_of_joining";
 
         try (
             Connection con = DBConnection.getConnection();
