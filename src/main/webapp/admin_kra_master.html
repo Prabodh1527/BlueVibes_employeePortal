@@ -862,7 +862,18 @@ document.addEventListener("change",function(e){
             document.getElementById("kraTableBody");
 
             body.innerHTML="";
+            if(data.length===0){
 
+                body.innerHTML=`
+                <tr>
+                    <td colspan="6"
+                    style="padding:20px;text-align:center;">
+                    No Submitted Appraisals Found
+                    </td>
+                </tr>`;
+            
+                return;
+            }
             data.forEach(row=>{
 
                 body.innerHTML += `
