@@ -1023,19 +1023,40 @@ function collectKRAData(){
     .querySelectorAll("#kraTableBody tr")
     .forEach(row=>{
 
+        const objective =
+        row.querySelector(".objective");
+
+        const measurement =
+        row.querySelector(".measurement");
+
+        const activity =
+        row.querySelector(".activity");
+
+        const weightage =
+        row.querySelector(".weightage");
+
+        if(
+            !objective ||
+            !measurement ||
+            !activity ||
+            !weightage
+        ){
+            return;
+        }
+
         rows.push({
 
             objective:
-            row.querySelector(".objective").value,
+            objective.value,
 
             measurementCriteria:
-            row.querySelector(".measurement").value,
+            measurement.value,
 
             subActivity:
-            row.querySelector(".activity").value,
+            activity.value,
 
             weightage:
-            row.querySelector(".weightage").value
+            weightage.value
         });
 
     });
@@ -1307,7 +1328,7 @@ function loadReviewData(){
             <tr>
                 <td colspan="6"
                     style="text-align:center;padding:20px;">
-                    No Submitted Appraisals Found
+                    No KRA Defined Yet
                 </td>
             </tr>`;
             return;
