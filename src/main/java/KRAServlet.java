@@ -285,10 +285,10 @@ public class KRAServlet extends HttpServlet {
     
                 String responseSql =
     
-                "SELECT self_appraisal," +
-                "self_rating," +
-                "response_status " +
-                "manager_comments " +
+                "SELECT self_appraisal, " +
+                "self_rating, " +
+                "response_status, " +
+                "manager_comments, " +
                 "manager_rating " +
                 "FROM kra_response " +
                 "WHERE kra_id=? " +
@@ -891,7 +891,7 @@ public class KRAServlet extends HttpServlet {
             "INNER JOIN (" +
             "SELECT DISTINCT ON (kra_id) * " +
             "FROM kra_response " +
-            "ORDER BY kra_id,id DESC" +
+            "ORDER BY kra_id,id DESC " +
             ") r " +
             "ON k.id=r.kra_id " +
             "WHERE k.employee_email=? " +
@@ -1525,6 +1525,7 @@ public class KRAServlet extends HttpServlet {
             .print("Error");
         }
     }
+    response.setContentType("text/plain");
 
     private void getKRADefinition(
     HttpServletRequest request,
@@ -1546,8 +1547,8 @@ public class KRAServlet extends HttpServlet {
         String sql =
 
         "SELECT * FROM kra_master " +
-        "WHERE employee_email=?" +
-        "AND assessment_year=?" +
+        "WHERE employee_email=? " +
+        "AND assessment_year=? " +
         "ORDER BY id";
 
         PreparedStatement ps =
