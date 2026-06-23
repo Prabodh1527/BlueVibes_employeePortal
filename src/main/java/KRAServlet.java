@@ -148,9 +148,10 @@ public class KRAServlet extends HttpServlet {
             System.out.println("DB Connected = " + (con != null));
     
             String sql =
-            "SELECT fullname,email,employee_id,designation,role " +
-            "FROM users " +
-            "ORDER BY fullname";
+                "SELECT fullname,email,employee_id,designation " +
+                "FROM users " +
+                "WHERE LOWER(email) <> 'admin@bluegital.com' " +
+                "ORDER BY fullname";
     
             PreparedStatement ps =
             con.prepareStatement(sql);
@@ -310,6 +311,11 @@ public class KRAServlet extends HttpServlet {
                         "status",
                         responseRs.getString(
                         "response_status"));
+
+                    result.put(
+                        "status",
+                        responseRs.getString(
+                        "response_status"));
                 }
                 else{
     
@@ -328,7 +334,12 @@ public class KRAServlet extends HttpServlet {
     
                 rows.put(row);
             }
-    
+            if(!result.has("status")){
+
+                result.put(
+                "status",
+                "DRAFT");
+            }
             result.put("rows",rows);
     
         }catch(Exception e){
