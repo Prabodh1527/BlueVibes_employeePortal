@@ -1304,68 +1304,64 @@ window.onload=function(){
 
 function approveAppraisal(){
 
-    const row =
-    document.querySelector("#reviewBody tr");
+    const rows =
+    document.querySelectorAll("#reviewBody tr");
 
-    if(!row){
-        alert("No appraisal loaded");
-        return;
-    }
+    rows.forEach(row=>{
 
-    fetch(
-    "KRAServlet?action=approveAppraisal",
-    {
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
+        fetch(
+        "KRAServlet?action=approveAppraisal",
+        {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
 
-            kraId:
-            row.dataset.kraid,
+                kraId: row.dataset.kraid,
 
-            comments:
-            row.querySelector(".managerComments").value,
+                comments:
+                row.querySelector(".managerComments").value,
 
-            rating:
-            row.querySelector(".managerRating").value
-        })
-    })
-    .then(res=>res.text())
-    .then(msg=>alert(msg));
+                rating:
+                row.querySelector(".managerRating").value
+            })
+        });
+
+    });
+
+    alert("Approved");
 }
 
 function needsImprovement(){
 
-    const row =
-    document.querySelector("#reviewBody tr");
+    const rows =
+    document.querySelectorAll("#reviewBody tr");
 
-    if(!row){
-        alert("No appraisal loaded");
-        return;
-    }
+    rows.forEach(row=>{
 
-    fetch(
-    "KRAServlet?action=needsImprovement",
-    {
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
+        fetch(
+        "KRAServlet?action=needsImprovement",
+        {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
 
-            kraId:
-            row.dataset.kraid,
+                kraId: row.dataset.kraid,
 
-            comments:
-            row.querySelector(".managerComments").value,
+                comments:
+                row.querySelector(".managerComments").value,
 
-            rating:
-            row.querySelector(".managerRating").value
-        })
-    })
-    .then(res=>res.text())
-    .then(msg=>alert(msg));
+                rating:
+                row.querySelector(".managerRating").value
+            })
+        });
+
+    });
+
+    alert("Marked as Needs Improvement");
 }
 
 function exportReview(){
