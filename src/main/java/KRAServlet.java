@@ -84,6 +84,14 @@ public class KRAServlet extends HttpServlet {
                 submitEmployeeAppraisal(request,response);
                 break;
 
+            case "approveAppraisal":
+                approveAppraisal(request,response);
+                break;
+            
+            case "needsImprovement":
+                needsImprovement(request,response);
+                break;
+
             default:
                 response.getWriter().print("Invalid Action");
         }
@@ -938,6 +946,14 @@ public class KRAServlet extends HttpServlet {
                 obj.put(
                     "status",
                     rs.getString("response_status"));
+
+                obj.put(
+                    "managerComments",
+                    rs.getString("manager_comments"));
+                
+                obj.put(
+                    "managerRating",
+                    rs.getInt("manager_rating"));
     
                 arr.put(obj);
             }
@@ -1391,6 +1407,108 @@ public class KRAServlet extends HttpServlet {
     
             response.getWriter()
                     .print("Error");
+        }
+    }
+
+    private void approveAppraisal(
+    HttpServletRequest request,
+    HttpServletResponse response)
+    throws IOException {
+
+        try{
+    
+            JSONObject json =
+            new JSONObject(getRequestBody(request));
+    
+            Connection con =
+            DBConnection.getConnection();
+    
+            String sql =
+    
+            "UPDATE kra_response " +
+            "SET response_status='APPROVED'," +
+            "manager_comments=?," +
+            "manager_rating=?," +
+            "reviewed_on=CURRENT_TIMESTAMP " +
+            "WHERE kra_id=?";
+    
+            PreparedStatement ps =
+            con.prepareStatement(sql);
+    
+            ps.setString(
+                1,
+                json.getString("comments"));
+    
+            ps.setInt(
+                2,
+                json.getInt("rating"));
+    
+            ps.setInt(
+                3,
+                json.getInt("kraId"));
+    
+            ps.executeUpdate();
+    
+            response.getWriter()
+            .print("Approved");
+    
+        }catch(Exception e){
+    
+            e.printStackTrace();
+    
+            response.getWriter()
+            .print("Error");
+        }
+    }
+
+    private void needsImprovement(
+    HttpServletRequest request,
+    HttpServletResponse response)
+    throws IOException {
+
+        try{
+    
+            JSONObject json =
+            new JSONObject(getRequestBody(request));
+    
+            Connection con =
+            DBConnection.getConnection();
+    
+            String sql =
+    
+            "UPDATE kra_response " +
+            "SET response_status='NEEDS_IMPROVEMENT'," +
+            "manager_comments=?," +
+            "manager_rating=?," +
+            "reviewed_on=CURRENT_TIMESTAMP " +
+            "WHERE kra_id=?";
+    
+            PreparedStatement ps =
+            con.prepareStatement(sql);
+    
+            ps.setString(
+                1,
+                json.getString("comments"));
+    
+            ps.setInt(
+                2,
+                json.getInt("rating"));
+    
+            ps.setInt(
+                3,
+                json.getInt("kraId"));
+    
+            ps.executeUpdate();
+    
+            response.getWriter()
+            .print("Needs Improvement");
+    
+        }catch(Exception e){
+    
+            e.printStackTrace();
+    
+            response.getWriter()
+            .print("Error");
         }
     }
 
