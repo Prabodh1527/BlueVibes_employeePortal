@@ -634,7 +634,7 @@ public class KRAServlet extends HttpServlet {
         }
     }
 
-    private void getReviewData(HttpServletRequest request,
+    /*private void getReviewData(HttpServletRequest request,
                            HttpServletResponse response)
         throws IOException {
 
@@ -679,6 +679,122 @@ public class KRAServlet extends HttpServlet {
             ps.setString(
                 2,
                 request.getParameter("year"));
+    
+            ResultSet rs =
+            ps.executeQuery();
+    
+            while(rs.next()){
+    
+                JSONObject obj =
+                new JSONObject();
+    
+                obj.put(
+                    "kraId",
+                    rs.getInt("kra_id"));
+    
+                obj.put(
+                    "employeeEmail",
+                    rs.getString("employee_email"));
+    
+                obj.put(
+                    "employeeId",
+                    rs.getString("employee_id"));
+    
+                obj.put(
+                    "designation",
+                    rs.getString("designation"));
+    
+                obj.put(
+                    "assessmentYear",
+                    rs.getString("assessment_year"));
+    
+                obj.put(
+                    "objective",
+                    rs.getString("objective"));
+    
+                obj.put(
+                    "measurementCriteria",
+                    rs.getString("measurement_criteria"));
+    
+                obj.put(
+                    "subActivity",
+                    rs.getString("sub_activity"));
+    
+                obj.put(
+                    "weightage",
+                    rs.getInt("weightage"));
+    
+                obj.put(
+                    "selfAppraisal",
+                    rs.getString("self_appraisal"));
+    
+                obj.put(
+                    "selfRating",
+                    rs.getInt("self_rating"));
+    
+                obj.put(
+                    "status",
+                    rs.getString("response_status"));
+    
+                arr.put(obj);
+            }
+    
+        }catch(Exception e){
+    
+            e.printStackTrace();
+        }
+    
+        response.getWriter().print(
+        arr.toString());
+    }*/
+    private void getReviewData(
+    HttpServletRequest request,
+    HttpServletResponse response)
+    throws IOException {
+
+        response.setContentType("application/json");
+    
+        JSONArray arr = new JSONArray();
+    
+        try{
+    
+            String email =
+            request.getParameter("email");
+    
+            String year =
+            request.getParameter("year");
+    
+            Connection con =
+            DBConnection.getConnection();
+    
+            String sql =
+    
+            "SELECT " +
+            "k.id as kra_id," +
+            "k.employee_email," +
+            "k.employee_id," +
+            "k.designation," +
+            "k.assessment_year," +
+            "k.objective," +
+            "k.measurement_criteria," +
+            "k.sub_activity," +
+            "k.weightage," +
+            "r.self_appraisal," +
+            "r.self_rating," +
+            "r.response_status " +
+            "FROM kra_master k " +
+            "JOIN kra_response r " +
+            "ON k.id=r.kra_id " +
+            "WHERE k.employee_email=? " +
+            "AND k.assessment_year=? " +
+            "AND r.response_status='SUBMITTED' " +
+            "ORDER BY k.id";
+    
+            PreparedStatement ps =
+            con.prepareStatement(sql);
+    
+            ps.setString(1,email);
+            ps.setString(2,year);
     
             ResultSet rs =
             ps.executeQuery();
@@ -1233,7 +1349,8 @@ public class KRAServlet extends HttpServlet {
         String sql =
 
         "SELECT * FROM kra_master " +
-        "WHERE employee_email=?";
+        "WHERE employee_email=?" +
+        "ORDER BY id";
 
         PreparedStatement ps =
         con.prepareStatement(sql);
