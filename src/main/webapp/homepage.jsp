@@ -465,59 +465,53 @@
         }
 
         function showCelebrationPopup(data){
-            alert(data.birthdays);
 
             let html = "";
         
-            if(data.birthdays.length > 0){
-
+            if(data.birthdays && data.birthdays.length > 0){
+        
                 html += `
                 <div style="margin-bottom:20px;">
                     <h3 style="color:#0284c7;">
-                    🎂 Birthday
+                        🎂 Birthday
                     </h3>
-                    <p style="
+        
+                    <div style="
                         font-size:18px;
-                        font-weight:700;
+                        font-weight:bold;
                         color:#0f172a;
-                        line-height:1.8;
+                        margin-top:10px;
                     ">
-                   
-                    ${data.birthdays.join("<br>")}
-                    </p>
+                        ${data.birthdays.join("<br>")}
+                    </div>
                 </div>`;
             }
         
-            if(data.anniversaries.length > 0){
-
+            if(data.anniversaries && data.anniversaries.length > 0){
+        
                 html += `
                 <div>
                     <h3 style="color:#16a34a;">
-                    🏆 Work Anniversary
+                        🏆 Work Anniversary
                     </h3>
-                    <p style="
+        
+                    <div style="
                         font-size:18px;
-                        font-weight:700;
+                        font-weight:bold;
                         color:#0f172a;
-                        line-height:1.8;
+                        margin-top:10px;
                     ">
-                    ${data.anniversaries.join("<br>")}
-                    </p>
+                        ${data.anniversaries.join("<br>")}
+                    </div>
                 </div>`;
             }
         
-            console.log(data.birthdays);
-            console.log(data.anniversaries);
-            
             if(html.trim()===""){
                 return;
             }
         
-            document.getElementById(
-            "celebrationContent").innerHTML = html;
-        
-            document.getElementById(
-            "celebrationModal").style.display = "flex";
+            document.getElementById("celebrationContent").innerHTML = html;
+            document.getElementById("celebrationModal").style.display = "flex";
         }
         
         function closeCelebrationModal(){
