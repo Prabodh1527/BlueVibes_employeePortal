@@ -239,7 +239,9 @@ private void checkAndSendCelebrations() {
 private long calculateDelayTo7AM() {
 
     LocalDateTime now =
-    LocalDateTime.now();
+    LocalDateTime.now(
+            java.time.ZoneId.of("Asia/Kolkata")
+            );
 
     LocalDateTime nextRun =
     now.withHour(7)
