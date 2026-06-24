@@ -334,7 +334,7 @@ public static void sendBirthdayMail(
         
         "<p>Warm Regards,<br><b>BlueVibes Team</b></p>";
         
-        sendMail(
+        sendEmail(
             recipientEmail,
             "Birthday Wishes from BlueVibes",
             simpleHtml
