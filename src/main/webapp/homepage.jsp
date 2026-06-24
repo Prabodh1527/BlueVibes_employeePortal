@@ -465,6 +465,8 @@
         }
 
         function showCelebrationPopup(data){
+            console.log(data);
+            console.log(data.birthdays);
 
             let html = "";
         
@@ -501,6 +503,7 @@
                         color:#0f172a;
                         margin-top:10px;
                     ">
+                        Prabodh
                         ${data.anniversaries.join("<br>")}
                     </div>
                 </div>`;
@@ -509,7 +512,6 @@
             if(html.trim()===""){
                 return;
             }
-            alert(html);
         
             document.getElementById("celebrationContent").innerHTML = html;
             document.getElementById("celebrationModal").style.display = "flex";
