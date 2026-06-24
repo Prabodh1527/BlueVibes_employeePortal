@@ -1,4 +1,4 @@
-import java.io.OutputStream;
+/*import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -221,8 +221,8 @@ public class BirthdayWorkAnniversaryMailer {
 
         conn.disconnect();
     }
-}
-/*import java.io.OutputStream;
+}*/
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -304,6 +304,41 @@ public static void sendBirthdayMail(
             recipientEmail,
             "🎉 Happy Birthday " + employeeName + "!",
             html);
+    String simpleHtml =
+        
+        "<h3>Birthday Wishes</h3>"
+        
+        +
+        
+        "<p>Dear <b>"
+        + employeeName +
+        "</b>,</p>"
+        
+        +
+        
+        "<p>Wishing you a very Happy Birthday from all of us at BlueVibes.</p>"
+        
+        +
+        
+        "<p>Thank you for your contributions and dedication.</p>"
+        
+        +
+        
+        "<p>Have a wonderful year ahead.</p>"
+        
+        +
+        
+        "<hr>"
+        
+        +
+        
+        "<p>Warm Regards,<br><b>BlueVibes Team</b></p>";
+        
+        sendMail(
+            recipientEmail,
+            "Birthday Wishes from BlueVibes",
+            simpleHtml
+        );
 }
 
 public static void sendAnniversaryMail(
@@ -469,4 +504,4 @@ private static void sendEmail(
     conn.disconnect();
 }
 
-}*/
+}
