@@ -304,7 +304,7 @@ public static void sendBirthdayMail(
             recipientEmail,
             "🎉 Happy Birthday " + employeeName + "!",
             html);
-    String simpleHtml =
+    /*String simpleHtml =
         
         "<h3>Birthday Wishes</h3>"
         
@@ -338,7 +338,7 @@ public static void sendBirthdayMail(
             recipientEmail,
             "Birthday Wishes from BlueVibes",
             simpleHtml
-        );
+        );*/
 }
 
 public static void sendAnniversaryMail(
