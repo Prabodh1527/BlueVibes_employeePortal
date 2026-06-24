@@ -509,6 +509,7 @@
             if(html.trim()===""){
                 return;
             }
+            alert(html);
         
             document.getElementById("celebrationContent").innerHTML = html;
             document.getElementById("celebrationModal").style.display = "flex";
