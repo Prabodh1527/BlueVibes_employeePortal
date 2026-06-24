@@ -464,11 +464,80 @@
                 });
         }
 
+        function showCelebrationPopup(data){
+
+            let html = "";
+        
+            if(data.birthdays.length > 0){
+        
+                html += `
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#0284c7;">
+                    🎂 Birthday
+                    </h3>
+                    <p style="font-size:16px;">
+                    ${data.birthdays.join("<br>")}
+                    </p>
+                </div>`;
+            }
+        
+            if(data.anniversaries.length > 0){
+        
+                html += `
+                <div>
+                    <h3 style="color:#16a34a;">
+                    🏆 Work Anniversary
+                    </h3>
+                    <p style="font-size:16px;">
+                    ${data.anniversaries.join("<br>")}
+                    </p>
+                </div>`;
+            }
+        
+            if(html===""){
+                return;
+            }
+        
+            document.getElementById(
+            "celebrationContent").innerHTML = html;
+        
+            document.getElementById(
+            "celebrationModal").style.display = "flex";
+        }
+        
+        function closeCelebrationModal(){
+        
+            document.getElementById(
+            "celebrationModal").style.display = "none";
+        }
+
         window.onload = function() {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString(undefined, options);
+
+            const options = {
+                weekday:'long',
+                year:'numeric',
+                month:'long',
+                day:'numeric'
+            };
+        
+            document.getElementById(
+            'currentDateDisplay').innerText =
+            new Date().toLocaleDateString(
+            undefined,
+            options);
+        
             loadStats();
+        
             loadTaskSummary();
+        
+            fetch(
+            "DashboardCelebrationServlet")
+            .then(res=>res.json())
+            .then(data=>{
+        
+                showCelebrationPopup(data);
+        
+            });
         };
         
         function toggleChat(){
@@ -591,6 +660,60 @@
         
             <div id="answerBox"></div>
         
+        </div>
+    
+    </div>
+    <div id="celebrationModal" style="
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.55);
+    z-index:10000;
+    justify-content:center;
+    align-items:center;
+    ">
+    
+        <div style="
+        width:500px;
+        max-width:90%;
+        background:white;
+        border-radius:20px;
+        padding:30px;
+        text-align:center;
+        box-shadow:0 15px 40px rgba(0,0,0,0.2);
+        position:relative;
+        ">
+    
+            <button onclick="closeCelebrationModal()"
+            style="
+            position:absolute;
+            top:15px;
+            right:15px;
+            border:none;
+            background:none;
+            font-size:22px;
+            cursor:pointer;
+            ">
+            ✖
+            </button>
+    
+            <div style="font-size:50px;">
+                🎉
+            </div>
+    
+            <h2 style="
+            color:#0f172a;
+            margin-top:10px;
+            margin-bottom:15px;
+            ">
+            Today's Celebrations
+            </h2>
+    
+            <div id="celebrationContent"></div>
+    
         </div>
     
     </div>
