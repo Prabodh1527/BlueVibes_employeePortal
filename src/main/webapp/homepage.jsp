@@ -466,16 +466,51 @@
 
         function showCelebrationPopup(data){
 
-            let name = "";
+            let html = "";
         
             if(data.birthdays && data.birthdays.length > 0){
-                name = data.birthdays[0];
+        
+                html += `
+                <div style="margin-bottom:20px;">
+                    <h3 style="color:#0284c7;">
+                        🎂 Birthday
+                    </h3>
+        
+                    <div style="
+                        font-size:18px;
+                        font-weight:bold;
+                        color:#0f172a;
+                        margin-top:10px;
+                    ">
+                        ${data.birthdays.join("<br>")}
+                    </div>
+                </div>`;
             }
         
-            document.getElementById("celebrationContent").innerHTML =
-                "<h2 style='color:#0284c7;'>🎂 Birthday</h2>" +
-                "<h3 style='color:#0f172a;'>" + name + "</h3>";
+            if(data.anniversaries && data.anniversaries.length > 0){
         
+                html += `
+                <div>
+                    <h3 style="color:#16a34a;">
+                        🏆 Work Anniversary
+                    </h3>
+        
+                    <div style="
+                        font-size:18px;
+                        font-weight:bold;
+                        color:#0f172a;
+                        margin-top:10px;
+                    ">
+                        ${data.anniversaries.join("<br>")}
+                    </div>
+                </div>`;
+            }
+        
+            if(html.trim()===""){
+                return;
+            }
+        
+            document.getElementById("celebrationContent").innerHTML = html;
             document.getElementById("celebrationModal").style.display = "flex";
         }
         
