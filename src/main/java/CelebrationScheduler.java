@@ -115,11 +115,38 @@ private void checkAndSendCelebrations() {
                 "email");
             }
 
-            BirthdayWorkAnniversaryMailer
-            .sendBirthdayMail(
-                email,
-                employeeName
-            );
+            PreparedStatement allUsersPs =
+                con.prepareStatement(
+                "SELECT email, communication_email FROM users");
+                
+                ResultSet allUsersRs =
+                allUsersPs.executeQuery();
+                
+                while(allUsersRs.next()){
+                
+                    String targetEmail =
+                    allUsersRs.getString(
+                    "communication_email");
+                
+                    if(targetEmail == null ||
+                       targetEmail.trim().isEmpty()){
+                
+                        targetEmail =
+                        allUsersRs.getString(
+                        "email");
+                    }
+                
+                    if(targetEmail == null ||
+                       targetEmail.trim().isEmpty()){
+                        continue;
+                    }
+                
+                    BirthdayWorkAnniversaryMailer
+                    .sendBirthdayMail(
+                        targetEmail,
+                        employeeName
+                    );
+                }
 
             System.out.println(
             "Birthday Mail Sent To "
@@ -163,11 +190,38 @@ private void checkAndSendCelebrations() {
                 "email");
             }
 
-            BirthdayWorkAnniversaryMailer
-            .sendAnniversaryMail(
-                email,
-                employeeName
-            );
+            PreparedStatement allUsersPs =
+                con.prepareStatement(
+                "SELECT email, communication_email FROM users");
+                
+                ResultSet allUsersRs =
+                allUsersPs.executeQuery();
+                
+                while(allUsersRs.next()){
+                
+                    String targetEmail =
+                    allUsersRs.getString(
+                    "communication_email");
+                
+                    if(targetEmail == null ||
+                       targetEmail.trim().isEmpty()){
+                
+                        targetEmail =
+                        allUsersRs.getString(
+                        "email");
+                    }
+                
+                    if(targetEmail == null ||
+                       targetEmail.trim().isEmpty()){
+                        continue;
+                    }
+                
+                    BirthdayWorkAnniversaryMailer
+                    .sendAnniversaryMail(
+                        targetEmail,
+                        employeeName
+                    );
+                }
 
             System.out.println(
             "Anniversary Mail Sent To "
