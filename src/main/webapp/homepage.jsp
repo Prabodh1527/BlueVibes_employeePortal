@@ -465,6 +465,7 @@
         }
 
         function showCelebrationPopup(data){
+            alert(data.birthdays);
 
             let html = "";
         
@@ -505,7 +506,10 @@
                 </div>`;
             }
         
-            if(html===""){
+            console.log(data.birthdays);
+            console.log(data.anniversaries);
+            
+            if(html.trim()===""){
                 return;
             }
         
