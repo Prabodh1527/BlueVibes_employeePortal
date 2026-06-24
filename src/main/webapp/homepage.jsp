@@ -469,26 +469,36 @@
             let html = "";
         
             if(data.birthdays.length > 0){
-        
+
                 html += `
                 <div style="margin-bottom:20px;">
                     <h3 style="color:#0284c7;">
                     🎂 Birthday
                     </h3>
-                    <p style="font-size:16px;">
+                    <p style="
+                        font-size:18px;
+                        font-weight:700;
+                        color:#0f172a;
+                        line-height:1.8;
+                    ">
                     ${data.birthdays.join("<br>")}
                     </p>
                 </div>`;
             }
         
             if(data.anniversaries.length > 0){
-        
+
                 html += `
                 <div>
                     <h3 style="color:#16a34a;">
                     🏆 Work Anniversary
                     </h3>
-                    <p style="font-size:16px;">
+                    <p style="
+                        font-size:18px;
+                        font-weight:700;
+                        color:#0f172a;
+                        line-height:1.8;
+                    ">
                     ${data.anniversaries.join("<br>")}
                     </p>
                 </div>`;
