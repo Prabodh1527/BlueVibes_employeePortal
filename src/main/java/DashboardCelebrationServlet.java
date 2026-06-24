@@ -40,7 +40,9 @@ public class DashboardCelebrationServlet extends HttpServlet {
         ){
 
             LocalDate today =
-            LocalDate.now();
+            LocalDate.now(
+                java.time.zoneId.of("Asia/Kolkata")
+                );
 
             int month =
             today.getMonthValue();
