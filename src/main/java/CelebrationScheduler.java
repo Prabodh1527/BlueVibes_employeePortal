@@ -65,7 +65,9 @@ public void contextInitialized(
 private void checkAndSendCelebrations() {
 
     LocalDate today =
-    LocalDate.now();
+    LocalDate.now(
+            java.time.ZoneId.of("Asia/Kolkata")
+            );
 
     int month =
     today.getMonthValue();
