@@ -158,7 +158,9 @@ public class WeeklyReportServlet extends HttpServlet {
 
         String[] reportIds = request.getParameterValues("reportId");
         String[] taskIds = request.getParameterValues("taskId");
+        System.out.println("Task IDs received = " + taskIds.length);
         String[] taskDescs = request.getParameterValues("taskDesc");
+        System.out.println("Task Descriptions received = " + taskDescs.length);
         String[] customers = request.getParameterValues("customer");
         String[] statuses = request.getParameterValues("status");
         String[] percents = request.getParameterValues("percent");
