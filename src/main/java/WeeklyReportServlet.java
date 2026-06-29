@@ -152,6 +152,10 @@ public class WeeklyReportServlet extends HttpServlet {
             return;
         }
 
+        System.out.println("Content-Type = " + request.getContentType());
+        System.out.println("taskId = " + java.util.Arrays.toString(request.getParameterValues("taskId")));
+        System.out.println("taskDesc = " + java.util.Arrays.toString(request.getParameterValues("taskDesc")));
+
         String[] reportIds = request.getParameterValues("reportId");
         String[] taskIds = request.getParameterValues("taskId");
         String[] taskDescs = request.getParameterValues("taskDesc");
