@@ -243,8 +243,12 @@ public class WeeklyReportServlet extends HttpServlet {
                 throw batchError;
             }
         } catch (Exception ex) {
-            System.err.println("!!! TRANSACTION ERROR: " + ex.getMessage());
-            out.print("{\"success\":false,\"error\":\"Database saving crash error: " + ex.getMessage() + "\"}");
+
+            System.err.println("========== WEEKLY REPORT ERROR ==========");
+            ex.printStackTrace();
+            System.err.println("=========================================");
+        
+            out.print("{\"success\":false}");
         } finally {
             out.flush();
             out.close();
