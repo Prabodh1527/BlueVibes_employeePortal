@@ -424,6 +424,7 @@
 
     function submitReportFormAsync(event) {
         event.preventDefault();
+        alert(document.querySelectorAll("#reportTbody tr").length);
         const formData = new URLSearchParams();
         const rows = document.querySelectorAll("#reportTbody tr");
         
