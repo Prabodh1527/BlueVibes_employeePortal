@@ -185,6 +185,10 @@ public class WeeklyReportServlet extends HttpServlet {
                     if (taskDescs[i] == null || taskDescs[i].trim().isEmpty()) continue;
 
                     int rId = (reportIds != null && i < reportIds.length) ? Integer.parseInt(reportIds[i]) : 0;
+                    System.out.println("Row = " + i +
+                    " ReportId=" + rId +
+                    " TaskId=" + taskIds[i] +
+                    " Desc=" + taskDescs[i]);
                     
                     if (rId == 0) {
                         try (PreparedStatement psInsert = conn.prepareStatement(insertSQL)) {
@@ -197,7 +201,12 @@ public class WeeklyReportServlet extends HttpServlet {
                             psInsert.setDate(7, java.sql.Date.valueOf(startDates[i]));
                             psInsert.setDate(8, java.sql.Date.valueOf(endDates[i]));
                             psInsert.setString(9, (commentsArray != null && i < commentsArray.length) ? commentsArray[i] : "");
-                            psInsert.executeUpdate();
+                            int rows = psInsert.executeUpdate();
+
+                            System.out.println(
+                                "Inserted taskId=" + taskIds[i] +
+                                " rowsAffected=" + rows
+                            );
                         }
                     } else {
                         try (PreparedStatement psUpdate = conn.prepareStatement(updateSQL)) {
@@ -211,14 +220,26 @@ public class WeeklyReportServlet extends HttpServlet {
                             psUpdate.setString(8, (commentsArray != null && i < commentsArray.length) ? commentsArray[i] : "");
                             psUpdate.setInt(9, rId);
                             psUpdate.setString(10, userEmail);
-                            psUpdate.executeUpdate();
+                            int rows = psUpdate.executeUpdate();
+
+                            System.out.println(
+                                "Updated reportId=" + rId +
+                                " rowsAffected=" + rows
+                            );
                         }
                     }
                 }
+                System.out.println("ABOUT TO COMMIT");
                 conn.commit();
+                System.out.println("COMMIT SUCCESS");
                 out.print("{\"success\":true}");
-            } catch (Exception batchError) {
+            } catch(Exception batchError){
+
+                System.out.println("========== ERROR ==========");
+                batchError.printStackTrace();
+            
                 conn.rollback();
+            
                 throw batchError;
             }
         } catch (Exception ex) {
