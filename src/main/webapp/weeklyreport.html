@@ -445,7 +445,7 @@
             credentials: 'include',
             body: formData.toString()
         })
-        .then(res => {
+        /*.then(res => {
             if (res.status === 401 || res.redirected) {
                 window.location.href = "index.html?status=session_expired";
                 return;
@@ -455,6 +455,17 @@
                 loadMastersAndReports(); 
             } else {
                 alert('Failed to save report values. Internal Server Error.');
+            }
+        })*/
+        .then(res => res.json())
+        .then(result => {
+            console.log(result);
+        
+            if(result.success){
+                alert("Weekly report saved successfully!");
+                loadMastersAndReports();
+            }else{
+                alert(result.error);
             }
         })
         .catch(err => {
