@@ -155,8 +155,9 @@
                     <tr>
                         <td>${t.id}</td>
                         <td><strong>${t.name}</strong></td>
-                        <td>
-                            <div class="action-btns">
+                        <td>${t.description}</td>
+                            <td>
+                                <div class="action-btns">
                                 <button class="btn-edit" onclick="prepareAwardEdit(${t.id}, '${t.name.replace(/'/g, "\\'")}')" title="Edit"><i class="ph ph-pencil-simple"></i></button>
                                 <button class="btn-delete" onclick="deleteAward(${t.id})" title="Delete"><i class="ph ph-trash"></i></button>
                             </div>
@@ -186,13 +187,22 @@
 
     document.getElementById('awardForm').addEventListener('submit', function(e) {
         e.preventDefault();
+    
         const id = document.getElementById('awardId').value;
         const params = new URLSearchParams();
+    
         params.append("action", id ? "update" : "add");
-        if(id) params.append("id", id);
+    
+        if(id)
+            params.append("id", id);
+    
         params.append("awardName", document.getElementById('awardName').value);
-
-        fetch('AwardMasterServlet', { method: 'POST', body: params }).then(() => {
+        params.append("awardDescription", document.getElementById('awardDescription').value);
+    
+        fetch('AwardMasterServlet', {
+            method: 'POST',
+            body: params
+        }).then(() => {
             resetForm();
             loadAwards();
         });
