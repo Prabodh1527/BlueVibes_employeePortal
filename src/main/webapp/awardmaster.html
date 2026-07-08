@@ -233,7 +233,29 @@
             fetch('AwardMasterServlet', { method: 'POST', body: params }).then(() => loadAwards());
         }
     }
-    window.onload = loadAwards;
+    function loadResults(){
+
+        fetch("AwardMasterServlet?action=results")
+        .then(r=>r.json())
+        .then(data=>{
+    
+            const tbody=document.getElementById("award-results");
+    
+            tbody.innerHTML=data.map(r=>`
+                <tr>
+                    <td>${r.award}</td>
+                    <td>${r.votes}</td>
+                    <td>${r.employee}</td>
+                </tr>
+            `).join("");
+    
+        });
+    
+    }
+    window.onload = function () {
+        loadAwards();
+        loadResults();
+    };
 </script>
 </body>
 </html>
