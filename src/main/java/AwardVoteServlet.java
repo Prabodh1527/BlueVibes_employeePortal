@@ -30,7 +30,7 @@ public class AwardVoteServlet extends HttpServlet {
         System.out.println("SESSION COMMUNICATION = " + session.getAttribute("communication_email"));
         System.out.println("SESSION USER = " + session.getAttribute("user"));
 
-        String voterEmail = (String) session.getAttribute("email");
+        String voterEmail = (String) session.getAttribute("userEmail");
 
         String awardId = request.getParameter("awardId");
         String nomineeEmail = request.getParameter("nomineeEmail");
