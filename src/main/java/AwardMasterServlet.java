@@ -20,7 +20,7 @@ public class AwardMasterServlet extends HttpServlet {
             if ("list".equals(action)) {
 
                 PreparedStatement ps = con.prepareStatement(
-                        "SELECT award_id, award_name, award_description FROM award_master ORDER BY award_name ASC");
+                        "SELECT award_id, award_name, description FROM award_master ORDER BY award_name ASC");
 
                 ResultSet rs = ps.executeQuery();
 
@@ -38,8 +38,8 @@ public class AwardMasterServlet extends HttpServlet {
                             .append(rs.getString("award_name").replace("\"", "\\\""))
                             .append("\",")
                             .append("\"description\":\"")
-                            .append(rs.getString("award_description") == null ? ""
-                                    : rs.getString("award_description").replace("\"", "\\\""))
+                            .append(rs.getString("description") == null ? ""
+                                    : rs.getString("description").replace("\"", "\\\""))
                             .append("\"")
                             .append("}");
 
@@ -116,7 +116,7 @@ public class AwardMasterServlet extends HttpServlet {
                 String description = request.getParameter("awardDescription");
 
                 PreparedStatement ps = con.prepareStatement(
-                        "INSERT INTO award_master (award_name,award_description) VALUES (?,?)");
+                        "INSERT INTO award_master (award_name,description) VALUES (?,?)");
 
                 ps.setString(1, name);
                 ps.setString(2, description);
@@ -133,7 +133,7 @@ public class AwardMasterServlet extends HttpServlet {
                 String description = request.getParameter("awardDescription");
 
                 PreparedStatement ps = con.prepareStatement(
-                        "UPDATE award_master SET award_name=?,award_description=? WHERE award_id=?");
+                        "UPDATE award_master SET award_name=?,description=? WHERE award_id=?");
 
                 ps.setString(1, name);
                 ps.setString(2, description);
