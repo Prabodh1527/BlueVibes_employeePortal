@@ -122,9 +122,9 @@
                 <input type="hidden" id="awardId" value="">
                 <div class="form-group">
                     <label id="formLabel">Award Name</label>
-                    <input type="text" id="awardName" class="form-input" placeholder="e.g. Best Team Player" required>
+                    <input type="text" id="awardName" name="awardName" class="form-input" placeholder="e.g. Best Team Player" required>
                 </div>
-                <div class="form-group"><label>Award Description</label><input type="text" id="awardDescription" class="form-input" placeholder="Short description"></div>
+                <div class="form-group"><label>Award Description</label><input type="text" id="awardDescription" name="awardDescription" class="form-input" placeholder="Short description"></div>
                 <button type="submit" id="submitBtn" class="btn-add"><i class="ph ph-plus-bold"></i> <span id="btnText">Add Award</span></button>
                 <button type="button" id="cancelBtn" class="btn-cancel" onclick="resetForm()">Cancel</button>
             </form>
