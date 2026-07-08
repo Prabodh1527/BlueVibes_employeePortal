@@ -497,6 +497,23 @@ let selectedEmployee=null;
 function filterEmployees(){const q=document.getElementById('employeeSearch').value.toLowerCase();document.querySelectorAll('.employee-card').forEach(c=>c.style.display=c.querySelector('h3').innerText.toLowerCase().includes(q)?'':'none');}
 function openAwardPopup(i){selectedEmployee=employees[i];fetch('AwardMasterServlet?action=list').then(r=>r.json()).then(d=>{const s=document.getElementById('awardSelect');s.innerHTML='';d.forEach(a=>s.add(new Option(a.name,a.id)));document.getElementById('awardModal').style.display='flex';});}
 function closeAwardPopup(){document.getElementById('awardModal').style.display='none';}
-function submitAwardVote(){const p=new URLSearchParams();p.append('awardId',document.getElementById('awardSelect').value);p.append('nomineeEmail',selectedEmployee.communication_email);fetch('AwardVoteServlet',{method:'POST',body:p}).then(()=>{alert('Nomination submitted successfully.');closeAwardPopup();});}
+//function submitAwardVote(){const p=new URLSearchParams();p.append('awardId',document.getElementById('awardSelect').value);p.append('nomineeEmail',selectedEmployee.communication_email);fetch('AwardVoteServlet',{method:'POST',body:p}).then(()=>{alert('Nomination submitted successfully.');closeAwardPopup();});}
+function submitAwardVote(){
+
+    const p = new URLSearchParams();
+
+    p.append("awardId", document.getElementById("awardSelect").value);
+    p.append("nomineeEmail", selectedEmployee.communication_email);
+
+    fetch("AwardVoteServlet",{
+        method:"POST",
+        body:p
+    })
+    .then(r=>r.text())
+    .then(t=>{
+        alert(t);
+        closeAwardPopup();
+    });
+}
 </script></body>
 </html>
