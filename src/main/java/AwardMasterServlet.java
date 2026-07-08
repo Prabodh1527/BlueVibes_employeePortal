@@ -104,6 +104,9 @@ public class AwardMasterServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String action = request.getParameter("action");
+        System.out.println("ACTION = " + action);
+        System.out.println("NAME = " + request.getParameter("awardName"));
+        System.out.println("DESC = " + request.getParameter("awardDescription"));
 
         try (Connection con = DBConnection.getConnection()) {
 
