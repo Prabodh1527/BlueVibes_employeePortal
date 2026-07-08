@@ -130,8 +130,19 @@
             </form>
         </div>
         <div class="card">
-            <div style="margin-bottom: 15px;">
-                <button type="button" onclick="downloadAwards()" class="btn-add"> Download </button>
+            <div style="margin-bottom:15px;display:flex;gap:10px;">
+                <button type="button" onclick="downloadAwards()" class="btn-add">Download</button>
+            
+                <button type="button" onclick="showResults()" class="btn-add">
+                    View Voting Results
+                </button>
+            
+                <button type="button"
+                        onclick="resetVotes()"
+                        class="btn-add"
+                        style="background:#dc2626;">
+                    Reset Votes
+                </button>
             </div>
             <table class="data-table">
                 <thead><tr><th>ID</th><th>Award Name</th><th>Description</th><th>Actions</th></tr></thead>
@@ -139,7 +150,6 @@
             </table>
         </div>
     </div>
-<div class="card"><h3 style="margin-bottom:15px;">Award Voting Results</h3><table class="data-table"><thead><tr><th>Award</th><th>Votes</th><th>Leading Employee</th></tr></thead><tbody id="award-results"></tbody></table></div>
 </div>
 </main>
 
@@ -238,24 +248,86 @@
         fetch("AwardMasterServlet?action=results")
         .then(r=>r.json())
         .then(data=>{
-    
-            const tbody=document.getElementById("award-results");
-    
-            tbody.innerHTML=data.map(r=>`
-                <tr>
-                    <td>${r.award}</td>
-                    <td>${r.votes}</td>
-                    <td>${r.employee}</td>
-                </tr>
-            `).join("");
-    
+        
+        document.getElementById("award-results").innerHTML=data.map(r=>`
+        
+        <tr>
+        <td>${r.award}</td>
+        <td>${r.votes}</td>
+        <td>${r.employee}</td>
+        </tr>
+        
+        `).join("");
+        
         });
-    
+        
+    }
+    function showResults(){
+
+        loadResults();
+        
+        document.getElementById("resultsModal").style.display="flex";
+        
+    }
+        
+    function resetVotes(){
+        
+        if(!confirm("Reset all award votes?"))
+            return;
+        
+        const p=new URLSearchParams();
+        
+        p.append("action","resetVotes");
+        
+        fetch("AwardMasterServlet",{
+        
+        method:"POST",
+        
+        body:p
+        
+        }).then(()=>{
+        
+        alert("Votes reset successfully.");
+        
+        loadResults();
+        
+        });
+        
     }
     window.onload = function () {
         loadAwards();
         loadResults();
     };
 </script>
+    <div id="resultsModal"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:9999;">
+
+    <div style="background:#fff;width:850px;max-width:95%;border-radius:12px;padding:25px;">
+    
+    <h2 style="margin-bottom:20px;">Award Voting Results</h2>
+    
+    <table class="data-table">
+    <thead>
+    <tr>
+    <th>Award</th>
+    <th>Votes</th>
+    <th>Leading Employee</th>
+    </tr>
+    </thead>
+    
+    <tbody id="award-results"></tbody>
+    
+    </table>
+    
+    <div style="margin-top:20px;text-align:right;">
+    <button class="btn-add"
+    onclick="document.getElementById('resultsModal').style.display='none'">
+    Close
+    </button>
+    </div>
+    
+    </div>
+    
+    </div>
 </body>
 </html>
