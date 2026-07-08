@@ -2,91 +2,309 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BlueVibes | Portal Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        :root { --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; --error: #ef4444; }
+        :root {
+            --navy-950: #070b14;
+            --navy-900: #0d1424;
+            --navy-800: #131c33;
+            --navy-700: #1c2942;
+            --cyan-400: #22d3ee;
+            --blue-500: #3b82f6;
+            --slate-300: #a8b4c8;
+            --slate-500: #6b7a94;
+            --white: #f4f7fb;
+            --error: #f87171;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); display: flex; align-items: center; justify-content: center; height: 100vh; }
 
-        .login-card { background: white; padding: 2.5rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 450px; text-align: center; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--navy-950);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 24px;
+        }
 
-        /* FIXED: SQUAD Dual Logo Branding Style with less white space */
-        .brand-container{
+        /* Ambient background: layered radial glow + faint grid, evokes a secure network/ops console */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 22% 20%, rgba(59, 130, 246, 0.16), transparent 45%),
+                radial-gradient(circle at 80% 75%, rgba(34, 211, 238, 0.12), transparent 50%),
+                var(--navy-950);
+            z-index: 0;
+        }
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+            background-size: 42px 42px;
+            mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 40%, transparent 100%);
+            z-index: 0;
+        }
+
+        .login-card {
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(180deg, rgba(19, 28, 51, 0.9), rgba(13, 20, 36, 0.92));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            padding: 2.75rem 2.5rem 2.25rem;
+            border-radius: 20px;
+            box-shadow:
+                0 30px 60px -20px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+            width: 420px;
+            text-align: center;
+            animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Signature element: pulsing security ring behind the brand mark */
+        .brand-container {
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .ring {
+            position: absolute;
+            top: -14px;
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            border: 1px solid rgba(34, 211, 238, 0.35);
+            animation: pulse 2.6s ease-out infinite;
+        }
+        @keyframes pulse {
+            0%   { transform: scale(0.85); opacity: 0.7; }
+            70%  { transform: scale(1.35); opacity: 0; }
+            100% { transform: scale(1.35); opacity: 0; }
+        }
+
+        .logo-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 10px;
-            margin-bottom: 10px;
+            margin-top: 10px;
         }
-        .logo-top{
-            width: 180px;
-            height: auto;
+        .logo-top {
+            width: 34px;
+            height: 34px;
             object-fit: contain;
-        }
-        .logo-bottom{
-            width: 220px;
-            height: auto;
-            object-fit: contain;
-        }
-
-        /* Adjusted width and removed padding to reduce white space - 80px Size */
-        /*.logo {
-            width: 80px;
-            height: 80px;
-            background: transparent;
-            padding: 0;
             border-radius: 8px;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 5px;
+        }
+        .logo-divider {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--slate-500);
+        }
+        .logo-bottom {
+            height: 22px;
+            width: auto;
             object-fit: contain;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-        }*/
-        .brand-name {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--primary);
-            letter-spacing: 4px;
-            background: linear-gradient(to right, #0f172a, #64748b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 1.5rem;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 4px 7px;
         }
 
-        .role-selector { display: flex; gap: 10px; margin-bottom: 1.5rem; }
-        .role-btn { flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; background: white; font-weight: 600; transition: 0.3s; }
-        .role-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .eyebrow {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            color: var(--cyan-400);
+            text-transform: uppercase;
+            margin-top: 18px;
+        }
 
-        .form-control { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 1rem; font-family: inherit; }
-        .btn-login { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-        .btn-login:hover { opacity: 0.9; }
+        .brand-name {
+            font-family: 'Sora', sans-serif;
+            font-size: 2.1rem;
+            font-weight: 700;
+            color: var(--white);
+            letter-spacing: 1px;
+            margin-top: 6px;
+        }
 
-        .footer-links { margin-top: 1.5rem; display: flex; justify-content: center; font-size: 0.85rem; }
-        .footer-links a { color: #64748b; text-decoration: none; }
+        .subtitle {
+            font-size: 0.88rem;
+            color: var(--slate-300);
+            margin-top: 6px;
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
 
         .error-msg {
-            background: #fee2e2;
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.3);
             color: var(--error);
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 1.25rem;
             font-size: 0.85rem;
             display: none;
+            text-align: left;
+        }
+
+        /* Segmented role toggle */
+        .role-selector {
+            position: relative;
+            display: flex;
+            background: var(--navy-800);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 1.5rem;
+        }
+        .role-btn {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 9px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--slate-300);
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.25s ease;
+        }
+        .role-btn.active { color: var(--navy-950); }
+        .role-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            height: calc(100% - 8px);
+            background: linear-gradient(135deg, var(--cyan-400), var(--blue-500));
+            border-radius: 9px;
+            transition: transform 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+        .role-selector.admin .role-slider { transform: translateX(100%); }
+
+        .field {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        .field i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--slate-500);
+            font-size: 1.05rem;
+            pointer-events: none;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--white);
+            font-family: inherit;
+            font-size: 0.92rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+        .form-control::placeholder { color: var(--slate-500); }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--cyan-400);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            margin-top: 0.5rem;
+            background: linear-gradient(135deg, var(--cyan-400), var(--blue-500));
+            color: #06111f;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 0.94rem;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+            box-shadow: 0 8px 20px -6px rgba(59, 130, 246, 0.5);
+        }
+        .btn-login:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .btn-login:active { transform: translateY(0); }
+        .btn-login:focus-visible {
+            outline: 2px solid var(--cyan-400);
+            outline-offset: 2px;
+        }
+
+        .footer-links {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            font-size: 0.83rem;
+        }
+        .footer-links a {
+            color: var(--slate-300);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .footer-links a:hover { color: var(--cyan-400); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .login-card, .ring { animation: none; }
+        }
+
+        @media (max-width: 480px) {
+            .login-card { width: 100%; padding: 2.25rem 1.5rem 2rem; }
         }
     </style>
 </head>
 <body>
 <div class="login-card">
     <div class="brand-container">
-        <img src="blueeye.png" class="logo-top">
-        <img src="bluedigital.png" class="logo-bottom">
+        <div class="ring"></div>
+        <div class="logo-row">
+            <img src="blueeye.png" class="logo-top" alt="BlueEye logo">
+            <span class="logo-divider"></span>
+            <img src="bluedigital.png" class="logo-bottom" alt="BlueDigital logo">
+        </div>
     </div>
+    <div class="eyebrow">Secure Access Portal</div>
     <div class="brand-name">BlueVibes</div>
+    <div class="subtitle">Sign in to continue to your workspace</div>
 
-    <h2 style="margin-bottom: 1.5rem; color: var(--primary); font-weight: 700;">Portal Login</h2>
+    <div id="errorAlert" class="error-msg">
+        <i class="ph ph-warning-circle"></i> Invalid email, password, or role.
+    </div>
 
-    <div id="errorAlert" class="error-msg">Invalid Email, Password, or Role.</div>
-
-    <div class="role-selector">
+    <div class="role-selector" id="roleSelector">
+        <div class="role-slider"></div>
         <button type="button" class="role-btn active" id="btnUser" onclick="setRole('User')">User</button>
         <button type="button" class="role-btn" id="btnAdmin" onclick="setRole('Admin')">Admin</button>
     </div>
@@ -94,14 +312,20 @@
     <form id="loginForm" action="LoginServlet" method="post">
         <input type="hidden" name="role" id="roleInput" value="User">
 
-        <input type="text" name="email" class="form-control" placeholder="Username / Email" required>
-        <input type="password" name="password" class="form-control" placeholder="Password" required>
+        <div class="field">
+            <i class="ph ph-envelope-simple"></i>
+            <input type="text" name="email" class="form-control" placeholder="Username / Email" required>
+        </div>
+        <div class="field">
+            <i class="ph ph-lock-key"></i>
+            <input type="password" name="password" class="form-control" placeholder="Password" required>
+        </div>
 
         <button type="submit" class="btn-login">Login to BlueVibes</button>
     </form>
 
     <div class="footer-links">
-        <a href="forgotpassword.html">Forgot Password?</a>
+        <a href="forgotpassword.html">Forgot password?</a>
     </div>
 </div>
 
@@ -110,6 +334,7 @@
         document.getElementById('roleInput').value = role;
         document.getElementById('btnUser').classList.toggle('active', role === 'User');
         document.getElementById('btnAdmin').classList.toggle('active', role === 'Admin');
+        document.getElementById('roleSelector').classList.toggle('admin', role === 'Admin');
     }
 
     window.onload = function() {
