@@ -29,13 +29,13 @@ public class KnowColleaguesServlet extends HttpServlet {
             "SELECT fullname, communication_email, designation, " +
             "date_of_birth, date_of_joining " +
             "FROM users " +
-            "WHERE communication_email <> ? " +
+            /*"WHERE communication_email <> ? " +*/
             "ORDER BY date_of_joining";
 
         try (Connection con = DBConnection.getConnection()) {
 
             PreparedStatement ps = con.prepareStatement(sql);
-            ps.setString(1, loggedInEmail);
+            //ps.setString(1, loggedInEmail);
         
             ResultSet rs = ps.executeQuery();
         
