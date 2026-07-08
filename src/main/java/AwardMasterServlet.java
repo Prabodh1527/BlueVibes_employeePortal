@@ -155,6 +155,15 @@ public class AwardMasterServlet extends HttpServlet {
 
                 ps.executeUpdate();
             }
+            else if ("resetVotes".equals(action)) {
+
+                PreparedStatement ps = con.prepareStatement(
+                    "DELETE FROM employee_award_votes"
+                );
+            
+                ps.executeUpdate();
+            
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
