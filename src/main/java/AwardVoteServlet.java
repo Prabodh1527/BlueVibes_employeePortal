@@ -25,6 +25,10 @@ public class AwardVoteServlet extends HttpServlet {
             response.getWriter().print("LOGIN_REQUIRED");
             return;
         }
+        System.out.println("SESSION EMAIL = " + session.getAttribute("email"));
+        System.out.println("SESSION USEREMAIL = " + session.getAttribute("userEmail"));
+        System.out.println("SESSION COMMUNICATION = " + session.getAttribute("communication_email"));
+        System.out.println("SESSION USER = " + session.getAttribute("user"));
 
         String voterEmail = (String) session.getAttribute("email");
 
