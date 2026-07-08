@@ -4,47 +4,273 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BlueVibes | Core Security Code Entry</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        :root { --primary: #0f172a; --accent: #0284c7; --bg: #f1f5f9; }
+        :root {
+            --navy-950: #070b14;
+            --navy-900: #0d1424;
+            --navy-800: #131c33;
+            --cyan-400: #22d3ee;
+            --blue-500: #3b82f6;
+            --slate-300: #a8b4c8;
+            --slate-500: #6b7a94;
+            --white: #f4f7fb;
+            --success: #4ade80;
+            --error: #f87171;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .auth-card { background: white; padding: 2.5rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; }
-        .logo-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 1.5rem; }
-        .logo-img { width: 60px; height: 60px; object-fit: contain; }
-        h2 { color: var(--primary); font-weight: 700; margin-bottom: 0.5rem; }
-        p { color: #64748b; font-size: 0.9rem; margin-bottom: 2rem; line-height: 1.5; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--navy-950);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 24px;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 22% 20%, rgba(59, 130, 246, 0.16), transparent 45%),
+                radial-gradient(circle at 80% 75%, rgba(34, 211, 238, 0.12), transparent 50%),
+                var(--navy-950);
+            z-index: 0;
+        }
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+            background-size: 42px 42px;
+            mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 40%, transparent 100%);
+            z-index: 0;
+        }
+
+        .auth-card {
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(180deg, rgba(19, 28, 51, 0.9), rgba(13, 20, 36, 0.92));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            padding: 2.75rem 2.5rem 2.25rem;
+            border-radius: 20px;
+            box-shadow:
+                0 30px 60px -20px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1.25rem;
+        }
+        .ring {
+            position: absolute;
+            top: -18px;
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            border: 1px solid rgba(34, 211, 238, 0.35);
+            animation: pulse 2.6s ease-out infinite;
+        }
+        @keyframes pulse {
+            0%   { transform: scale(0.85); opacity: 0.7; }
+            70%  { transform: scale(1.35); opacity: 0; }
+            100% { transform: scale(1.35); opacity: 0; }
+        }
+        .logo-img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 4px;
+        }
+        .logo-divider {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--slate-500);
+        }
+
+        h2 {
+            font-family: 'Sora', sans-serif;
+            color: var(--white);
+            font-weight: 700;
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            color: var(--slate-300);
+            font-size: 0.88rem;
+            margin-bottom: 1.75rem;
+            line-height: 1.55;
+        }
+
         .form-group { text-align: left; margin-bottom: 1.5rem; }
-        label { display: block; font-size: 0.85rem; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            color: var(--slate-300);
+            margin-bottom: 8px;
+        }
+
         .input-wrapper { position: relative; }
-        .input-wrapper i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
-        
-        /* Verification PIN styling */
-        input.pin-input { width: 100%; padding: 12px 12px 12px 40px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-family: inherit; transition: 0.2s; text-align: center; font-size: 1.2rem; font-weight: bold; letter-spacing: 4px; }
-        input.pin-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
-        
-        /* Password fields styling */
-        input.pass-input { width: 100%; padding: 12px 12px 12px 40px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-family: inherit; transition: 0.2s; text-align: left; font-size: 1rem; letter-spacing: 0; }
-        input.pass-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
-        
-        .btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 0.5rem; }
-        .btn-submit:hover { background: var(--accent); }
-        
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--slate-500);
+            font-size: 1.05rem;
+            pointer-events: none;
+        }
+
+        input.pin-input {
+            width: 100%;
+            padding: 12px 12px 12px 42px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--white);
+            font-family: inherit;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 6px;
+        }
+        input.pin-input::placeholder { letter-spacing: 6px; color: var(--slate-500); }
+        input.pin-input:focus {
+            border-color: var(--cyan-400);
+            outline: none;
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+        }
+
+        input.pass-input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--white);
+            font-family: inherit;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            text-align: left;
+            font-size: 0.95rem;
+            letter-spacing: 0;
+        }
+        input.pass-input::placeholder { color: var(--slate-500); }
+        input.pass-input:focus {
+            border-color: var(--cyan-400);
+            outline: none;
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+        }
+
+        #passwordRules {
+            margin-top: 14px;
+            text-align: left;
+            font-size: 0.78rem;
+            display: grid;
+            gap: 5px;
+        }
+        #passwordRules div {
+            color: var(--error);
+            transition: color 0.2s ease;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, var(--cyan-400), var(--blue-500));
+            color: #06111f;
+            border: none;
+            padding: 13px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.94rem;
+            cursor: pointer;
+            transition: transform 0.15s ease, filter 0.15s ease;
+            box-shadow: 0 8px 20px -6px rgba(59, 130, 246, 0.5);
+            margin-top: 0.5rem;
+        }
+        .btn-submit:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .btn-submit:active { transform: translateY(0); }
+        .btn-submit:focus-visible {
+            outline: 2px solid var(--cyan-400);
+            outline-offset: 2px;
+        }
+
         /* Banner Messages Alerts */
-        .msg { padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1.5rem; display: none; text-align: left; line-height: 1.4; }
-        .msg-success { background: #dcfce7; color: #166534; display: block; border-left: 4px solid #16a34a; }
-        .msg-error { background: #fee2e2; color: #991b1b; display: block; border-left: 4px solid #dc2626; }
+        .msg {
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            text-align: left;
+            line-height: 1.45;
+        }
+        .msg-success {
+            background: rgba(74, 222, 128, 0.1);
+            color: var(--success);
+            display: block;
+            border-left: 3px solid var(--success);
+        }
+        .msg-error {
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--error);
+            display: block;
+            border-left: 3px solid var(--error);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .auth-card, .ring { animation: none; }
+        }
+
+        @media (max-width: 480px) {
+            .auth-card { padding: 2.25rem 1.5rem 2rem; }
+        }
     </style>
 </head>
 <body>
 
 <div class="auth-card">
     <div class="logo-container">
+        <div class="ring"></div>
         <img src="logo1.jpeg" class="logo-img" alt="Blueeye">
+        <span class="logo-divider"></span>
         <img src="logo.jpeg" class="logo-img" alt="Bluegital">
     </div>
-    
+
     <h2>Security Code Verification</h2>
     <p>Please paste the 6-digit login access PIN sent directly to your corporate inbox profile layout configuration.</p>
 
@@ -72,13 +298,13 @@
             <div class="input-wrapper">
                 <i class="ph ph-shield-check"></i>
                 <input type="password" id="confirmPassword" class="pass-input" placeholder="••••••••" required>
-                <div id="passwordRules" style="margin-top:15px;text-align:left;font-size:13px;">
-                <div id="ruleLengthMin" style="color:#dc2626;">✖ Minimum 7 characters</div>
-                <div id="ruleLengthMax" style="color:#dc2626;">✖ Maximum 15 characters</div>
-                <div id="ruleUpper" style="color:#dc2626;">✖ One uppercase letter</div>
-                <div id="ruleNumber" style="color:#dc2626;">✖ One number</div>
-                <div id="ruleSpecial" style="color:#dc2626;">✖ One special character</div>
-                <div id="ruleMatch" style="color:#dc2626;">✖ Passwords match</div>
+                <div id="passwordRules">
+                    <div id="ruleLengthMin">✖ Minimum 7 characters</div>
+                    <div id="ruleLengthMax">✖ Maximum 15 characters</div>
+                    <div id="ruleUpper">✖ One uppercase letter</div>
+                    <div id="ruleNumber">✖ One number</div>
+                    <div id="ruleSpecial">✖ One special character</div>
+                    <div id="ruleMatch">✖ Passwords match</div>
                 </div>
             </div>
         </div>
@@ -92,7 +318,7 @@
     const params = new URLSearchParams(window.location.search);
     const msgBox = document.getElementById('banner');
     const status = params.get('status');
-    
+
     if (status === 'code_sent') {
         msgBox.innerText = "Dispatch Confirmation: A 6-digit dynamic numeric entry key has been dropped into your corporate workspace inbox.";
         msgBox.className = "msg msg-success";
@@ -109,19 +335,19 @@
 
     const newPasswordField = document.getElementById("newPassword");
     const confirmPasswordField = document.getElementById("confirmPassword");
-    
+
     function checkPasswordRules() {
-    
+
         const password = newPasswordField.value;
         const confirmPassword = confirmPasswordField.value;
-    
+
         const minLength = password.length >= 7;
         const maxLength = password.length <= 15;
         const upperCase = /[A-Z]/.test(password);
         const number = /\d/.test(password);
         const special = /[^A-Za-z0-9]/.test(password);
         const match = password !== "" && password === confirmPassword;
-    
+
         updateRule("ruleLengthMin", minLength);
         updateRule("ruleLengthMax", maxLength);
         updateRule("ruleUpper", upperCase);
@@ -129,20 +355,20 @@
         updateRule("ruleSpecial", special);
         updateRule("ruleMatch", match);
     }
-    
+
     function updateRule(id, passed) {
-    
+
         const element = document.getElementById(id);
-    
+
         if (passed) {
-            element.style.color = "#16a34a";
+            element.style.color = "#4ade80";
             element.innerHTML = element.innerHTML.replace("✖", "✔");
         } else {
-            element.style.color = "#dc2626";
+            element.style.color = "#f87171";
             element.innerHTML = element.innerHTML.replace("✔", "✖");
         }
     }
-    
+
     newPasswordField.addEventListener("input", checkPasswordRules);
     confirmPasswordField.addEventListener("input", checkPasswordRules);
 
@@ -162,7 +388,7 @@
 
         const p1 = document.getElementById('newPassword').value;
         const p2 = document.getElementById('confirmPassword').value;
-    
+
         const valid =
             p1.length >= 7 &&
             p1.length <= 15 &&
@@ -170,17 +396,17 @@
             /\d/.test(p1) &&
             /[^A-Za-z0-9]/.test(p1) &&
             p1 === p2;
-    
+
         if (!valid) {
-    
+
             msgBox.innerText =
                 "Password must be 7-15 characters long and contain at least 1 uppercase letter, 1 number, 1 special character and both passwords must match.";
-    
+
             msgBox.className = "msg msg-error";
-    
+
             return false;
         }
-    
+
         return true;
     }
 </script>
