@@ -95,7 +95,7 @@ public class AwardMasterServlet extends HttpServlet {
                 json.append("]");
                 out.print(json.toString());
             }
-            catch (Exception e) {
+        }catch (Exception e) {
                 e.printStackTrace();
         }
     }
