@@ -65,38 +65,53 @@ public class AwardMasterServlet extends HttpServlet {
                         "GROUP BY a.award_name,e.full_name " +
                         "ORDER BY a.award_name");
 
-                ResultSet rs = ps.executeQuery();
+                else if ("results".equals(action)) {
 
-                StringBuilder json = new StringBuilder("[");
-                boolean first = true;
-
-                while (rs.next()) {
-
-                    if (!first)
-                        json.append(",");
-
-                    json.append("{")
-                            .append("\"award\":\"")
-                            .append(rs.getString("award_name"))
-                            .append("\",")
-                            .append("\"votes\":")
-                            .append(rs.getInt("votes"))
-                            .append(",")
-                            .append("\"employee\":\"")
-                            .append(rs.getString("employee"))
-                            .append("\"")
-                            .append("}");
-
-                    first = false;
-                }
-
-                json.append("]");
-                out.print(json.toString());
-
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+                    PreparedStatement ps = con.prepareStatement(
+                
+                        "SELECT " +
+                        "a.award_name, " +
+                        "COALESCE(u.fullname,'-') AS employee, " +
+                        "COUNT(v.id) AS votes " +
+                        "FROM award_master a " +
+                        "LEFT JOIN employee_award_votes v " +
+                        "ON a.award_id = v.award_id " +
+                        "LEFT JOIN users u " +
+                        "ON u.email = v.nominee_email " +
+                        "GROUP BY a.award_name, u.fullname " +
+                        "ORDER BY a.award_name, votes DESC"
+                
+                    );
+                
+                    ResultSet rs = ps.executeQuery();
+                
+                    StringBuilder json = new StringBuilder("[");
+                    boolean first = true;
+                
+                    while (rs.next()) {
+                
+                        if (!first)
+                            json.append(",");
+                
+                        json.append("{")
+                                .append("\"award\":\"")
+                                .append(rs.getString("award_name").replace("\"","\\\""))
+                                .append("\",")
+                                .append("\"employee\":\"")
+                                .append(rs.getString("employee") == null ? "-" : rs.getString("employee").replace("\"","\\\""))
+                                .append("\",")
+                                .append("\"votes\":")
+                                .append(rs.getInt("votes"))
+                                .append("}");
+                
+                        first = false;
+                    }
+                
+                    json.append("]");
+                    out.print(json.toString());
+                } 
+            catch (Exception e) {
+                e.printStackTrace();
         }
     }
 
