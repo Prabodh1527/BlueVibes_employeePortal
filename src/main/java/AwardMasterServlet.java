@@ -51,20 +51,18 @@ public class AwardMasterServlet extends HttpServlet {
             }
 
             else if ("results".equals(action)) {
-
+            
                 PreparedStatement ps = con.prepareStatement(
             
                     "SELECT " +
                     "a.award_name, " +
                     "COALESCE(u.fullname,'-') AS employee, " +
-                    "COUNT(v.id) AS votes " +
+                    "COUNT(v.vote_id) AS votes " +
                     "FROM award_master a " +
-                    "LEFT JOIN employee_award_votes v " +
-                    "ON a.award_id = v.award_id " +
-                    "LEFT JOIN users u " +
-                    "ON u.email = v.nominee_email " +
-                    "GROUP BY a.award_name, u.fullname " +
-                    "ORDER BY a.award_name, votes DESC"
+                    "LEFT JOIN employee_award_votes v ON a.award_id=v.award_id " +
+                    "LEFT JOIN users u ON u.communication_email=v.nominee_email " +
+                    "GROUP BY a.award_name,u.fullname " +
+                    "ORDER BY a.award_name,votes DESC"
             
                 );
             
@@ -73,23 +71,27 @@ public class AwardMasterServlet extends HttpServlet {
                 StringBuilder json = new StringBuilder("[");
                 boolean first = true;
             
-                while (rs.next()) {
+                while(rs.next()){
             
-                    if (!first)
+                    if(!first){
                         json.append(",");
+                    }
             
                     json.append("{")
                         .append("\"award\":\"")
-                        .append(rs.getString("award_name").replace("\"","\\\\\""))
+                        .append(rs.getString("award_name").replace("\"","\\\""))
                         .append("\",")
+            
                         .append("\"employee\":\"")
-                        .append((rs.getString("employee")==null?"-":rs.getString("employee")).replace("\"","\\\\\""))
+                        .append((rs.getString("employee")==null?"-":rs.getString("employee")).replace("\"","\\\""))
                         .append("\",")
+            
                         .append("\"votes\":")
                         .append(rs.getInt("votes"))
+            
                         .append("}");
             
-                    first = false;
+                    first=false;
                 }
             
                 json.append("]");
