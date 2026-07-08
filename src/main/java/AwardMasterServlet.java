@@ -53,63 +53,48 @@ public class AwardMasterServlet extends HttpServlet {
             else if ("results".equals(action)) {
 
                 PreparedStatement ps = con.prepareStatement(
-
-                        "SELECT a.award_name," +
-                        " COUNT(v.vote_id) AS votes," +
-                        " COALESCE(e.full_name,'-') AS employee " +
-                        "FROM award_master a " +
-                        "LEFT JOIN employee_award_votes v ON a.award_id=v.award_id " +
-                        "LEFT JOIN (" +
-                        "SELECT nominee_email,MAX(full_name) full_name FROM employee_details GROUP BY nominee_email,full_name" +
-                        ") e ON e.nominee_email=v.nominee_email " +
-                        "GROUP BY a.award_name,e.full_name " +
-                        "ORDER BY a.award_name");
-
-                else if ("results".equals(action)) {
-
-                    PreparedStatement ps = con.prepareStatement(
-                
-                        "SELECT " +
-                        "a.award_name, " +
-                        "COALESCE(u.fullname,'-') AS employee, " +
-                        "COUNT(v.id) AS votes " +
-                        "FROM award_master a " +
-                        "LEFT JOIN employee_award_votes v " +
-                        "ON a.award_id = v.award_id " +
-                        "LEFT JOIN users u " +
-                        "ON u.email = v.nominee_email " +
-                        "GROUP BY a.award_name, u.fullname " +
-                        "ORDER BY a.award_name, votes DESC"
-                
-                    );
-                
-                    ResultSet rs = ps.executeQuery();
-                
-                    StringBuilder json = new StringBuilder("[");
-                    boolean first = true;
-                
-                    while (rs.next()) {
-                
-                        if (!first)
-                            json.append(",");
-                
-                        json.append("{")
-                                .append("\"award\":\"")
-                                .append(rs.getString("award_name").replace("\"","\\\""))
-                                .append("\",")
-                                .append("\"employee\":\"")
-                                .append(rs.getString("employee") == null ? "-" : rs.getString("employee").replace("\"","\\\""))
-                                .append("\",")
-                                .append("\"votes\":")
-                                .append(rs.getInt("votes"))
-                                .append("}");
-                
-                        first = false;
-                    }
-                
-                    json.append("]");
-                    out.print(json.toString());
-                } 
+            
+                    "SELECT " +
+                    "a.award_name, " +
+                    "COALESCE(u.fullname,'-') AS employee, " +
+                    "COUNT(v.id) AS votes " +
+                    "FROM award_master a " +
+                    "LEFT JOIN employee_award_votes v " +
+                    "ON a.award_id = v.award_id " +
+                    "LEFT JOIN users u " +
+                    "ON u.email = v.nominee_email " +
+                    "GROUP BY a.award_name, u.fullname " +
+                    "ORDER BY a.award_name, votes DESC"
+            
+                );
+            
+                ResultSet rs = ps.executeQuery();
+            
+                StringBuilder json = new StringBuilder("[");
+                boolean first = true;
+            
+                while (rs.next()) {
+            
+                    if (!first)
+                        json.append(",");
+            
+                    json.append("{")
+                        .append("\"award\":\"")
+                        .append(rs.getString("award_name").replace("\"","\\\\\""))
+                        .append("\",")
+                        .append("\"employee\":\"")
+                        .append((rs.getString("employee")==null?"-":rs.getString("employee")).replace("\"","\\\\\""))
+                        .append("\",")
+                        .append("\"votes\":")
+                        .append(rs.getInt("votes"))
+                        .append("}");
+            
+                    first = false;
+                }
+            
+                json.append("]");
+                out.print(json.toString());
+            }
             catch (Exception e) {
                 e.printStackTrace();
         }
