@@ -122,6 +122,7 @@ public class AwardMasterServlet extends HttpServlet {
                 ps.setString(2, description);
 
                 ps.executeUpdate();
+                System.out.println("INSERT SUCCESS");
             }
 
             else if ("update".equals(action)) {
