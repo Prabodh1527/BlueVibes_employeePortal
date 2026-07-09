@@ -191,6 +191,105 @@
         .action-btns { display: flex; gap: 8px; }
         .btn-edit { background: #e0f2fe; color: var(--accent); border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
         .btn-delete { background: #fee2e2; color: #ef4444; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+
+        /* ---- Voting Results Modal (employee drill-down) ---- */
+        .employee-row{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:14px 12px;
+            border-radius:10px;
+            cursor:pointer;
+            transition:0.2s;
+            border:1px solid transparent;
+        }
+        .employee-row:hover{
+            background:#f0f9ff;
+            border-color:#bae6fd;
+        }
+        .employee-row span:first-child{
+            font-weight:600;
+            font-size:0.95rem;
+        }
+        .award-count{
+            background:#e0f2fe;
+            color:var(--accent);
+            font-size:0.8rem;
+            font-weight:700;
+            padding:4px 10px;
+            border-radius:20px;
+        }
+
+        .detail-summary{
+            display:flex;
+            gap:15px;
+            margin-bottom:20px;
+        }
+        .detail-summary > div{
+            flex:1;
+            background:#f8fafc;
+            border:1px solid var(--border);
+            border-radius:10px;
+            padding:14px;
+            text-align:center;
+        }
+        .detail-summary strong{
+            display:block;
+            font-size:1.6rem;
+            color:var(--primary);
+        }
+        .detail-summary span{
+            font-size:0.78rem;
+            color:#64748b;
+        }
+
+        .award-block{
+            border:1px solid var(--border);
+            border-radius:10px;
+            margin-bottom:12px;
+            overflow:hidden;
+        }
+        .award-block-header{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:14px 16px;
+            cursor:pointer;
+            background:#f8fafc;
+            font-weight:600;
+            font-size:0.92rem;
+        }
+        .award-block-header:hover{ background:#f1f5f9; }
+        .award-total{
+            background:var(--accent);
+            color:white;
+            font-size:0.75rem;
+            font-weight:700;
+            padding:3px 10px;
+            border-radius:20px;
+        }
+        .award-block-body{
+            display:none;
+            padding:16px;
+            border-top:1px solid var(--border);
+        }
+        .award-block-body.show{ display:block; }
+        .award-desc{
+            font-size:0.85rem;
+            color:#64748b;
+            margin-bottom:14px;
+            line-height:1.5;
+        }
+        .nominators-list{ display:flex; flex-direction:column; gap:6px; }
+        .nominator-row{
+            display:flex;
+            justify-content:space-between;
+            font-size:0.85rem;
+            padding:8px 10px;
+            background:#f8fafc;
+            border-radius:6px;
+        }
+        .nominator-row span:last-child{ color:#64748b; }
     </style>
 </head>
 <body>
@@ -270,7 +369,6 @@
             </table>
         </div>
     </div>
-</div>
 </main>
 
 <script>
@@ -363,33 +461,94 @@
             fetch('AwardMasterServlet', { method: 'POST', body: params }).then(() => loadAwards());
         }
     }
-    function loadResults(){
 
-        fetch("AwardMasterServlet?action=results")
-        .then(r=>r.json())
-        .then(data=>{
-        
-        document.getElementById("award-results").innerHTML=data.map(r=>`
-        
-        <tr>
-        <td>${r.award}</td>
-        <td>${r.votes}</td>
-        <td>${r.employee}</td>
-        </tr>
-        
-        `).join("");
-        
-        });
-        
-    }
+    /* ---------- Voting Results: employee list -> award drill-down ---------- */
+
     function showResults(){
-
-        loadResults();
-        
+        loadEmployeeSummary();
         document.getElementById("resultsModal").style.display="flex";
-        
     }
-        
+
+    function loadEmployeeSummary(){
+        fetch("AwardMasterServlet?action=employeeSummary")
+            .then(r => r.json())
+            .then(data => renderEmployeeList(data));
+    }
+
+    function renderEmployeeList(data){
+        document.getElementById("modalTitle").innerText = "Award Voting Results";
+        document.getElementById("backBtn").style.display = "none";
+
+        const container = document.getElementById("resultsBody");
+
+        if(data.length === 0){
+            container.innerHTML = `<p style="color:#64748b;padding:20px 0;">No employees found.</p>`;
+            return;
+        }
+
+        container.innerHTML = data.map(e => `
+            <div class="employee-row" onclick="loadEmployeeDetail('${e.email.replace(/'/g, "\\'")}')">
+                <span>👤 ${e.fullname}</span>
+                <span class="award-count">${e.totalNominations} Award${e.totalNominations === 1 ? '' : 's'}</span>
+            </div>
+        `).join('');
+    }
+
+    function loadEmployeeDetail(email){
+        fetch("AwardMasterServlet?action=employeeDetail&email=" + encodeURIComponent(email))
+            .then(r => r.json())
+            .then(data => renderEmployeeDetail(data));
+    }
+
+    function renderEmployeeDetail(data){
+        document.getElementById("modalTitle").innerText = data.fullname;
+        document.getElementById("backBtn").style.display = "inline-flex";
+
+        const container = document.getElementById("resultsBody");
+
+        let html = `
+            <div class="detail-summary">
+                <div><strong>${data.totalNominations}</strong><span>Total Nominations</span></div>
+                <div><strong>${data.distinctAwards}</strong><span>Different Awards</span></div>
+            </div>
+        `;
+
+        if(data.awards.length === 0){
+            html += `<p style="color:#64748b;padding:20px 0;">No nominations yet.</p>`;
+        }
+
+        data.awards.forEach((award, idx) => {
+            const nominatorsHtml = award.nominators.map(n => `
+                <div class="nominator-row"><span>${n.name}</span><span>${n.date}</span></div>
+            `).join('');
+
+            html += `
+                <div class="award-block">
+                    <div class="award-block-header" onclick="toggleAward(${idx})">
+                        <span>🏆 ${award.awardName}</span>
+                        <span class="award-total">${award.count}</span>
+                    </div>
+                    <div id="awardBody${idx}" class="award-block-body">
+                        ${award.description ? `<p class="award-desc">${award.description}</p>` : ''}
+                        <div class="nominators-list">
+                            ${nominatorsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function toggleAward(idx){
+        document.getElementById("awardBody" + idx).classList.toggle("show");
+    }
+
+    function backToList(){
+        loadEmployeeSummary();
+    }
+
     function resetVotes(){
         
         if(!confirm("Reset all award votes?"))
@@ -409,43 +568,30 @@
         
         alert("Votes reset successfully.");
         
-        loadResults();
+        document.getElementById("resultsModal").style.display = "none";
         
         });
         
     }
     window.onload = function () {
         loadAwards();
-        loadResults();
     };
 </script>
     <div id="resultsModal"
      style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:9999;">
 
-    <div style="background:#fff;width:850px;max-width:95%;border-radius:12px;padding:25px;">
-    
-    <h2 style="margin-bottom:20px;">Award Voting Results</h2>
-    
-    <table class="data-table">
-    <thead>
-    <tr>
-    <th>Award</th>
-    <th>Votes</th>
-    <th>Leading Employee</th>
-    </tr>
-    </thead>
-    
-    <tbody id="award-results"></tbody>
-    
-    </table>
-    
-    <div style="margin-top:20px;text-align:right;">
-    <button class="btn-add"
-    onclick="document.getElementById('resultsModal').style.display='none'">
-    Close
-    </button>
-    </div>
-    
+    <div style="background:#fff;width:600px;max-width:95%;max-height:85vh;border-radius:12px;padding:25px;display:flex;flex-direction:column;">
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <button id="backBtn" onclick="backToList()" style="display:none;background:none;border:none;cursor:pointer;font-size:1.3rem;color:var(--accent);padding:0;align-items:center;">
+                <i class="ph ph-arrow-left"></i>
+            </button>
+            <h2 id="modalTitle" style="flex-grow:1;">Award Voting Results</h2>
+            <button onclick="document.getElementById('resultsModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.3rem;">✖</button>
+        </div>
+
+        <div id="resultsBody" style="overflow-y:auto;flex-grow:1;"></div>
+
     </div>
     
     </div>
