@@ -220,6 +220,43 @@
             background:rgba(239,68,68,.12);
         }
 
+        .award-card{
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            border-left:5px solid #0284c7;
+            border-radius:12px;
+            padding:18px;
+            margin-bottom:15px;
+            transition:0.25s;
+        }
+        
+        .award-card:hover{
+            transform:translateY(-2px);
+            box-shadow:0 6px 15px rgba(0,0,0,.08);
+        }
+        
+        .award-title{
+            font-size:18px;
+            font-weight:700;
+            color:#0f172a;
+            margin-bottom:8px;
+        }
+        
+        .award-description{
+            color:#64748b;
+            margin-bottom:12px;
+        }
+        
+        .award-votes{
+            display:inline-block;
+            background:#dbeafe;
+            color:#1d4ed8;
+            padding:6px 12px;
+            border-radius:20px;
+            font-weight:600;
+            font-size:13px;
+        }
+
         .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
         .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; }
         .content-area { padding: 2.5rem; overflow-y: auto; flex-grow: 1; }
@@ -368,8 +405,18 @@
     <div class="content-area">
         <div class="welcome-box">
             <h1>Welcome <%= userName %>!</h1>
+        </div>
 
-            
+        <div class="summary-card" style="margin-bottom:25px;">
+            <h3>🏆 My Awards</h3>
+        
+            <div id="myAwardsContainer">
+        
+                <div style="color:#64748b;">
+                    Loading your awards...
+                </div>
+        
+            </div>
         </div>
 
         <div class="quick-actions-card">
