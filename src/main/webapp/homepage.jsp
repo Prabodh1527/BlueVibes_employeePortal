@@ -548,46 +548,21 @@
         function loadMyAwards(){
 
             fetch("MyAwardsServlet")
-            .then(res => res.json())
-            .then(data => {
-                console.log(data);
-                alert(JSON,stringify(data));
+            .then(res => {
         
-                const container = document.getElementById("myAwardsContainer");
+                alert("HTTP Status : " + res.status);
         
-                if(data.length === 0){
+                return res.text();
         
-                    container.innerHTML = `
-                        <div style="
-                            text-align:center;
-                            color:#64748b;
-                            padding:20px;">
-                            You haven't received any awards yet.
-                        </div>
-                    `;
+            })
+            .then(text => {
         
-                    return;
-                }
+                alert(text);
         
-                container.innerHTML = data.map(a => `
+            })
+            .catch(err => {
         
-                    <div class="award-card">
-        
-                        <div class="award-title">
-                            🏆 ${a.award}
-                        </div>
-        
-                        <div class="award-description">
-                            ${a.description}
-                        </div>
-        
-                        <div class="award-votes">
-                            ${a.votes} Nomination${a.votes>1?'s':''}
-                        </div>
-        
-                    </div>
-        
-                `).join("");
+                alert("ERROR : " + err);
         
             });
         
