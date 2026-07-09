@@ -43,29 +43,31 @@ public class MyAwardsServlet extends HttpServlet {
 
         try(Connection con = DBConnection.getConnection()){
 
-            // Find the employee's communication email
+            // Get communication email using login email
+            String communicationEmail = loginEmail;
+
             PreparedStatement psUser = con.prepareStatement(
-                "SELECT communication_email FROM users WHERE email=? OR communication_email=?"
+                "SELECT communication_email FROM users WHERE email=?"
             );
 
             psUser.setString(1, loginEmail);
-            psUser.setString(2, loginEmail);
 
             ResultSet rsUser = psUser.executeQuery();
-
-            String communicationEmail = loginEmail;
 
             if(rsUser.next()){
                 communicationEmail = rsUser.getString("communication_email");
             }
 
+            rsUser.close();
+            psUser.close();
+
             PreparedStatement ps = con.prepareStatement(
 
-                "SELECT a.award_name, a.description, COUNT(v.vote_id) total_votes " +
+                "SELECT a.award_name, a.description, COUNT(v.vote_id) AS total_votes " +
                 "FROM employee_award_votes v " +
-                "JOIN award_master a ON a.award_id=v.award_id " +
-                "WHERE v.nominee_email=? " +
-                "GROUP BY a.award_name,a.description " +
+                "JOIN award_master a ON a.award_id = v.award_id " +
+                "WHERE v.nominee_email = ? " +
+                "GROUP BY a.award_name, a.description " +
                 "ORDER BY total_votes DESC"
 
             );
@@ -91,7 +93,8 @@ public class MyAwardsServlet extends HttpServlet {
                     .append("\",")
 
                     .append("\"description\":\"")
-                    .append(rs.getString("description")==null ? "" : rs.getString("description").replace("\"","\\\""))
+                    .append(rs.getString("description")==null ? "" :
+                            rs.getString("description").replace("\"","\\\""))
                     .append("\",")
 
                     .append("\"votes\":")
@@ -102,6 +105,9 @@ public class MyAwardsServlet extends HttpServlet {
 
             json.append("]");
 
+            rs.close();
+            ps.close();
+
             out.print(json.toString());
 
         }
@@ -109,6 +115,5 @@ public class MyAwardsServlet extends HttpServlet {
             e.printStackTrace();
             out.print("[]");
         }
-
     }
 }
