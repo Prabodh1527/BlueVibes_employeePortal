@@ -587,6 +587,45 @@
         
                 });
         
+                let html = "";
+
+                for(let i=0;i<data.length;i++){
+                
+                    const award =
+                        data[i].award ||
+                        data[i].award_name ||
+                        data[i].name ||
+                        "";
+                
+                    const description =
+                        data[i].description ||
+                        data[i].desc ||
+                        "";
+                
+                    const votes =
+                        data[i].votes ||
+                        data[i].total_votes ||
+                        0;
+                
+                    html += `
+                        <div class="award-card">
+                
+                            <div class="award-title">
+                                🏆 ${award}
+                            </div>
+                
+                            <div class="award-description">
+                                ${description}
+                            </div>
+                
+                            <div class="award-votes">
+                                ${votes} Nomination${votes>1?"s":""}
+                            </div>
+                
+                        </div>
+                    `;
+                }
+                
                 container.innerHTML = html;
         
             })
