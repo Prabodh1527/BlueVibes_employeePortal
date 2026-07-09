@@ -25,63 +25,73 @@ public class MyAwardsServlet extends HttpServlet {
     
         HttpSession session = request.getSession(false);
     
-        if (session == null) {
+        if(session==null){
             out.print("[]");
             return;
         }
     
-        String loginEmail = (String) session.getAttribute("userEmail");
+        String loginEmail=(String)session.getAttribute("userEmail");
     
-        if (loginEmail == null)
-            loginEmail = (String) session.getAttribute("email");
-    
-        if (loginEmail == null) {
+        if(loginEmail==null){
             out.print("[]");
             return;
         }
     
-        try (Connection con = DBConnection.getConnection()) {
+        try(Connection con=DBConnection.getConnection()){
     
-            PreparedStatement ps = con.prepareStatement(
+            // Step 1 : Get communication email of logged in user
+            String nomineeEmail=loginEmail;
     
-                "SELECT a.award_name, " +
-                "a.description, " +
-                "COUNT(*) total_votes " +
+            PreparedStatement p1=con.prepareStatement(
+                "SELECT communication_email FROM users WHERE email=?"
+            );
+    
+            p1.setString(1,loginEmail);
+    
+            ResultSet r1=p1.executeQuery();
+    
+            if(r1.next()){
+                nomineeEmail=r1.getString("communication_email");
+            }
+    
+            // Step 2 : Get awards
+            PreparedStatement ps=con.prepareStatement(
+    
+                "SELECT a.award_name,a.description,COUNT(*) total_votes " +
                 "FROM employee_award_votes v " +
-                "JOIN award_master a ON a.award_id=v.award_id " +
-                "JOIN users u ON u.communication_email=v.nominee_email " +
-                "WHERE u.email=? " +
+                "INNER JOIN award_master a ON a.award_id=v.award_id " +
+                "WHERE v.nominee_email=? " +
                 "GROUP BY a.award_name,a.description " +
                 "ORDER BY total_votes DESC"
     
             );
     
-            ps.setString(1, loginEmail);
+            ps.setString(1,nomineeEmail);
     
-            ResultSet rs = ps.executeQuery();
+            ResultSet rs=ps.executeQuery();
     
-            StringBuilder json = new StringBuilder("[");
-            boolean first = true;
+            StringBuilder json=new StringBuilder("[");
+            boolean first=true;
     
-            while (rs.next()) {
+            while(rs.next()){
     
-                if (!first)
-                    json.append(",");
+                if(!first) json.append(",");
     
-                first = false;
+                first=false;
+    
+                String award=rs.getString("award_name");
+                String desc=rs.getString("description");
+    
+                if(award==null) award="";
+                if(desc==null) desc="";
+    
+                award=award.replace("\"","\\\"");
+                desc=desc.replace("\"","\\\"");
     
                 json.append("{")
-                    .append("\"award\":\"")
-                    .append(rs.getString("award_name"))
-                    .append("\",")
-    
-                    .append("\"description\":\"")
-                    .append(rs.getString("description") == null ? "" : rs.getString("description"))
-                    .append("\",")
-    
-                    .append("\"votes\":")
-                    .append(rs.getInt("total_votes"))
-    
+                    .append("\"award\":\"").append(award).append("\",")
+                    .append("\"description\":\"").append(desc).append("\",")
+                    .append("\"votes\":").append(rs.getInt("total_votes"))
                     .append("}");
             }
     
@@ -89,11 +99,9 @@ public class MyAwardsServlet extends HttpServlet {
     
             out.print(json.toString());
     
-        } catch (Exception e) {
-    
+        }catch(Exception e){
             e.printStackTrace();
             out.print("[]");
-    
         }
     }
 }
