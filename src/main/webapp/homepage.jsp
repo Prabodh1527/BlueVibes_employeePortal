@@ -105,7 +105,7 @@
         
         .quick-grid{
             display:grid;
-            grid-template-columns:repeat(4,1fr);
+            grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
             gap:20px;
         }
         
@@ -118,6 +118,10 @@
             text-align:center;
             transition:0.3s;
             color:#0f172a;
+            cursor:pointer;
+            font-family:inherit;
+            font-size:inherit;
+            width:100%;
         }
         
         .quick-btn:hover{
@@ -225,14 +229,18 @@
             border:1px solid #e2e8f0;
             border-left:5px solid #0284c7;
             border-radius:12px;
-            padding:18px;
             margin-bottom:15px;
-            transition:0.25s;
+            overflow:hidden;
         }
-        
-        .award-card:hover{
-            transform:translateY(-2px);
-            box-shadow:0 6px 15px rgba(0,0,0,.08);
+
+        .award-card-header{
+            padding:18px;
+            cursor:pointer;
+            transition:0.2s;
+        }
+
+        .award-card-header:hover{
+            background:#f1f5f9;
         }
         
         .award-title{
@@ -240,6 +248,9 @@
             font-weight:700;
             color:#0f172a;
             margin-bottom:8px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
         }
         
         .award-description{
@@ -256,6 +267,30 @@
             font-weight:600;
             font-size:13px;
         }
+
+        .award-card-body{
+            display:none;
+            padding:0 18px 18px;
+            border-top:1px solid #e2e8f0;
+        }
+
+        .award-card-body.show{
+            display:block;
+            padding-top:14px;
+        }
+
+        .nominator-row{
+            display:flex;
+            justify-content:space-between;
+            font-size:0.85rem;
+            padding:8px 10px;
+            background:white;
+            border:1px solid #e2e8f0;
+            border-radius:6px;
+            margin-bottom:6px;
+        }
+
+        .nominator-row span:last-child{ color:#64748b; }
 
         .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
         .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; }
@@ -426,6 +461,11 @@
                     <i class="ph ph-calendar-x"></i>
                     <span>Apply Leave</span>
                 </a>
+
+                <button type="button" class="quick-btn" onclick="showMyAwards()">
+                    <i class="ph ph-trophy"></i>
+                    <span>My Awards</span>
+                </button>
         
             </div>
         </div>
@@ -533,16 +573,32 @@
             "celebrationModal").style.display = "none";
         }
 
+        /* ---------- My Awards modal ---------- */
+
+        function showMyAwards(){
+            document.getElementById("myAwardsModal").style.display = "flex";
+            loadMyAwards();
+        }
+
+        function closeMyAwardsModal(){
+            document.getElementById("myAwardsModal").style.display = "none";
+        }
+
+        function toggleAwardCard(idx){
+            document.getElementById("awardCardBody" + idx).classList.toggle("show");
+        }
+
         function loadMyAwards(){
+
+            const container = document.getElementById("myAwardsContainer");
+            container.innerHTML = `<div style="text-align:center;color:#64748b;padding:20px;">Loading...</div>`;
 
             fetch("MyAwardsServlet")
             .then(res => res.json())
             .then(data => {
-        
-                const container = document.getElementById("myAwardsContainer");
-        
-                if(!data || data.length===0){
-        
+
+                if(!data || data.length === 0){
+
                     container.innerHTML = `
                         <div style="text-align:center;color:#64748b;padding:20px;">
                             You haven't received any awards yet.
@@ -550,82 +606,56 @@
                     `;
                     return;
                 }
-        
-                let html="";
-        
-                data.forEach(function(a){
-        
-                    html += `
-                        <div class="award-card">
-        
-                            <div class="award-title">
-                                🏆 ${a.award}
-                            </div>
-        
-                            <div class="award-description">
-                                ${a.description}
-                            </div>
-        
-                            <div class="award-votes">
-                                ${a.votes} Nomination${a.votes>1 ? "s" : ""}
-                            </div>
-        
-                        </div>
-                    `;
-        
-                });
-        
+
                 let html = "";
 
-                for(let i=0;i<data.length;i++){
-                
-                    const award =
-                        data[i].award ||
-                        data[i].award_name ||
-                        data[i].name ||
-                        "";
-                
-                    const description =
-                        data[i].description ||
-                        data[i].desc ||
-                        "";
-                
-                    const votes =
-                        data[i].votes ||
-                        data[i].total_votes ||
-                        0;
-                
+                data.forEach(function(a, idx){
+
+                    const award = a.award || "";
+                    const description = a.description || "";
+                    const votes = a.votes || 0;
+                    const nominators = a.nominators || [];
+
+                    const nominatorsHtml = nominators.map(function(n){
+                        return `<div class="nominator-row"><span>${n.name}</span><span>${n.date}</span></div>`;
+                    }).join("");
+
                     html += `
                         <div class="award-card">
-                
-                            <div class="award-title">
-                                🏆 ${award}
+
+                            <div class="award-card-header" onclick="toggleAwardCard(${idx})">
+                                <div class="award-title">
+                                    <span>🏆 ${award}</span>
+                                    <span class="award-votes">${votes} Nomination${votes > 1 ? "s" : ""}</span>
+                                </div>
+                                <div class="award-description">
+                                    ${description}
+                                </div>
                             </div>
-                
-                            <div class="award-description">
-                                ${description}
+
+                            <div id="awardCardBody${idx}" class="award-card-body">
+                                <div style="font-size:0.8rem;font-weight:600;color:#64748b;margin-bottom:8px;">
+                                    NOMINATED BY
+                                </div>
+                                ${nominatorsHtml}
                             </div>
-                
-                            <div class="award-votes">
-                                ${votes} Nomination${votes>1?"s":""}
-                            </div>
-                
+
                         </div>
                     `;
-                }
-                
+                });
+
                 container.innerHTML = html;
-        
+
             })
             .catch(function(err){
-        
+
                 console.error(err);
-        
-                document.getElementById("myAwardsContainer").innerHTML =
-                "<div style='color:red'>Unable to load awards.</div>";
-        
+
+                container.innerHTML =
+                "<div style='color:red;text-align:center;padding:20px;'>Unable to load awards.</div>";
+
             });
-        
+
         }
 
         window.onload = function() {
@@ -646,7 +676,6 @@
             loadStats();
         
             loadTaskSummary();
-            loadMyAwards();
         
             fetch(
             "DashboardCelebrationServlet")
@@ -835,6 +864,46 @@
         </div>
     
     </div>
+
+    <div id="myAwardsModal" style="
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.5);
+    z-index:10000;
+    justify-content:center;
+    align-items:center;
+    ">
+
+        <div style="
+        width:560px;
+        max-width:92%;
+        max-height:82vh;
+        background:white;
+        border-radius:20px;
+        padding:28px;
+        box-shadow:0 15px 40px rgba(0,0,0,0.2);
+        position:relative;
+        display:flex;
+        flex-direction:column;
+        ">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+                <h2 style="color:#0f172a;">🏆 My Awards</h2>
+                <button onclick="closeMyAwardsModal()"
+                style="border:none;background:none;font-size:22px;cursor:pointer;color:#64748b;">
+                ✖
+                </button>
+            </div>
+
+            <div id="myAwardsContainer" style="overflow-y:auto;flex-grow:1;"></div>
+
+        </div>
+
+    </div>
+</main>
 </body>
 </html>
-
