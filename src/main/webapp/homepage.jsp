@@ -550,6 +550,8 @@
             fetch("MyAwardsServlet")
             .then(res => res.json())
             .then(data => {
+                console.log(data);
+                alert(JSON,stringify(data));
         
                 const container = document.getElementById("myAwardsContainer");
         
