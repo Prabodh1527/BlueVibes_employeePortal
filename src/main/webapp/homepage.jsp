@@ -407,18 +407,6 @@
             <h1>Welcome <%= userName %>!</h1>
         </div>
 
-        <div class="summary-card" style="margin-bottom:25px;">
-            <h3>🏆 My Awards</h3>
-        
-            <div id="myAwardsContainer">
-        
-                <div style="color:#64748b;">
-                    Loading your awards...
-                </div>
-        
-            </div>
-        </div>
-
         <div class="quick-actions-card">
             <h3>Quick Actions</h3>
         
