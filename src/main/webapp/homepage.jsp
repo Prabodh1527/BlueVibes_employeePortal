@@ -545,6 +545,52 @@
             "celebrationModal").style.display = "none";
         }
 
+        function loadMyAwards(){
+
+            fetch("MyAwardsServlet")
+            .then(res => res.json())
+            .then(data => {
+        
+                const container = document.getElementById("myAwardsContainer");
+        
+                if(data.length === 0){
+        
+                    container.innerHTML = `
+                        <div style="
+                            text-align:center;
+                            color:#64748b;
+                            padding:20px;">
+                            You haven't received any awards yet.
+                        </div>
+                    `;
+        
+                    return;
+                }
+        
+                container.innerHTML = data.map(a => `
+        
+                    <div class="award-card">
+        
+                        <div class="award-title">
+                            🏆 ${a.award}
+                        </div>
+        
+                        <div class="award-description">
+                            ${a.description}
+                        </div>
+        
+                        <div class="award-votes">
+                            ${a.votes} Nomination${a.votes>1?'s':''}
+                        </div>
+        
+                    </div>
+        
+                `).join("");
+        
+            });
+        
+        }
+
         window.onload = function() {
 
             const options = {
@@ -563,6 +609,7 @@
             loadStats();
         
             loadTaskSummary();
+            loadMyAwards();
         
             fetch(
             "DashboardCelebrationServlet")
