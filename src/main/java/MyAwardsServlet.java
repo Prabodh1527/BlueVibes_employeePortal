@@ -30,19 +30,34 @@ public class MyAwardsServlet extends HttpServlet {
             return;
         }
 
-        // Use the same session variable that works in AwardVoteServlet
-        String email = (String) session.getAttribute("userEmail");
+        String loginEmail = (String) session.getAttribute("userEmail");
 
-        if(email == null){
-            email = (String) session.getAttribute("email");
+        if(loginEmail == null){
+            loginEmail = (String) session.getAttribute("email");
         }
 
-        if(email == null){
+        if(loginEmail == null){
             out.print("[]");
             return;
         }
 
         try(Connection con = DBConnection.getConnection()){
+
+            // Find the employee's communication email
+            PreparedStatement psUser = con.prepareStatement(
+                "SELECT communication_email FROM users WHERE email=? OR communication_email=?"
+            );
+
+            psUser.setString(1, loginEmail);
+            psUser.setString(2, loginEmail);
+
+            ResultSet rsUser = psUser.executeQuery();
+
+            String communicationEmail = loginEmail;
+
+            if(rsUser.next()){
+                communicationEmail = rsUser.getString("communication_email");
+            }
 
             PreparedStatement ps = con.prepareStatement(
 
@@ -55,7 +70,7 @@ public class MyAwardsServlet extends HttpServlet {
 
             );
 
-            ps.setString(1,email);
+            ps.setString(1, communicationEmail);
 
             ResultSet rs = ps.executeQuery();
 
@@ -76,18 +91,13 @@ public class MyAwardsServlet extends HttpServlet {
                     .append("\",")
 
                     .append("\"description\":\"")
-                    .append(
-                        rs.getString("description")==null ?
-                        "" :
-                        rs.getString("description").replace("\"","\\\"")
-                    )
+                    .append(rs.getString("description")==null ? "" : rs.getString("description").replace("\"","\\\""))
                     .append("\",")
 
                     .append("\"votes\":")
                     .append(rs.getInt("total_votes"))
 
                     .append("}");
-
             }
 
             json.append("]");
