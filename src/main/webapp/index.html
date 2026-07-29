@@ -169,6 +169,11 @@
             font-size: 0.85rem;
             display: none;
             text-align: left;
+            line-height: 1.4;
+        }
+
+        .error-msg i {
+            margin-right: 6px;
         }
 
         /* Segmented role toggle */
@@ -300,7 +305,7 @@
     <div class="subtitle">Sign in to continue to your workspace</div>
 
     <div id="errorAlert" class="error-msg">
-        <i class="ph ph-warning-circle"></i> Invalid email, password, or role.
+        <i class="ph ph-warning-circle"></i> <span id="errorText">Invalid email, password, or role.</span>
     </div>
 
     <div class="role-selector" id="roleSelector">
@@ -339,8 +344,20 @@
 
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('error')) {
-            document.getElementById('errorAlert').style.display = 'block';
+        const errorVal = urlParams.get('error');
+
+        if (errorVal !== null) {
+            const errorAlert = document.getElementById('errorAlert');
+            const errorText = document.getElementById('errorText');
+
+            if (errorVal === 'invalid' || errorVal === 'true' || errorVal === '') {
+                errorText.textContent = 'Invalid email, password, or role.';
+            } else {
+                // Decode dynamic message sent by servlet (e.g. "Your account is suspended...")
+                errorText.textContent = decodeURIComponent(errorVal);
+            }
+
+            errorAlert.style.display = 'block';
         }
     }
 </script>
