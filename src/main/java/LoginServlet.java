@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,8 +26,8 @@ public class LoginServlet extends HttpServlet {
                 return;
             }
 
-            // FIXED SQL: Select the password hash alongside other fields using just the email
-            String sql = "SELECT password, fullname, role, password_changed FROM users WHERE email=?";
+            // ADDED: Fetch 'status' alongside other fields
+            String sql = "SELECT password, fullname, role, password_changed, status FROM users WHERE email=?";
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, email);
 
@@ -33,25 +35,35 @@ public class LoginServlet extends HttpServlet {
                     // Check if the user even exists with that email
                     if (rs.next()) {
                         
-                        // 1. Grab the stored password string (could be plain-text or a Bcrypt hash)
                         String storedPasswordFromDb = rs.getString("password");
                         String dbRole = rs.getString("role");
+                        String status = rs.getString("status"); // Retrieve status column
 
-                        // 2. FIXED: Use our smart PasswordUtil to evaluate if it matches
-                        // This handles both old plain text entries and your new secure hashes!
+                        // Verify password and role first
                         if (PasswordUtil.verifyPassword(password, storedPasswordFromDb) && dbRole.equalsIgnoreCase(role)) {
                             
+                            // CHECK ACCOUNT STATUS (case-insensitive check for "active")
+                            if (status == null || !"active".equalsIgnoreCase(status.trim())) {
+                                String suspendedMessage = "Your account is " + (status != null ? status : "inactive") + 
+                                                         ". Kindly contact the administrator.";
+                                
+                                // Redirect back to login with encoded error message
+                                response.sendRedirect("index.html?error=" + URLEncoder.encode(suspendedMessage, StandardCharsets.UTF_8.toString()));
+                                return;
+                            }
+
+                            // If active, proceed with session creation
                             HttpSession session = request.getSession();
                             
-                            // Set attributes exactly as expected by other Servlets
                             session.setAttribute("userEmail", email);
                             session.setAttribute("userRole", dbRole);
                             
-                            // Store the real name for the dashboard
                             String fullName = rs.getString("fullname");
                             session.setAttribute("userName", (fullName != null) ? fullName : "User");
+                            
                             boolean passwordChanged = rs.getBoolean("password_changed");
                             session.setAttribute("passwordChanged", passwordChanged);
+                            
                             if (!"Admin".equalsIgnoreCase(dbRole) && !passwordChanged) {
                                 response.sendRedirect("LoadProfileServlet?forcePasswordChange=true");
                                 return;
@@ -64,12 +76,12 @@ public class LoginServlet extends HttpServlet {
                                 response.sendRedirect("homepage.jsp");
                             }
                         } else {
-                            // Password failed verification or the role didn't match up
-                            response.sendRedirect("index.html?error=true");
+                            // Password failed verification or role mismatch
+                            response.sendRedirect("index.html?error=invalid");
                         }
                     } else {
-                        // User email not found in the records
-                        response.sendRedirect("index.html?error=true");
+                        // User email not found
+                        response.sendRedirect("index.html?error=invalid");
                     }
                 }
             }
