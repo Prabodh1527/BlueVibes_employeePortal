@@ -209,6 +209,7 @@ body{
     padding:20px;
     border:1px solid #e2e8f0;
     box-shadow:0 2px 10px rgba(0,0,0,0.05);
+    position:relative;
 }
 
 .employee-card h3{
@@ -240,6 +241,23 @@ body{
     font-weight:600;
     margin-bottom:10px;
 }
+
+.status-tag{
+    position:absolute;
+    top:16px;
+    right:16px;
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+}
+.status-active{ background:#dcfce7; color:#166534; }
+.status-resigned{ background:#fef3c7; color:#92400e; }
+.status-inactive{ background:#e2e8f0; color:#475569; }
+.status-abscond{ background:#fee2e2; color:#991b1b; }
 
 </style>
 </head>
@@ -405,6 +423,16 @@ body{
 
 let employees=[];
 
+function getStatusMeta(status){
+    const s=(status || 'ACTIVE').toUpperCase();
+    switch(s){
+        case 'RESIGNED': return { label:'Resigned', cls:'status-resigned' };
+        case 'INACTIVE': return { label:'In Active', cls:'status-inactive' };
+        case 'ABSCOND': return { label:'Abscond', cls:'status-abscond' };
+        default: return { label:'Active', cls:'status-active' };
+    }
+}
+
 fetch('KnowColleaguesServlet')
 .then(response => response.json())
 .then(data => {
@@ -431,9 +459,13 @@ fetch('KnowColleaguesServlet')
                 '<div class="birthday-badge">🎂 Birthday Month</div>';
             }
         }
+
+        const statusMeta = getStatusMeta(emp.status);
     
         html += `
         <div class="employee-card">
+
+            <span class="status-tag ${statusMeta.cls}">${statusMeta.label}</span>
     
             ${birthdayBadge}
     
