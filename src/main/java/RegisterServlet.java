@@ -140,6 +140,16 @@ public class RegisterServlet extends HttpServlet {
                 ps.setString(2, email);
                 ps.executeUpdate();
                 response.getWriter().write("success");
+
+            } else if ("update_status".equals(action)) {
+                String email = request.getParameter("email");
+                String status = request.getParameter("status");
+                String sql = "UPDATE users SET status = ? WHERE email = ?";
+                PreparedStatement ps = con.prepareStatement(sql);
+                ps.setString(1, status);
+                ps.setString(2, email);
+                ps.executeUpdate();
+                response.getWriter().write("success");
             }
 
         } catch (Exception e) {
