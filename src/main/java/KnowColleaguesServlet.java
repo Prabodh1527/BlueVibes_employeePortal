@@ -9,31 +9,25 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 @WebServlet("/KnowColleaguesServlet")
 public class KnowColleaguesServlet extends HttpServlet {
-
     protected void doGet(HttpServletRequest request,
                          HttpServletResponse response)
             throws ServletException, IOException {
-
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-
         PrintWriter out = response.getWriter();
-
         HttpSession session = request.getSession(false);
         String loggedInEmail = (String) session.getAttribute("email");
         
         String sql =
             "SELECT fullname, communication_email, designation, " +
-            "date_of_birth, date_of_joining " +
+            "date_of_birth, date_of_joining, status " +
             "FROM users " +
-            /*"WHERE communication_email <> ? " +*/
+            "WHERE UPPER(status) = 'ACTIVE' " +
+            /*"AND communication_email <> ? " +*/
             "ORDER BY date_of_joining";
-
         try (Connection con = DBConnection.getConnection()) {
-
             PreparedStatement ps = con.prepareStatement(sql);
             //ps.setString(1, loggedInEmail);
         
@@ -49,6 +43,9 @@ public class KnowColleaguesServlet extends HttpServlet {
                 }
         
                 first = false;
+
+                String statusVal = rs.getString("status");
+                if (statusVal == null || statusVal.trim().isEmpty()) statusVal = "ACTIVE";
         
                 json.append("{")
                     .append("\"fullname\":\"")
@@ -69,6 +66,10 @@ public class KnowColleaguesServlet extends HttpServlet {
         
                     .append("\"date_of_joining\":\"")
                     .append(rs.getString("date_of_joining") == null ? "" : rs.getString("date_of_joining"))
+                    .append("\",")
+
+                    .append("\"status\":\"")
+                    .append(escape(statusVal.toUpperCase()))
                     .append("\"")
         
                     .append("}");
@@ -85,13 +86,10 @@ public class KnowColleaguesServlet extends HttpServlet {
             out.print("[]");
         }
     }
-
     private String escape(String value){
-
         if(value == null){
             return "";
         }
-
         return value
                 .replace("\\", "\\\\")
                 .replace("\"", "\\\"");
