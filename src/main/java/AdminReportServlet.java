@@ -38,7 +38,8 @@ public class AdminReportServlet extends HttpServlet {
 
         StringBuilder sql = new StringBuilder(
                 "SELECT wr.*, u.fullname FROM user_weekly_reports wr " +
-                "JOIN users u ON wr.user_email = u.email WHERE 1=1 "
+                "JOIN users u ON wr.user_email = u.email WHERE 1=1 " +
+                "AND UPPER(u.status) = 'ACTIVE' "
         );
 
         if (emailsParam != null && !emailsParam.isEmpty()) {
