@@ -44,7 +44,7 @@ public class FetchAllEmployeesServlet extends HttpServlet {
                 }
 
                 // Query optimized for PostgreSQL
-                String sql = "SELECT employee_id, fullname, email, designation, wfh_allowed, date_of_joining, " +
+                String sql = "SELECT employee_id, fullname, email, designation, wfh_allowed, date_of_joining, status, " +
                              "(SELECT COUNT(*) FROM attendance WHERE user_email = users.email) as present_count " +
                              "FROM users WHERE role='User'";
                 
@@ -76,6 +76,9 @@ public class FetchAllEmployeesServlet extends HttpServlet {
                     int leavesTaken = individualWorkingDays - presentCount;
                     if (leavesTaken < 0) leavesTaken = 0;
 
+                    String statusVal = rs.getString("status");
+                    if (statusVal == null || statusVal.trim().isEmpty()) statusVal = "ACTIVE";
+
                     // Building JSON with escaped values for safety
                     json.append("{")
                         .append("\"empId\":\"").append(clean(rs.getString("employee_id"))).append("\",")
@@ -84,6 +87,7 @@ public class FetchAllEmployeesServlet extends HttpServlet {
                         .append("\"designation\":\"").append(clean(rs.getString("designation"))).append("\",")
                         .append("\"doj\":\"").append(rs.getString("date_of_joining") == null ? "" : rs.getString("date_of_joining")).append("\",")
                         .append("\"wfhAllowed\":").append(rs.getBoolean("wfh_allowed")).append(",")
+                        .append("\"status\":\"").append(clean(statusVal.toUpperCase())).append("\",")
                         .append("\"leavesTaken\":").append(leavesTaken)
                         .append("}");
                     
