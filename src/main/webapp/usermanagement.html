@@ -170,14 +170,14 @@
 
         .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
         .top-header { height: 70px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; }
-        .content-area { padding: 2rem; overflow-y: auto; }
-        .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th { background: #f8fafc; text-align: left; padding: 15px; font-size: 0.85rem; color: #64748b; border-bottom: 2px solid var(--border); }
-        .data-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .content-area { padding: 1.5rem; overflow-y: auto; overflow-x: hidden; }
+        .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .data-table th { background: #f8fafc; text-align: left; padding: 10px 8px; font-size: 0.72rem; color: #64748b; border-bottom: 2px solid var(--border); white-space: nowrap; }
+        .data-table td { padding: 8px; border-bottom: 1px solid var(--border); font-size: 0.78rem; overflow-wrap: break-word; }
 
-        .action-btns { display: flex; gap: 8px; align-items: center; }
-        .btn-view { background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; font-size: 0.8rem; }
+        .action-btns { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+        .btn-view { background: var(--accent); color: white; border: none; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px; font-size: 0.75rem; }
         .btn-attendance { background: #10b981; }
         .btn-edit { background: #f59e0b; }
         .btn-delete { background: #ef4444; }
@@ -198,16 +198,22 @@
             accent-color: var(--accent);
         }
 
-        /* Status Tag Styling */
+        /* Status Tag / Dropdown Styling */
         .status-tag {
             display: inline-block;
-            padding: 5px 12px;
+            padding: 4px 8px;
             border-radius: 20px;
-            font-size: 0.75rem;
+            font-size: 0.68rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.3px;
             white-space: nowrap;
+        }
+        .status-select {
+            border: none;
+            cursor: pointer;
+            appearance: auto;
+            max-width: 100%;
         }
         .status-active { background: #dcfce7; color: #166534; }
         .status-resigned { background: #fef3c7; color: #92400e; }
@@ -308,14 +314,14 @@
             <table class="data-table">
                 <thead>
                 <tr>
-                    <th>Emp ID</th>
-                    <th>Full Name</th>
-                    <th>Official Email</th>
-                    <th>Designation</th>
-                    <th>Joining Date</th>
-                    <th>Status</th>
-                    <th style="text-align:center;">Allow WFH</th>
-                    <th>Actions</th>
+                    <th style="width:8%;">Emp ID</th>
+                    <th style="width:14%;">Full Name</th>
+                    <th style="width:19%;">Official Email</th>
+                    <th style="width:12%;">Designation</th>
+                    <th style="width:9%;">Joining Date</th>
+                    <th style="width:11%;">Status</th>
+                    <th style="width:8%; text-align:center;">Allow WFH</th>
+                    <th style="width:19%;">Actions</th>
                 </tr>
                 </thead>
                 <tbody id="employee-table-body">
@@ -410,12 +416,18 @@
             return;
         }
 
-        // Sort: Active employees first, then everyone else
+        // Sort: Active employees first, then everyone else; within each group, earliest joining date first
         const sorted = [...allEmployees].sort((a, b) => {
             const aActive = (a.status || 'ACTIVE').toUpperCase() === 'ACTIVE';
             const bActive = (b.status || 'ACTIVE').toUpperCase() === 'ACTIVE';
-            if (aActive === bActive) return 0;
-            return aActive ? -1 : 1;
+            if (aActive !== bActive) return aActive ? -1 : 1;
+
+            const aDate = a.doj ? new Date(a.doj) : null;
+            const bDate = b.doj ? new Date(b.doj) : null;
+            if (aDate && bDate) return aDate - bDate;
+            if (aDate && !bDate) return -1;
+            if (!aDate && bDate) return 1;
+            return 0;
         });
 
         const filtered = currentStatusFilter === 'ALL'
@@ -434,6 +446,7 @@
             else if(emp.leavesTaken >= 20) leaveColor = "#f59e0b";
             else if(emp.leavesTaken > 0) leaveColor = "#10b981";*/
             const statusMeta = getStatusMeta(emp.status);
+            const empStatus = (emp.status || 'ACTIVE').toUpperCase();
 
             tableBody.innerHTML += `
                 <tr id="row-${safeEmail}">
@@ -442,7 +455,14 @@
                     <td class="col-email">${emp.email}</td>
                     <td class="col-desig">${emp.designation}</td>
                     <td class="col-doj">${emp.doj ? emp.doj : 'Not Set'}</td>
-                    <td class="col-status"><span class="status-tag ${statusMeta.cls}">${statusMeta.label}</span></td>
+                    <td class="col-status">
+                        <select class="status-tag status-select ${statusMeta.cls}" onchange="updateStatus('${emp.email}', this)" title="Change employee status">
+                            <option value="ACTIVE" ${empStatus === 'ACTIVE' ? 'selected' : ''}>Active</option>
+                            <option value="INACTIVE" ${empStatus === 'INACTIVE' ? 'selected' : ''}>In Active</option>
+                            <option value="RESIGNED" ${empStatus === 'RESIGNED' ? 'selected' : ''}>Resigned</option>
+                            <option value="ABSCOND" ${empStatus === 'ABSCOND' ? 'selected' : ''}>Abscond</option>
+                        </select>
+                    </td>
                     <td style="text-align:center;">
                         <input type="checkbox" class="wfh-toggle"
                             ${emp.wfhAllowed ? 'checked' : ''}
@@ -452,10 +472,37 @@
                     <td class="action-btns">
                         <button class="btn-view" onclick="openProfile('${emp.email}')" title="View Profile"><i class="ph ph-user"></i></button>
                         <button class="btn-view btn-attendance" onclick="openAttendance('${emp.email}', '${emp.fullname}')" title="Attendance"><i class="ph ph-calendar-check"></i></button>
-                        <button class="btn-view btn-edit" onclick="enableEdit('${emp.email}', this)" title="Edit"><i class="ph ph-pencil"></i> Edit</button>
+                        <button class="btn-view btn-edit" onclick="enableEdit('${emp.email}', this)" title="Edit"><i class="ph ph-pencil"></i></button>
                         <button class="btn-view btn-delete" onclick="deleteUser('${emp.empId}', '${emp.fullname}')" title="Delete"><i class="ph ph-trash"></i></button>
                     </td>
                 </tr>`;
+        });
+    }
+
+    function updateStatus(email, selectEl) {
+        const newStatus = selectEl.value;
+        const meta = getStatusMeta(newStatus);
+        selectEl.className = `status-tag status-select ${meta.cls}`;
+
+        const params = new URLSearchParams();
+        params.append("action", "update_status");
+        params.append("email", email);
+        params.append("status", newStatus);
+
+        fetch('RegisterServlet', {
+            method: 'POST',
+            body: params
+        }).then(res => {
+            if (res.ok) {
+                fetchEmployees();
+            } else {
+                alert("Failed to update status.");
+                fetchEmployees();
+            }
+        }).catch(err => {
+            console.error("Status update error:", err);
+            alert("An error occurred while updating status.");
+            fetchEmployees();
         });
     }
 
