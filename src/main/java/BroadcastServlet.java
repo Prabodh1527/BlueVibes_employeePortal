@@ -101,7 +101,7 @@ public class BroadcastServlet extends HttpServlet {
             try (Connection con = DBConnection.getConnection()) {
             
                 String sql =
-                    "SELECT email, communication_email FROM users";
+                    "SELECT email, communication_email FROM users WHERE UPPER(status) = 'ACTIVE'";
             
                 try (PreparedStatement ps =
                         con.prepareStatement(sql);
