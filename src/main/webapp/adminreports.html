@@ -368,10 +368,11 @@ function loadUsers(){
 fetch("FetchAllEmployeesServlet")
 .then(res=>res.json())
 .then(data=>{
+const activeOnly=(data||[]).filter(u=>(u.status||"ACTIVE").toUpperCase()==="ACTIVE");
 const ul=document.getElementById("userList");
 ul.innerHTML="";
 ul.innerHTML+=`<label><input type="checkbox" value="ALL" onchange="selectAll(this)"> Select All</label>`;
-data.forEach(u=>{
+activeOnly.forEach(u=>{
 ul.innerHTML+=`<label><input type="checkbox" value="${u.email}"> ${u.fullname} (${u.email})</label>`;
 });
 currentPage=1;updatePagination();
